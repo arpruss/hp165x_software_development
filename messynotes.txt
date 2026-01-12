@@ -3,6 +3,8 @@ Strings are null terminated.
 
 Screen size: 576x376; each logical line is 592 pixels long (16 invisible)
 
+From PVTEST_
+
 992fe2+2: SetCoordinates:  push y, x
         0098a500 48  78  00       pea        (0xb4 ).w
                  b4
@@ -30,8 +32,6 @@ FUN_00993014: takes two coordinate pairs; line?
 0098a934: TestKeys
 
 FUN_00993038: get key --> D0 ; probably -1 is none
-
-mod: at 5f00, change 01 56 to 01 FF
 
 at 600000: graphics memory, draw in white by default.
 To switch to black:
@@ -80,7 +80,15 @@ eaf6: print 0-terminated string
 eacc: 2,coordinates,coordinates :  
 ecd0: beep
 ece2: reload system!
-eb38: get key --> D0w  [ actual code at 12F44 ]
+eb38: get key --> D0w  [ actual code at 12F4 ]
+calls 0F8E(1.l,1.l)
+
+at 0x980700.w have the current key
+at 0x980704.b have 03 if a key is pressed and 00 otherwise
+at 0x980708.w have the last key pressed (FFFF if spinner)
+
+  ;; there is some way to toggle whether keys click ; when loading as PVTEST_, they click ; when
+  ;; loading as SYSTEM_, they don't
   none = 0000 (is there a flag to wait?)
   0 = 0240
   . = 0440

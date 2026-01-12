@@ -13,8 +13,10 @@ START:                  ; first instruction of program
     jsr ClearToWhite
     move.w #WRITE_BLACK,SCREEN_MEMORY_CONTROL
 
-    move.l #$0F8E, a1
-    move.l #800,d2
+TOP:
+    move.l #0,PrintByte_x
+    move.l #$980720, a1
+    move.l #32,d2
 
 LOOP:
     move.b (a1),d1
@@ -22,6 +24,11 @@ LOOP:
     add #1,a1
     sub #1,d2
     bne LOOP
+
+    move.b $980615,d1
+    jsr PrintByte
+    
+    bra TOP
     
     jsr WaitForSelect
     jsr ROM_RELOAD
