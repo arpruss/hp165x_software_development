@@ -6,7 +6,7 @@
 *-----------------------------------------------------------
     ORG    $984500
     
-    include romdefs.x68
+    include hpdefs.x68
     
 START:                  ; first instruction of program
 

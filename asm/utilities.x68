@@ -1,21 +1,33 @@
 ;    ORG    $984500
 ;START:                  ; first instruction of program
 
-    include romdefs.x68
+    include hpdefs.x68
     
 ClearToWhite:
-    move.l #$600000, A1
-    move.l #(592*376/4), D1
-    move.w #$000F,D2 
-    move.l #$201000,A3
-    move.w #$0002,d5
-    move.w #$0002,(a3)
+    move.w #WRITE_WHITE,SCREEN_MEMORY_CONTROL
+ClearToWhite_0:
+    movem.l D0-D7/A0-A1,-(SP) ; save all registers used
+    move.l #$000F000F, D0
+    move.l D0,D1
+    move.l D0,D2
+    move.l D0,D3
+    move.l D0,D4
+    move.l D0,D5
+    move.l D0,D6
+    move.l D0,D7
+    move.l #($600000+(592*376/2)), A0 ; 592*376/2 is divisible by 64
+    move.l  #$600000, A1
 ClearToWhite_1:
-    move.w d2,(A1)
-    add   #2,A1
-    sub.l #1,D1
-    bne ClearToWhite_1  
+    movem.l D0-D7,-(A0) ; clear 16 display words at once, decrementing A0 by 32
+    cmp.l A1,A0
+    bne ClearToWhite_1
+    
+    movem.l (SP)+,D0-D7/A0-A1 ; restore all registers used
     rts
+
+ClearToBlack:
+    move.w #WRITE_BLACK,SCREEN_MEMORY_CONTROL
+    bra ClearToWhite_0
 
 PrintByte:
     move.l A1,-(SP)
@@ -52,10 +64,10 @@ PrintNybble_write:
     bcc PrintNybble_newline
 PrintNybble_set_coordinates:    
     move.l D1,PrintByte_x
-    jsr $0000eae4 ; set coordinates
+    jsr ROM_SET_COORDINATES ; set coordinates
     addq.l #8, SP
     pea PrintNybble_message
-    jsr $0000eaf6 ; draw text
+    jsr ROM_DRAW_TEXT ; draw text
     addq.l #4, SP
     rts
 PrintNybble_bigger:
@@ -83,6 +95,8 @@ WaitForSelect:
 
 
 ;    END START
+
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~
