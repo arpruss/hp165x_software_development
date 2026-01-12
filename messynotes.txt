@@ -84,8 +84,13 @@ eb38: get key --> D0w  [ actual code at 12F4 ]
 calls 0F8E(1.l,1.l)
 
 at 0x980700.w have the current key
-at 0x980704.b have 03 if a key is pressed and 00 otherwise
-at 0x980708.w have the last key pressed (FFFF if spinner)
+at 0x980702.b have 03 if a key is pressed and 00 otherwise
+at 0x980704.w have the last key pressed (FFFF if spinner)
+at 0x980706.b have 01 if last event was spinner and 00 if it was a key
+at 0x98070A.w have the duration of last key down event (including spinner in any direction)
+at 0x9a070C.b have 01 if last spinner movement was right and FF if it was left
+at 0x9a070D.b have some sort of spinner speed value
+at 0x9a070E.w have some kind of current spinner position, not corresponding to angle : a full rotation is about 115-122
 
   ;; there is some way to toggle whether keys click ; when loading as PVTEST_, they click ; when
   ;; loading as SYSTEM_, they don't

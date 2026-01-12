@@ -15,7 +15,7 @@ START:                  ; first instruction of program
 
 TOP:
     move.l #0,PrintByte_x
-    move.l #$980720, a1
+    move.l #$980700, a1
     move.l #32,d2
 
 LOOP:
