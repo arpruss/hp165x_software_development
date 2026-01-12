@@ -1,0 +1,127 @@
+code starts at 002C in the pvtest file, which is loaded at 0x984500.
+Strings are null terminated.
+
+Screen size: 576x376; each logical line is 592 pixels long (16 invisible)
+
+992fe2+2: SetCoordinates:  push y, x
+        0098a500 48  78  00       pea        (0xb4 ).w
+                 b4
+        0098a504 48  78  01       pea        (0x15c ).w
+                 5c
+        0098a508 4e  93           jsr        (A3 => LAB_00992fe2+2 )
+        0098a50a 50  8f           addq.l     #0x8 ,SP
+
+FUN_00993044: args: push string, push length 
+
+FUN_00992ff6: DrawString: push string, zero terminated
+
+FUN_00992fc0: DrawRect:
+ push thickness, height, width, y, x
+Good test location: 0098a3d6/5f02
+
+LAB_00992fe6+4: DrawChar: push char (.w) to draw
+
+FUN_00992fde.l: SetBold: push word: 1 bold, 0 normal
+
+FUN_00993014: takes two coordinate pairs; line?
+
+0098a078: DrawKeyboard
+
+0098a934: TestKeys
+
+FUN_00993038: get key --> D0 ; probably -1 is none
+
+mod: at 5f00, change 01 56 to 01 FF
+
+at 600000: graphics memory, draw in white by default.
+To switch to black:
+    move.w     #4 ,-(SP ) ; other values 0,1,FF ;
+    jsr        $0000eaba
+    addq.l     #2 ,SP
+ FF does nothing?!  00 draws black, 04 draws black, 
+
+To turn off writing:
+    move.w     #$fe ,-(SP )
+    jsr        $0000eaae
+    addq.l     #2 ,SP
+# f1, f9???
+
+ FF00 --> $201000 = write black pixels
+ FF02 --> $201000 = write white pixels
+ write word at a time to even addresses ; only lowest 4 bits matter
+
+Draw pixel in SYSTEM_:
+
+void FUN_00a04b12(ushort param_1,ushort param_2)
+{
+  ushort uVar1;
+  
+  uVar1 = 8;
+  if ((param_1 & 3) != 0) {
+    uVar1 = 8 >> (param_1 & 3);
+  }
+  (x/4)*2 + y*(592/2) = 8 >> (x % 8)
+  *(ushort *)((uint)((param_1 & 0xfffc) >> 1) + (uint)param_2 * 0x128 + 0x600000) = uVar1;
+  return;
+}
+
+// only the last 4 bits of each display byte are used
+
+ROM routines:
+
+ead8: rectangle: 7,h,w,y,x ???? not quite
+
+ea06: one arg 1e
+
+eac6: 8,8,170,240 (after 0000eaae : fe) : clears rectangle on screen
+
+eae4: y,x : set coordinates
+eaf6: print 0-terminated string
+eacc: 2,coordinates,coordinates :  
+ecd0: beep
+ece2: reload system!
+eb38: get key --> D0w  [ actual code at 12F44 ]
+  none = 0000 (is there a flag to wait?)
+  0 = 0240
+  . = 0440
+  chs = 0840
+  1 = 0220
+  2 = 0420
+  3 = 0820
+  4 = 0210
+  5 = 0410
+  6 = 0810
+  clr = 0120
+  stop = 0104
+  7 = 0208
+  8 = 0408
+  9 = 0808
+  don't care = 0110
+  run = 0102
+  A = 0204
+  B = 0404
+  C = 0804
+  D = 0202
+  E = 0402
+  F = 0802
+  format = 0101
+  trace = 0201
+  display = 0401
+  io = 0801
+  updown = 1040
+  leftright = 2040
+  select = 2001
+  counterclockwise = 0082
+  clockwise = 0081
+  
+0x20F000:
+  FFF6: turn left
+  FFF4: turn right
+
+@eaba:
+4ef9000092da4ef90000198e4ef9000014A04EF9000017DA4EF9000018F6
+jmp table: 92DA
+@92da:
+4e56ffc848ee9193ffc833ee00080098077e46790098077e207c0020100030390098077ee14832390098077C100130804Cee0103FFC84E5E4E754E56FFC848EE0007FFC8
+
+
