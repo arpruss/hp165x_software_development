@@ -9,26 +9,73 @@
     include hpdefs.x68
     
 START:                  ; first instruction of program
+     jsr ClearToBlack
+     jsr ClearToWhite
+     move.w #WRITE_BLACK,SCREEN_MEMORY_CONTROL
+     bsr ResetBold
 
-    jsr ClearToWhite
-    move.w #WRITE_BLACK,SCREEN_MEMORY_CONTROL
+TOP:  
+     clr.w LAST_KEY
+     move.l #0, Print_x
+     move.l #0, Print_y
+     move.l position, D1
+     bsr PrintDWord
+     move.b #$A, D1
+     bsr PrintChar
+  
+     move.l position, a1
+     move.l #29-1,D3
+loop:
+     bsr Dump32
+     dbra D3,loop
 
-    move.l #$0F8E, a1
-    move.l #800,d2
+     cmp.w #$2001,LAST_KEY
+     beq DONE
+     cmp.w #$1040,LAST_KEY ; updown
+     beq up
+     cmp.w #$2040,LAST_KEY ; leftright
+     beq down
+     bra TOP
 
-LOOP:
-    move.b (a1),d1
-    jsr PrintByte
-    add #1,a1
-    sub #1,d2
-    bne LOOP
+up:
+     sub.l #(29*32),position     
+     bra TOP
+
+down:
+     add.l #(29*32),position     
+     bra TOP
+
+DONE:     
+     jsr ROM_RELOAD
+  
+Dump32:
+    move A1,D1
+    bsr PrintWord
+    move.b #32,D1
+    bsr PrintChar
+    move.l #31,D2
+Dump32_1:
+    move.b (A1)+,D1
+    bsr PrintByte
+    cmp #16,D2
+    bne not16
+    move.b #32,D1
+    bsr PrintChar
+not16:    
+    dbra D2,Dump32_1
     
-    jsr WaitForSelect
-    jsr ROM_RELOAD
+    move.b #$A,D1
+    bsr PrintChar
+    rts
+    
+position: dc.l $900000    
     
     include utilities.x68
-    
+stackpointer dc.l 0
     END    START        ; last line of source
+
+
+
 
 
 

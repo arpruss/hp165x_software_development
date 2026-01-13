@@ -1,11 +1,15 @@
+Memory map:
+1mb RAM from 900000 to 9FFFFF, duplicated at x00000 for x from 8 to F.
+
 code starts at 002C in the pvtest file, which is loaded at 0x984500 (this is 
 probably user-selectable).
-
-Stack pointer: FFDE0000
+                 
+Stack pointer: 00A7FFDE 
 
 Strings are null terminated.
 
-Screen size: 576x376; each logical line is 592 pixels long (16 invisible)
+Screen size: 576x384; each logical line is 592 pixels long (16 invisible) 
+But the ROM routines enforce a margin.
 
 From PVTEST_
 
@@ -86,7 +90,8 @@ eaf6: print 0-terminated string
 eacc: 2,coordinates,coordinates :  
 ecd0: beep
 ece2: reload system!
-eb38: get key --> D0w  [ actual code at 12F4 ]
+eb38: get key --> D0w  [ actual code at 12F4 ] ; sometimes waits, sometimes doesn't ??!
+b164/ec58 ?? write text at coordinates: 0.w, y.w, x.w, message.l
 calls 0F8E(1.l,1.l)
 
 at 0x980700.w have the current key

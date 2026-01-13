@@ -15,12 +15,12 @@ ClearToWhite_0:
     move.l D0,D5
     move.l D0,D6
     move.l D0,D7
-    move.l #(SCREEN+(592*376/2)), A0 ; 592*376/2 is divisible by 64
+    move.l #(SCREEN+(592*384/2)), A0 ; 592*384/2 is divisible by 64
     move.l  #SCREEN, A1
 ClearToWhite_1:
     movem.l D0-D7,-(A0) ; clear 16 display words at once, decrementing A0 by 32
     cmp.l A1,A0
-    bne ClearToWhite_1
+    bge ClearToWhite_1
     
     movem.l (SP)+,D0-D7/A0-A1 ; restore all registers used
     rts
@@ -28,11 +28,38 @@ ClearToWhite_1:
 ClearToBlack:
     move.w #WRITE_BLACK,SCREEN_MEMORY_CONTROL
     bra ClearToWhite_0
+    
+PrintDWord: ; print dword in D1
+    movem.l D0-D1,-(SP)
+    move.l D1,D0
+    lsr.l #8,D1
+    lsr.l #8,D1
+    lsr.l #8,D1
+    bsr PrintByte
+    move.l D0,D1
+    lsr.l #8,D1
+    lsr.l #8,D1
+    bsr PrintByte
+    move.l D0,D1
+    lsr.l #8,D1
+    bsr PrintByte
+    move.l D0,D1
+    bsr PrintByte
+    movem.l (SP)+,D0-D1
+    rts
+
+PrintWord: ; print word in D1
+    move.l D0,-(SP)
+    move.w D1,D0
+    lsr.w #8,D1
+    bsr PrintByte
+    move.w D0,D1
+    bsr PrintByte
+    move.l (SP)+,D0
+    rts
 
 PrintByte:
-    move.l A1,-(SP)
-    move.l D1,-(SP)
-    move.l D2,-(SP)
+    movem.l D0-D2/A1,-(SP)
 
     move.l D1,-(SP)
     
@@ -43,48 +70,60 @@ PrintByte:
     and.b #$F, D1
     jsr PrintNybble
     
-    move.l (SP)+,D2
-    move.l (SP)+,D1
-    move.l (SP)+,A1
+    movem.l (SP)+,D0-D2/A1
     rts
     
-PrintNybble: ; print D1 in hex
+PrintChar: ; print character in D1
+    movem.l D0-D2,-(SP)    
+PrintChar_write:
+    cmp.b #$0A,D1
+    beq PrintChar_newline
+    move.b D1,Print_message
+    
+    move.l Print_y,D1
+    move.l D1,-(SP)
+    move.l Print_x,D1
+    move.l D1,-(SP)
+    jsr ROM_SET_COORDINATES ; set coordinates
+    addq.l #8, SP
+
+    pea Print_message
+    jsr ROM_DRAW_TEXT ; draw text
+    addq.l #4, SP
+    
+    move.l Print_x,D1
+    addq.l #8,D1
+    cmp.l #(576-8),D1
+    bcc PrintChar_newline
+PrintChar_1:
+    move.l D1,Print_x
+PrintChar_exit:    
+    movem.l (SP)+,D0-D2
+    rts
+
+PrintChar_newline:
+    move.l Print_y,D1
+    add.l #12,D1    
+    move.l D1,Print_y
+    clr.l D1
+    bra PrintChar_1
+
+PrintNybble: ; print D1 in hex ; clobbers D1
     and.b #$F,D1
     cmp.b #10,D1
     bcc PrintNybble_bigger
     add.b #'0',D1
-PrintNybble_write:
-    move.b D1,PrintNybble_message
-    move.l PrintByte_y,D1
-    move.l D1,-(SP)
-    move.l PrintByte_x,D1
-    move.l D1,-(SP)
-    add.l #8,D1
-    cmp.l #(576-8),D1
-    bcc PrintNybble_newline
-PrintNybble_set_coordinates:    
-    move.l D1,PrintByte_x
-    jsr ROM_SET_COORDINATES ; set coordinates
-    addq.l #8, SP
-    pea PrintNybble_message
-    jsr ROM_DRAW_TEXT ; draw text
-    addq.l #4, SP
-    rts
+    bra PrintChar
 PrintNybble_bigger:
     add.b #('A'-10),D1
-    bra PrintNybble_write    
-PrintNybble_newline:
-    move.l PrintByte_y,D1
-    add.l #12,D1    
-    move.l D1,PrintByte_y
-    move.l #0,D1
-    bra PrintNybble_set_coordinates
-PrintByte_x:  
+    bra PrintChar
+
+Print_x:  
     dc.l 0
-PrintByte_y:  
-    dc.l 1
+Print_y:  
+    dc.l 0
     
-PrintNybble_message:
+Print_message:
     dc.b 'z',00    
     
 WaitForSelect:
@@ -97,14 +136,17 @@ SetBold:
     pea 1
     jsr ROM_SET_BOLD
     add.l #4, SP
+    rts
 
 ResetBold:
     clr.l -(SP)
     jsr ROM_SET_BOLD
     add.l #4, SP
+    rts
 
 ;    END START
 
+     
 
 
 
