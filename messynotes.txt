@@ -1,5 +1,5 @@
 Memory map:
-1mb RAM from 900000 to 9FFFFF, duplicated at x00000 for x from 8 to F.
+1mb RAM from 980000 to A7FFFF ???
 
 code starts at 002C in the pvtest file, which is loaded at 0x984500 (this is 
 probably user-selectable).

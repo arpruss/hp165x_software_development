@@ -29,7 +29,7 @@ loop:
      bsr Dump32
      dbra D3,loop
 
-     cmp.w #$2001,LAST_KEY
+     cmp.w #$0104,LAST_KEY ; stop
      beq DONE
      cmp.w #$1040,LAST_KEY ; updown
      beq up
@@ -68,7 +68,7 @@ not16:
     bsr PrintChar
     rts
     
-position: dc.l $900000    
+position: dc.l $980000    
     
     include utilities.x68
 stackpointer dc.l 0
