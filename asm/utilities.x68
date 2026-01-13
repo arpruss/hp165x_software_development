@@ -15,8 +15,8 @@ ClearToWhite_0:
     move.l D0,D5
     move.l D0,D6
     move.l D0,D7
-    move.l #($600000+(592*376/2)), A0 ; 592*376/2 is divisible by 64
-    move.l  #$600000, A1
+    move.l #(SCREEN+(592*376/2)), A0 ; 592*376/2 is divisible by 64
+    move.l  #SCREEN, A1
 ClearToWhite_1:
     movem.l D0-D7,-(A0) ; clear 16 display words at once, decrementing A0 by 32
     cmp.l A1,A0
@@ -93,8 +93,19 @@ WaitForSelect:
     bne WaitForSelect
     rts
 
+SetBold:
+    pea 1
+    jsr ROM_SET_BOLD
+    add.l #4, SP
+
+ResetBold:
+    clr.l -(SP)
+    jsr ROM_SET_BOLD
+    add.l #4, SP
 
 ;    END START
+
+
 
 
 

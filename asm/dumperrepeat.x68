@@ -9,9 +9,8 @@
     include hpdefs.x68
     
 START:                  ; first instruction of program
-
-    jsr ClearToWhite
-    move.w #WRITE_BLACK,SCREEN_MEMORY_CONTROL
+    jsr ClearToBlack
+    move.w #WRITE_WHITE,SCREEN_MEMORY_CONTROL
 
 TOP:
     move.l #0,PrintByte_x
