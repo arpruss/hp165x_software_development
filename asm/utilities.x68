@@ -1,6 +1,6 @@
 ;    ORG    $984500
 ;START:                  ; first instruction of program
-
+    
     include hpdefs.x68
     
 ClearToWhite:
@@ -24,7 +24,7 @@ ClearToWhite_1:
     
     movem.l (SP)+,D0-D7/A0-A1 ; restore all registers used
     rts
-
+    
 ClearToBlack:
     move.w #WRITE_BLACK,SCREEN_MEMORY_CONTROL
     bra ClearToWhite_0
@@ -127,9 +127,9 @@ Print_message:
     dc.b 'z',00    
     
 WaitForSelect:
-    jsr ROM_GET_KEY
-    cmp.w #$2001,D1
+    cmp.w #$2001,LAST_KEY
     bne WaitForSelect
+    clr.w LAST_KEY
     rts
 
 SetBold:
@@ -157,7 +157,7 @@ Beep:
      
 
 
-
+    
 
 
 *~Font name~Courier New~

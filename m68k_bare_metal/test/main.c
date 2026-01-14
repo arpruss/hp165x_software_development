@@ -1,8 +1,6 @@
 #include <stdint.h>
 
 #define SCREEN_MEMORY_CONTROL ((volatile uint16_t*)0x201000)
-#define WRITE_WHITE 0x0002
-#define WRITE_BLACK 0xFF00
 #define SCREEN ((volatile uint16_t*)0x600000)
 typedef void (*DrawText_t)(char*);
 #define DrawText ((DrawText_t)(0x0000eaf6))
@@ -23,15 +21,26 @@ __asm__(
 "  movew %d1,%d0\n"
 "  rts");
 
-extern uint16_t getkey(); 
+#include "utils.h"
 
 main() {
-	SCREEN_MEMORY_CONTROL[0] = WRITE_WHITE;
-	for (int i=0; i<592*376/2; i++)
+	SCREEN_MEMORY_CONTROL[0] = WRITE_BLACK;
+	for (int i=0; i<SCREEN_WIDTH*SCREEN_HEIGHT/4; i++)
 		SCREEN[i] = 0xF;
-	DrawText("Hello\n world");
-	SetCoordinates(10,30);
-	DrawText(alpha);
-	while (getkey() != 0x2001);
+	SCREEN_MEMORY_CONTROL[0]=WRITE_WHITE;
+	for (int x=0;x<256;x++) {
+		drawPixel(x,x);
+		drawPixel(255-x,x);
+	}
+	SCREEN_MEMORY_CONTROL[0] = WRITE_BLACK;
+	for (int i=SCREEN_WIDTH/4*8; i<SCREEN_WIDTH/4*16; i++)
+		SCREEN[i] = 0xF;
+	SCREEN_MEMORY_CONTROL[0] = WRITE_WHITE;
+	for (int x=0;x<256;x++) {
+		drawPixel(x,64);
+		drawPixel(x,256-64);
+	}
+	*LAST_KEY=0;
+	while (*LAST_KEY != KEY_SELECT);
 	Reload();
 }

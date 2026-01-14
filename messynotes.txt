@@ -42,6 +42,8 @@ FUN_00993014: takes two coordinate pairs; line?
 FUN_00993038: get key --> D0 ; probably -1 is none
 
 at 600000: graphics memory, draw in white by default.
+screen: write word at a time to even addresses ; only lowest 4 bits matter
+
 To switch to black:
     move.w     #4 ,-(SP ) ; other values 0,1,FF ;
     jsr        $0000eaba
@@ -54,9 +56,13 @@ To turn off writing:
     addq.l     #2 ,SP
 # f1, f9???
 
+At 201000.w: graphics writing mode control. Maybe some kind of mask and value? I can't figure it out
+completely. But this seems to work:
  FF00 --> $201000 = write black pixels
- FF02 --> $201000 = write white pixels
- write word at a time to even addresses ; only lowest 4 bits matter
+ FE00 --> $201000 = write white pixels
+ Other values like 0002 and 0008 sometimes reverse things. And sometimes they
+ only seem to reverse pixels drawn in a certain mode.
+ 
  
  BEEP --> $FF to $203000, then $FE to $203000. In between, call $8002 with argument of 8.l (pause?).
 

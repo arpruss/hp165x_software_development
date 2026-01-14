@@ -3,8 +3,11 @@
     
 START:                  
     jsr ClearToBlack
+    move #0,D0
+    jsr PrintDWord
     jsr WaitForSelect
-    jsr ClearToWhite
+    move.w #$0004,SCREEN_MEMORY_CONTROL
+    jsr     ClearToWhite_0
     
     jsr WaitForSelect
     jsr ROM_RELOAD

@@ -5,8 +5,9 @@
 
 #define LAST_KEY ((volatile uint16_t*)0x980704)
 #define SCREEN_MEMORY_CONTROL ((volatile uint16_t*)0x201000)
-#define WRITE_WHITE 0x0002
+//#define WRITE_REVERSE 0x0008
 #define WRITE_BLACK 0xFF00
+#define WRITE_WHITE 0xFE00
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384
 #define SCREEN_WIDTH 592
