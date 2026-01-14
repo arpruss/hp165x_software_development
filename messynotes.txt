@@ -8,8 +8,8 @@ Stack pointer: 00A7FFDE
 
 Strings are null terminated.
 
-Screen size: 576x384; each logical line is 592 pixels long (16 invisible) 
-But the ROM routines enforce a margin.
+Screen size: 592x384
+Some of the ROM routines (e.g., DrawString) enforce a margin.
 
 From PVTEST_
 
@@ -57,6 +57,8 @@ To turn off writing:
  FF00 --> $201000 = write black pixels
  FF02 --> $201000 = write white pixels
  write word at a time to even addresses ; only lowest 4 bits matter
+ 
+ BEEP --> $FF to $203000, then $FE to $203000. In between, call $8002 with argument of 8.l (pause?).
 
 Draw pixel in SYSTEM_:
 
@@ -88,11 +90,14 @@ eb08: text color?? : 0 = black on white ; 1-2 white background, no text
 eae4: y,x : set coordinates
 eaf6: print 0-terminated string
 eacc: 2,coordinates,coordinates :  
-ecd0: beep
+ecd0: beep --> 0F70
 ece2: reload system!
 eb38: get key --> D0w  [ actual code at 12F4 ] ; sometimes waits, sometimes doesn't ??!
 b164/ec58 ?? write text at coordinates: 0.w, y.w, x.w, message.l
 calls 0F8E(1.l,1.l)
+
+trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
+D7=1D has similar arguments, but functionality is unknown
 
 at 0x980700.w have the current key
 at 0x980702.b have 03 if a key is pressed and 00 otherwise

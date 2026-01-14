@@ -143,10 +143,19 @@ ResetBold:
     jsr ROM_SET_BOLD
     add.l #4, SP
     rts
+    
+Beep:
+    move.b #BUZZER_ON,BUZZER
+    move.l #16,D0
+    move.l #$1C,D7
+    trap #0
+    move.b #BUZZER_OFF,BUZZER
+    rts
 
 ;    END START
 
      
+
 
 
 

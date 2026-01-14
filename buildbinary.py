@@ -28,8 +28,8 @@ with open(sys.argv[1],"r") as s:
                 
 origLength = len(binary)
                 
-if len(binary) < MINIMUM_FILE_LENGTH:
-    binary = binary.ljust(MINIMUM_FILE_LENGTH,b'\x00')
+# I don't know what this padding is for!
+binary = binary + MINIMUM_FILE_LENGTH * b'\x00' 
                 
 with open("binaryfile","wb") as p:
     length = len(binary) + 8

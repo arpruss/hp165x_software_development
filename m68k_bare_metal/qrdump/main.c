@@ -1,33 +1,94 @@
 #include <stdint.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <string.h>
 #include "utils.h"
 
-char alpha[] = {'a','b',0};
-int beta[4];
+void drawQR(uint8_t* s);
+
+uint8_t message[1666+1];
+#define MAX_DATA 1640 // this much data should safely encode into 1666 non-null bytes
+#define CHUNK_SIZE 160 // (MAX_DATA-4)
+uint8_t buffer[MAX_DATA];
+uint8_t counts[256];
+
+void putchar_(int c) {}
+
+void encodeNull(uint8_t* out, uint8_t* data, uint16_t length) {
+	// adds two bytes, plus a little more
+	// 166
+	for (uint16_t i=0;i<256;i++)
+		counts[i] = 0;
+	for (uint16_t i=0;i<length;i++)
+		if (counts[data[i]]<255)
+			counts[data[i]]++;
+	uint8_t leastCommonByte = 1;
+	uint8_t leastCount = 255;
+	for (uint16_t i=1;i<256;i++)
+		if (counts[i]<leastCount) {
+			leastCommonByte = 1;
+			leastCount = counts[i];
+		}
+	uint8_t secondLeastCommonByte = leastCommonByte == 1 ? 2 : 1;
+	leastCount = 255;
+	for (uint16_t i=1;i<256;i++)
+		if (i != leastCommonByte && counts[i]<leastCount) {
+			secondLeastCommonByte = 1;
+			leastCount = counts[i];
+		}
+	*out++ = leastCommonByte;
+	*out++ = secondLeastCommonByte;
+	for (int i=0;i<length;i++) {
+		uint8_t d = data[i];
+		if (d==leastCommonByte) {
+			*out++ = secondLeastCommonByte;
+			*out++ = 1;
+		}
+		if (d==secondLeastCommonByte) {
+			*out++ = secondLeastCommonByte;
+			*out++ = 2;
+		}
+		else if (d==0) {
+			*out++ = leastCommonByte;
+		}
+		else {
+			*out++ = d;
+		}
+	}
+	*out = 0;
+}
+
 
 int main() {
 	drawBlack();
 	fillScreen();
-	drawWhite();
-	fillScreen();
-	drawBlack();
-	setCoordinates(0,0);
-	drawText("Hello\n world");
-	setCoordinates(10,30);
-	drawText(alpha);
-	while (getKey() != 0x2001);
-	for (int i=0; i<30; i++) {
-		volatile uint16_t* pos = SCREEN + i*SCREEN_BUFFER_WIDTH/4 + 10; //y * (SCREEN_BUFFER_WIDTH/4) + x/4;
-		drawPixel(10+i,i);
-	}
-//	fillScreen();
-//	for (int i=0; i<SCREEN_BUFFER_WIDTH; i++) {
-//		volatile uint16_t* pos = SCREEN + SCREEN_BUFFER_WIDTH/4 + 10; //y * (SCREEN_BUFFER_WIDTH/4) + x/4;
-//		*pos = 1;
-//	*pos = 1<<(8-(x%4));
-//		drawPixel(i,i/8);
-//		drawPixel(SCREEN_BUFFER_WIDTH-1-i,i/8);
-//	}
-	while (getKey() != 0x2001);
-	reload();
+	uint8_t* pos = 0;
+	char pos_string[9];
+	do {
+		drawWhite();
+		fillScreen();
+		drawBlack();
+		sprintf(pos_string, "%08x", (uint32_t)pos);
+		setCoordinates(0,0);
+		memcpy(buffer,&pos,4);
+		memcpy(buffer+4,pos,CHUNK_SIZE);
+		encodeNull(message,buffer,CHUNK_SIZE+4);
+		drawText(pos_string);
+		drawQR(message);
+		while(1) {
+			uint16_t k = getKey();
+			if (k == KEY_STOP) {
+				reload();
+			}
+			else if (k == KEY_UP_DOWN) {
+				pos -= CHUNK_SIZE;
+				break;
+			}
+			else if (k == KEY_LEFT_RIGHT || k == KEY_SELECT) {
+				pos += CHUNK_SIZE;
+				break;
+			}			
+		}
+	} while(1);
 	return 0;
 }

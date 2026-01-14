@@ -16,12 +16,12 @@ void drawWhite(void) {
 
 // TODO: assembly
 void drawPixel(uint16_t x, uint16_t y) {
-	volatile uint16_t* pos = SCREEN + y * (SCREEN_BUFFER_WIDTH/4) + x/4;
+	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH/4) + x/4;
 	*pos = 8>>(x%4);
 }
 
 // TODO: assembly
 void fillScreen(void) {
-	for (uint16_t i = 0 ; i < SCREEN_BUFFER_WIDTH/4 * SCREEN_HEIGHT ; i++)
+	for (uint16_t i = 0 ; i < SCREEN_WIDTH/4 * SCREEN_HEIGHT ; i++)
 		SCREEN[i] = 0xF;
 }

@@ -15,7 +15,7 @@
 #
 #   SRCS=main.c user.c \
 #        driver.s
-SRCS=main.c utils.c
+SRCS=main.c utils.c qr.c
 
 # Specify the CPU type that you are targeting your build towards.
 #
@@ -40,7 +40,7 @@ LD=$(PREFIX)-ld
 OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 
-CFLAGS=-m$(CPU) -Wall -Wextra -static -I../include -I. -msoft-float -MMD -MP -O99
+CFLAGS=-m$(CPU) -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../include -I. -msoft-float -MMD -MP -O99
 LFLAGS=--script=platform.ld -L../libmetal -lmetal-$(CPU)
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))

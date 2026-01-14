@@ -9,8 +9,7 @@
 #define WRITE_BLACK 0xFF00
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384
-#define SCREEN_WIDTH 576
-#define SCREEN_BUFFER_WIDTH 592
+#define SCREEN_WIDTH 592
 
 #define KEY_NONE 0x0000
 #define KEY_0 0x0240

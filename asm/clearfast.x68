@@ -5,12 +5,14 @@ START:
     jsr ClearToBlack
     jsr WaitForSelect
     jsr ClearToWhite
+    
     jsr WaitForSelect
     jsr ROM_RELOAD
 
     include utilities.x68
 
     END    START        ; last line of source
+
 
 
 
