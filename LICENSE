@@ -1,6 +1,12 @@
 MIT License
 
-Copyright (c) 2026 arpruss
+This covers all the code written by Alexander Pruss and Tom Storey but not
+small snippets of HP code in the documentation which should be fair use.
+
+https://github.com/arpruss/hp165x_software_development
+https://github.com/tomstorey/m68k_bare_metal/
+
+Copyright (c) 2026 Alexander R. Pruss
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
