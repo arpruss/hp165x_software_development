@@ -158,10 +158,10 @@ def put(inFile, outFile, fileType):
             return True
     if delete(outFile):
         print("Deleted original")
-        readDir(False)
+        readDir(True)
     print("Packing")
     pack()
-    readDir(False)
+    readDir(True)
     if len(directory) + 1 > dirEntries:
         print("Out of space in directory")
         return False
@@ -191,7 +191,8 @@ def readDir(quiet=False):
                 lastBlock = directory[-1][1].startBlock + directory[-1][1].blocks
             if not quiet:
                 print(directory[-1][0],str(directory[-1][1]))
-    print("Last block",lastBlock)
+    if not quiet:
+        print("Last block",lastBlock)
 
 with open(sys.argv[2],"rb") as inf:
     diskData = bytearray(inf.read())
@@ -213,7 +214,7 @@ if lifId != 0x1000:
 print("Volume:",name.decode())
 print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
 print("Tracks: %u\nSides: %u\nBlocks per track: %u" % (tracks,sides,blocksPerTrack))
-readDir()
+readDir(cmd != "dir")
 if cmd == "rm" or cmd == "del":
     for f in sys.argv[3:]:
         if delete(f):
