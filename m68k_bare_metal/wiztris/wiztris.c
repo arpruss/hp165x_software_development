@@ -97,9 +97,9 @@ void showlevel()
 
 void addtoscore(int s)
 {
-    static char score[15];
+    static char score[20];
     thescore += s;
-    sprintf(score,"%ld",thescore);
+    sprintf(score,"Score: %ld",thescore);
 	drawTextAt(0,1,score);
 }
 
