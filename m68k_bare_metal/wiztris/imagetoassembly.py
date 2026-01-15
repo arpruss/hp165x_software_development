@@ -98,18 +98,18 @@ print("""    .text
     .align 2
     .globl %s
     .type %s, @function 
-%s:  /* void %s(uint32_t x,uint32_t y) */
+%s:  /* void %s(uint16_t x,uint16_t y) */
 """ % (basename,basename,basename,basename))
 print("""
 	movem.l %d0-%d2/%a0,-(%sp)
     move.l 24(%sp),%d0 /* y */
-    mulu.w #(592/4),%d0    /* d0.w = y*(WIDTH/4) */
+    mulu.w #(592/4),%d0     /* d0.w = y*(WIDTH/4) */
     move.l 20(%sp),%d1      /* x */
     move.w %d1,%d2	
     lsr.w #2,%d1           /* d1 = x/4 */
     add.w %d1,%d0          /* d0 = y*(WIDTH/4) + x/4 */
+    add.l %d0,%d0          
 	move.l #0x600000,%a0
-	add.l %d0,%a0
     add.l %d0,%a0          /* a0 = 0x600000 + (y*WIDTH/4+x/4)*2 */
     and.l #3,%d2           /* d2 = x%4 */
     add.w %d2,%d2

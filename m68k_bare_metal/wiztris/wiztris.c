@@ -5,7 +5,7 @@
 #include "utils.h"
 typedef uint8_t byte;
 
-void blacksquare(uint16_t x, uint16_t y);
+void blacksquare(uint32_t x, uint32_t y);
 
 #define NROTS 4
 #define NSHAPES 7
@@ -127,9 +127,9 @@ void dosquare(int i,int j,int c)  /* row,column,color */
 	else
 		*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 	
-	graysquare(x,y);
+	blacksquare(x,y);
 	return;
-
+/*
 	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH / 4) + x/4;
 	volatile uint16_t* pos2;
 	uint16_t mask = 8>>(x%4);
@@ -156,6 +156,7 @@ void dosquare(int i,int j,int c)  /* row,column,color */
 			pos2 += SCREEN_WIDTH / 4;
 		}
 	}
+	*/
 }
 
 void dopiece(int row0,int col0,int n,int r,int c)
