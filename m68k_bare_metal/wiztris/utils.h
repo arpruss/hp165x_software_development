@@ -3,7 +3,9 @@
 
 #include <stdint.h>
 
+#define CURRENT_KEY ((volatile uint16_t*)0x980700)
 #define LAST_KEY ((volatile uint16_t*)0x980704)
+#define LAST_KEY_DURATION ((volatile uint16_t*)0x98070A)
 #define SCREEN_MEMORY_CONTROL ((volatile uint16_t*)0x201000)
 //#define WRITE_REVERSE 0x0008
 #define WRITE_BLACK 0xFF00

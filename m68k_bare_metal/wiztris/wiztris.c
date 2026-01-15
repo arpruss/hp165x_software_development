@@ -12,6 +12,8 @@ typedef uint8_t byte;
 
 #define HEADER 43
 
+#define REPEAT_DELAY 20
+#define REPEAT_SPEED  8
 
 #define MAXHIGH 10
 
@@ -72,6 +74,7 @@ long thescore=0;
 
 int level;
 int scores;
+// TODO: don't make the delays be longer when moving!!!
 #define DELAY_BASE 300
 int delays[10]={ DELAY_BASE*280, DELAY_BASE*262, DELAY_BASE*233, DELAY_BASE*210, DELAY_BASE*175, DELAY_BASE*163, DELAY_BASE*140,
 DELAY_BASE*105, DELAY_BASE*81, DELAY_BASE*52 };
@@ -123,6 +126,8 @@ void dosquare(int i,int j,int c)  /* row,column,color */
 
 	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH / 4) + x/4;
 	uint16_t startMask = 8>>(x%4);
+
+	//TODO: swap direction
 	for (uint16_t dy = 0 ; dy < SQUARE_HEIGHT ; dy++ ) {
 		volatile uint16_t* pos2 = pos;
 		uint16_t mask = startMask;
@@ -303,6 +308,50 @@ void drawbox() {
 	drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH+1,0,GHEIGHT*SQUARE_HEIGHT);
 }
 
+uint16_t getKeyNoWait(void) { // TODO: turn off interrupts
+	static uint16_t lastKey = 0;
+	static int32_t lastKeyTime = 0;
+	uint16_t k = *LAST_KEY;
+	
+	if (k != 0) {
+		*LAST_KEY = 0;
+		lastKeyTime = 0;
+		lastKey = k;
+		return k;
+	}
+	else {
+		k = *CURRENT_KEY;
+		if (k == 0) {
+			lastKey = 0;
+			return 0;
+		}
+		else {
+			if (k != lastKey) {
+				lastKey = 0;
+				lastKeyTime = 0;
+				return 0;//TODO: fix
+			}
+			else {
+				uint16_t t = *LAST_KEY_DURATION;
+				
+				if (lastKeyTime == 0) {
+					if (t >= REPEAT_DELAY) {
+						lastKeyTime = t;
+						return lastKey;
+					}
+				}
+				else {
+					if (t >= lastKeyTime + REPEAT_SPEED) {
+						lastKeyTime = t;
+						return lastKey;
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+
 void drop()
 {
     static unsigned c;
@@ -334,8 +383,8 @@ void drop()
         {
            dopiece(row,col,piece,rot,1);
            for(i=0;i<curdelay;i++) {
-              if((c=*LAST_KEY)) {
-				 *LAST_KEY = 0;
+              if((c=getKeyNoWait())) {
+				 //*LAST_KEY = 0;
 				 switch(c)
                  {
                    case KEY_DISPLAY:
