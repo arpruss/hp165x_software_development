@@ -103,7 +103,8 @@ b164/ec58 ?? write text at coordinates: 0.w, y.w, x.w, message.l
 calls 0F8E(1.l,1.l)
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
-D7=1D has similar arguments, but functionality is unknown
+D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
+trap handler starts at #6B52
 
 at 0x980700.w have the current key
 at 0x980702.b have 03 if a key is pressed and 00 otherwise
