@@ -5,6 +5,22 @@
 #include "utils.h"
 typedef uint8_t byte;
 
+void blacksquare(uint16_t x, uint16_t y);
+
+#define NROTS 4
+#define NSHAPES 7
+#define shapetbl(i,j,k) _shape[(k)+4*(j)+16*(i)]
+char _shape[112]; /* [4*4*7]; */
+#define GWIDTH 10
+#define GHEIGHT 22
+#define GHEIGHT_1 21
+char prevGrid[GHEIGHT][GWIDTH]={{0}};
+char grid[GHEIGHT][GWIDTH]={{0}};
+#define SQUARE_HEIGHT 17
+#define SQUARE_WIDTH  ADJUST_WIDTH(SQUARE_HEIGHT) // 19
+#define BOARD_X ((SCREEN_WIDTH-SQUARE_WIDTH*GWIDTH)/2)
+
+
 #include "ibm8x8.c"
 
 #define DRAW_FOREGROUND WRITE_WHITE
@@ -52,19 +68,6 @@ score_t highscores[MAXHIGH];
 byte numhigh=0;
 
 #define BOX
-
-#define NROTS 4
-#define NSHAPES 7
-#define shapetbl(i,j,k) _shape[(k)+4*(j)+16*(i)]
-char _shape[112]; /* [4*4*7]; */
-#define GWIDTH 10
-#define GHEIGHT 22
-#define GHEIGHT_1 21
-char prevGrid[GHEIGHT][GWIDTH]={{0}};
-char grid[GHEIGHT][GWIDTH]={{0}};
-#define SQUARE_HEIGHT 17
-#define SQUARE_WIDTH  ADJUST_WIDTH(SQUARE_HEIGHT)
-#define BOARD_X ((SCREEN_WIDTH-SQUARE_WIDTH*GWIDTH)/2)
 
 int maxheight;
 int maxwidth;
@@ -123,27 +126,35 @@ void dosquare(int i,int j,int c)  /* row,column,color */
 		*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
 	else
 		*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
+	
+	graysquare(x,y);
+	return;
 
 	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH / 4) + x/4;
-	uint16_t startMask = 8>>(x%4);
+	volatile uint16_t* pos2;
+	uint16_t mask = 8>>(x%4);
+	uint16_t value = 0;
 
-	//TODO: swap direction
-	for (uint16_t dy = 0 ; dy < SQUARE_HEIGHT ; dy++ ) {
-		volatile uint16_t* pos2 = pos;
-		uint16_t mask = startMask;
-		uint16_t value = 0;
-		for (uint16_t dx = 0 ; dx < SQUARE_WIDTH ; dx++) {
-			value |= mask;
-			mask >>= 1;
-			if (mask == 0) {
+	for (uint16_t dx = 0 ; dx < SQUARE_WIDTH ; dx++) {
+		value |= mask;
+		mask >>= 1;
+		if (mask == 0) {
+			pos2 = pos;
+			for (uint16_t dy = 0 ; dy < SQUARE_HEIGHT ; dy++) {
 				*pos2 = value;
-				pos2++;
-				mask = 8;
-				value = 0;
+				pos2 += SCREEN_WIDTH / 4;
 			}
+			pos++;
+			mask = 8;
+			value = 0;
 		}
-		*pos2 = value;
-		pos += (SCREEN_WIDTH / 4);
+	}
+	if (value != 0) {
+		pos2 = pos;
+		for (uint16_t dy = 0 ; dy < SQUARE_HEIGHT ; dy++) {
+			*pos2 = value;
+			pos2 += SCREEN_WIDTH / 4;
+		}
 	}
 }
 

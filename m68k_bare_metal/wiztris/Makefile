@@ -15,7 +15,7 @@
 #
 #   SRCS=main.c user.c \
 #        driver.s
-SRCS=wiztris.c utils.c 
+SRCS=wiztris.c utils.c blacksquare.S
 
 # Specify the CPU type that you are targeting your build towards.
 #
@@ -53,6 +53,12 @@ all: bmbinary.s68
 
 
 .PHONY: bmbinary release all crt clean rom dump dumps hexdump
+
+graysquare.S: imagetoassembly.py graysquare.txt
+	python imagetoassembly.py graysquare.txt > graysquare.S
+
+blacksquare.S: imagetoassembly.py blacksquare.txt
+	python imagetoassembly.py blacksquare.txt > blacksquare.S
 
 bmbinary: $(OBJS)
 	$(LD) -o $@ $(OBJS) $(LFLAGS)
