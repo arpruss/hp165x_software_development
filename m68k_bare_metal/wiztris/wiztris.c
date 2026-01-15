@@ -5,7 +5,7 @@
 #include "utils.h"
 typedef uint8_t byte;
 
-void blacksquare(uint32_t x, uint32_t y);
+void blacksquare(uint16_t x, uint16_t y);
 
 #define NROTS 4
 #define NSHAPES 7
@@ -314,8 +314,8 @@ void help()
 
 void drawbox() {
 	*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
+	drawVerticalLine(BOARD_X-3,0,GHEIGHT*SQUARE_HEIGHT);
 	drawVerticalLine(BOARD_X-2,0,GHEIGHT*SQUARE_HEIGHT);
-	drawVerticalLine(BOARD_X-1,0,GHEIGHT*SQUARE_HEIGHT);
 	drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH,0,GHEIGHT*SQUARE_HEIGHT);
 	drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH+1,0,GHEIGHT*SQUARE_HEIGHT);
 }
