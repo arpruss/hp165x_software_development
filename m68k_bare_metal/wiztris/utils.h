@@ -46,7 +46,7 @@
 #define KEY_SELECT 0x2001
 #define KEY_TURN_CCW 0x0082
 #define KEY_TURN_CW 0x0081
-#define ADJUST_WIDTH(x) ((x)*9/8)
+#define ADJUST_WIDTH(x) ((x)*57/50) // measured at 1.14
 
 
 uint16_t getKey(void);
@@ -54,12 +54,13 @@ void drawPixel(uint16_t x, uint16_t y);
 void fillScreen(void);
 void drawBlack(void);
 void drawWhite(void);
+void reload(void);
 typedef void (*DrawText_t)(char*);
 #define drawText ((DrawText_t)(0x0000eaf6))
 typedef void (*SetCoordinates_t)(uint32_t,uint32_t);
 #define setCoordinates ((SetCoordinates_t)(0x0000eae4))
 typedef void (*Reload_t)(void);
-#define reload ((Reload_t)0x0000ece2)
+#define _reload ((Reload_t)0x0000ece2)
 uint16_t getKeyWait(void);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
 void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);

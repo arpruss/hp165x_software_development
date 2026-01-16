@@ -1,4 +1,5 @@
 #include "utils.h"
+#define INITIAL_MARGIN 8
 
 uint16_t getKey(void) {
 	uint16_t k = *LAST_KEY;
@@ -12,6 +13,33 @@ void drawBlack(void) {
 
 void drawWhite(void) {
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+}
+
+void initialScreen() {
+	volatile uint16_t* pos = SCREEN;
+	for (unsigned y=0;y<SCREEN_HEIGHT;y++) {
+		if (y<INITIAL_MARGIN || SCREEN_HEIGHT-INITIAL_MARGIN <= y) {
+			*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
+			for (unsigned x4=0; x4<SCREEN_WIDTH/4; x4++)
+				*pos++ = 0x0F;
+		}
+		else {
+			*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
+			for (unsigned x4=0; x4<INITIAL_MARGIN/4; x4++)
+				*pos++ = 0x0F;
+			*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+			for (unsigned x4=0; x4<(SCREEN_WIDTH-2*INITIAL_MARGIN)/4; x4++)
+				*pos++ = 0x0F;
+			*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
+			for (unsigned x4=0; x4<INITIAL_MARGIN/4; x4++)
+				*pos++ = 0x0F;
+		}
+	}		
+}
+
+void reload(void) {
+	initialScreen();
+	_reload();
 }
 
 // TODO: assembly

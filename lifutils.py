@@ -3,11 +3,12 @@ import struct
 
 BLOCK_SIZE = 256
 DIR_ENTRY_SIZE = 32
-RESERVED_TRACKS = 1
+RESERVED_TRACK = 79
 CHUNKING = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
 
 def help():
+    print("python lifutils.py create lifname.lif")
     print("python lifutils.py dir lifname.lif")
     print("python lifutils.py del lifname.lif FILE_TO_DELETE [more files]")
     print("python lifutils.py ren lifname.lif SOURCE_NAME DEST_NAME")
@@ -19,8 +20,6 @@ def help():
 
 if len(sys.argv) < 3:
     help()
-
-cmd = sys.argv[1]
 
 def bytesToWord(b):
     return b[0] << 8 | b[1]
@@ -193,6 +192,33 @@ def readDir(quiet=False):
                 print(directory[-1][0],str(directory[-1][1]))
     if not quiet:
         print("Last block",lastBlock)
+        
+def create(name):
+    print("Creating "+name)
+    header=bytes.fromhex("8000413136355820000000021000000000000012000000000000004F0000000200000014")
+    tracks = 79
+    sides = 2
+    blocksPerTrack = 20
+    totalBlocks = tracks * sides * blocksPerTrack
+    with open(name,"wb") as outf:
+        def writeReservedSector(data=b''):
+            outf.write(data)
+            outf.write(b'\xFF' * (1024-len(data)))
+        outf.write(header)
+        outf.write((BLOCK_SIZE-len(header)) * b'\x00')
+        outf.write((BLOCK_SIZE*(totalBlocks-1)) * b'\xFF')
+        for side in range(2):
+            writeReservedSector(bytes.fromhex("E60000"))
+            writeReservedSector(bytes.fromhex("5002880503010201A301A3E6321632"))
+            writeReservedSector()
+            writeReservedSector()
+            writeReservedSector()
+
+cmd = sys.argv[1]
+
+if cmd == "create":
+    create(sys.argv[2])
+    cmd = "dir"
 
 with open(sys.argv[2],"rb") as inf:
     diskData = bytearray(inf.read())
@@ -201,11 +227,15 @@ lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPe
 dirEntries = dirBlocks * BLOCK_SIZE // DIR_ENTRY_SIZE
 if tracks == 0:
     print("assuming default geometry")
-    tracks = 80
+    tracks = 79
     sides = 2
     blocksPerTrack = 20
     diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)
-totalBlocks = (tracks-RESERVED_TRACKS) * sides * blocksPerTrack
+if tracks > RESERVED_TRACK:
+    print("fixing track info to take into account reserved track")
+    tracks = RESERVED_TRACK
+    diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)    
+totalBlocks = tracks * sides * blocksPerTrack
 if lifHeader != 0x8000:
     print("Not a valid lif file")
     sys.exit(2)
@@ -264,4 +294,5 @@ if rewrite:
     readDir()
     with open(sys.argv[2],"wb") as outf:
         outf.write(diskData)
+        
         
