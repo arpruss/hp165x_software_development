@@ -5,7 +5,9 @@
 #include "utils.h"
 typedef uint8_t byte;
 
-void blacksquare(uint16_t x, uint16_t y);
+#define SQUARE blacksquare
+
+void SQUARE(uint16_t x, uint16_t y);
 
 #define NROTS 4
 #define NSHAPES 7
@@ -20,7 +22,7 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 #define BOARD_X ((SCREEN_WIDTH-SQUARE_WIDTH*GWIDTH)/2)
 
 
-#include "ibm8x8.c"
+#include "ibm8x14.c"
 
 #define DRAW_FOREGROUND WRITE_WHITE
 #define DRAW_BACKGROUND WRITE_BLACK
@@ -37,12 +39,12 @@ void putchar_(int c) {}
 typedef void (*function_one_arg_t)(uint16_t);
 
 void drawTextAt(uint16_t x, uint16_t y, char* s) {
-	volatile uint16_t* pos = SCREEN + y * (8*SCREEN_WIDTH/4) + x*2;
+	volatile uint16_t* pos = SCREEN + y * (14*(SCREEN_WIDTH/4)) + x*2;
 	while(*s) {
 		uint16_t c = *s++ & 0xFF;
-		uint8_t* glyph = font8x8 + c*8;
+		uint8_t* glyph = font8x14 + c*14;
 		volatile uint16_t* pos2 = pos;
-		for (uint16_t row = 0; row < 8 ; row++) {
+		for (uint16_t row = 0; row < 14; row++) {
 			uint8_t g = *glyph;
 			*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 			*pos2 = (~g)>>4;
@@ -66,8 +68,6 @@ typedef struct
 score_t highscores[MAXHIGH];
 byte numhigh=0;
 
-#define BOX
-
 int maxheight;
 int maxwidth;
 int shownext;
@@ -77,7 +77,7 @@ long thescore=0;
 int level;
 int scores;
 // TODO: don't make the delays be longer when moving!!!
-#define DELAY_BASE 300
+#define DELAY_BASE 279 // 9.46sec on level drop in emulation of original DOS falling block game
 int delays[10]={ DELAY_BASE*280, DELAY_BASE*262, DELAY_BASE*233, DELAY_BASE*210, DELAY_BASE*175, DELAY_BASE*163, DELAY_BASE*140,
 DELAY_BASE*105, DELAY_BASE*81, DELAY_BASE*52 };
 int fulls;
@@ -96,7 +96,7 @@ void showlevel()
 
 void addtoscore(int s)
 {
-    static char score[20];
+    char score[20];
     thescore += s;
     sprintf(score,"Score: %ld",thescore);
 	drawTextAt(0,1,score);
@@ -126,9 +126,8 @@ void dosquare(int i,int j,int c)  /* row,column,color */
 	else
 		*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 	
-	blacksquare(x,y);
-	return;
-/*
+	SQUARE(x,y);
+#if 0
 	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH / 4) + x/4;
 	volatile uint16_t* pos2;
 	uint16_t mask = 8>>(x%4);
@@ -155,15 +154,15 @@ void dosquare(int i,int j,int c)  /* row,column,color */
 			pos2 += SCREEN_WIDTH / 4;
 		}
 	}
-	*/
+#endif	
 }
 
 void dopiece(int row0,int col0,int n,int r,int c)
 {
-    static int row;
-    static int col;
-    static int colmask;
-    static int st;
+    int row;
+    int col;
+    int colmask;
+    int st;
     for(row=0; row<4; row++)
     {
         st=shapetbl(n,row,r);
@@ -182,8 +181,8 @@ void dopiece(int row0,int col0,int n,int r,int c)
 
 void drawgrid()
 {
-    static int row;
-    static int col;
+    int row;
+    int col;
     for(row=0; row<GHEIGHT; row++) for(col=0; col<GWIDTH; col++) {
 		char g = grid[row][col];
 		dosquare(row,col,g);
@@ -192,7 +191,7 @@ void drawgrid()
 
 int fitq(int row0,int col0,int piece,int rot)
 {
-    static int row,col,colmask,st;
+    int row,col,colmask,st;
     for(row=0; row<4; row++)
     {
         if(row0-row>=GHEIGHT) continue;
@@ -215,7 +214,7 @@ int fitq(int row0,int col0,int piece,int rot)
 
 int addtogrid(int row0,int col0,int piece,int rot)
 {
-    static int row,col,colmask,st;
+    int row,col,colmask,st;
     for(row=0; row<4; row++)
     {
         colmask=1;
@@ -250,7 +249,7 @@ void killrow(int i)
 
 void scanlines(int row)
 {
-    static int i,j;
+    int i,j;
     int full;
     i=row-4;
     if(i<0) i=0;
@@ -274,7 +273,7 @@ void scanlines(int row)
 
 int getlowestrow(int row,int piece,int rot)
 {
-    static int i;
+    int i;
     for(i=3;i>=0;i--)
       if(shapetbl(piece,i,rot)) return row-i;
     return row;//should not be reached
@@ -282,7 +281,7 @@ int getlowestrow(int row,int piece,int rot)
 
 int gethighestrow(int row,int piece,int rot)
 {
-    static int i;
+    int i;
     for(i=0;i<4;i++)
       if(shapetbl(piece,i,rot)) return row-i;
     return row;//should not be reached
@@ -310,10 +309,11 @@ void help()
 
 void drawbox() {
 	*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
-	drawVerticalLine(BOARD_X-3,0,GHEIGHT*SQUARE_HEIGHT);
-	drawVerticalLine(BOARD_X-2,0,GHEIGHT*SQUARE_HEIGHT);
-	drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH,0,GHEIGHT*SQUARE_HEIGHT);
-	drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH+1,0,GHEIGHT*SQUARE_HEIGHT);
+	for (int i=0;i<2;i++) {
+		drawVerticalLine(BOARD_X-2-i,0,GHEIGHT*SQUARE_HEIGHT);
+		drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH+i,0,GHEIGHT*SQUARE_HEIGHT);
+		drawHorizontalLine(BOARD_X-3,GHEIGHT*SQUARE_HEIGHT+i,BOARD_X+GWIDTH*SQUARE_WIDTH+1);
+	}
 }
 
 uint16_t getKeyNoWait(void) { // TODO: turn off interrupts
@@ -362,17 +362,17 @@ uint16_t getKeyNoWait(void) { // TODO: turn off interrupts
 
 void drop()
 {
-    static unsigned c;
-    static int piece;
-    static int rot;
-    static int row,col;
-    static int i;
-    static int rot2;
-    static int col2;
-    static int curdelay;
-    static int droppedfrom;
-    static int nextrot,nextpiece;
-    static int curheight;
+    unsigned c;
+    int piece;
+    int rot;
+    int row,col;
+    int i;
+    int rot2;
+    int col2;
+    int curdelay;
+    int droppedfrom;
+    int nextrot,nextpiece;
+    int curheight;
     rot=rand()%NROTS;
 	piece=rand()%NSHAPES;
     col=3;
@@ -391,7 +391,8 @@ void drop()
         {
            dopiece(row,col,piece,rot,1);
            for(i=0;i<curdelay;i++) {
-              if((c=getKeyNoWait())) {
+			  c = getKeyNoWait();
+              if(c) {
 				 //*LAST_KEY = 0;
 				 switch(c)
                  {
@@ -457,6 +458,7 @@ void drop()
                       break;
                  }
 			  }
+			  
 		   }
 		   
            if(fitq(row-1,col,piece,rot))
@@ -497,18 +499,18 @@ int main()
     do {
       shownext=0;
       cls();
-	  drawTextAt(0,13,gameName);
-	  drawTextAt(0,15,"Copyright (c) 2002-26 Alexander Pruss");
-	  drawTextAt(0,18,"In-game controls:");
-	  drawTextAt(2,19,"      0/.: move");
-	  drawTextAt(2,20,"      1/2: rotate");
-	  drawTextAt(2,21,"      CHS: drop");
-	  drawTextAt(2,22,"      Run: level up");
-	  drawTextAt(2,23,"  Display: show next");
-	  drawTextAt(2,24,"     Stop: exit");
+	  drawTextAt(0,13-13,gameName);
+	  drawTextAt(0,15-13,"Copyright (c) 2002-26 Alexander Pruss");
+	  drawTextAt(0,18-13,"In-game controls:");
+	  drawTextAt(2,19-13,"      0/.: move");
+	  drawTextAt(2,20-13,"      1/2: rotate");
+	  drawTextAt(2,21-13,"      CHS: drop");
+	  drawTextAt(2,22-13,"      Run: level up");
+	  drawTextAt(2,23-13,"  Display: show next");
+	  drawTextAt(2,24-13,"     Stop: exit");
 	  
-	  drawTextAt(0,28,"0-9:  start at given level [3=default]");
-	  drawTextAt(0,29,"Stop: exit");
+	  drawTextAt(0,28-13,"0-9:  start at given level [3=default]");
+	  drawTextAt(0,29-13,"Stop: exit");
 	  
 	  k = getKeyWait();
       switch(k) {
@@ -542,6 +544,9 @@ int main()
 		  case KEY_9:
 			level = 9;
 			break;
+	      case KEY_STOP:
+			reload();
+			break;
 		  default:
 			level = 3;
 			break;
@@ -554,7 +559,7 @@ int main()
 	  drawTextAt(0,3,"Game over!");
       drawTextAt(0,4,"Again? (0/1)");
 	  k = getKeyWait();
-   } while(k==KEY_1);
+   } while(k!=KEY_0 && k!=KEY_STOP);
    reload();
    return 0;
 }

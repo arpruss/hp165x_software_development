@@ -44,6 +44,35 @@ void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2) {
 	}
 }
 
+void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2) {
+	uint16_t xCount;
+	volatile uint16_t* pos = SCREEN + (SCREEN_WIDTH/4) * y;
+	uint16_t mask;
+	
+	if (x1 <= x2) {
+		mask = 8>>(x1%4);
+		pos += (x1/4);
+		xCount = x2 - x1 + 1;
+	}
+	else {
+		mask = 8>>(x2%4);
+		pos += (x2/4);
+		xCount = x1 - x2 + 1;
+	}
+	uint8_t value = 0;
+	for (uint16_t i = 0 ; i < xCount ; i++) {
+		value |= mask;
+		mask >>= 1;
+		if (mask == 0) {
+			*pos++ |= value;
+			mask = 8;
+			value = 0;
+		}
+	}
+	if (value)
+		*pos = value;
+}
+
 uint16_t getKeyWait() {
 	*LAST_KEY = 0;
 	do {

@@ -62,7 +62,7 @@ typedef void (*Reload_t)(void);
 #define reload ((Reload_t)0x0000ece2)
 uint16_t getKeyWait(void);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
-
+void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);
 
 
 #endif

@@ -15,7 +15,7 @@
 #
 #   SRCS=main.c user.c \
 #        driver.s
-SRCS=wiztris.c utils.c blacksquare.S
+SRCS=wiztris.c utils.c blacksquare.S graysquare.S
 
 # Specify the CPU type that you are targeting your build towards.
 #
