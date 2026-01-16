@@ -26,7 +26,7 @@ with open(filename,"r") as f:
             imageHeight += 1            
             
 def makeImage(img,width,height,startOffset):
-    code = ""
+    code = "/* image %d */\n" % startOffset
     words = []
     dwords = []
     
@@ -69,9 +69,11 @@ def makeImage(img,width,height,startOffset):
             return "(%a0)"
         else:
             return f"0x{p:04x}(%a0)"
+    lastD0L = -1
     for dword in dwordDict:
         positions = dwordDict[dword]
-        if len(positions) == 1:
+        lowWord = dword & 0xFFFF
+        if len(positions) == 1 and lowWord not in wordDict:
             if positions[0] == 0:
                 code += f"    move.l #0x{dword:08x},{dest(positions[0])}\n"
         else:
@@ -81,6 +83,10 @@ def makeImage(img,width,height,startOffset):
                 code += f"    move.l #0x{dword:08x},%d0\n"
             for p in positions:
                 code += f"    move.l %d0,{dest(p)}\n"
+            if lowWord in wordDict:
+                for p in wordDict[lowWord]:
+                    code += f"    move.w %d0,{dest(p)}\n"
+                del wordDict[lowWord]                    
     for word in wordDict:
         positions = wordDict[word]
         if len(positions) == 1:
@@ -100,32 +106,39 @@ print("""    .text
     .type %s, @function 
 %s:  /* void %s(uint16_t x,uint16_t y) */
 """ % (basename,basename,basename,basename))
+
+
 print("""
 	movem.l %d0-%d2/%a0,-(%sp)
     move.w 26(%sp),%d0 /* y */
     mulu.w #(592/4),%d0     /* d0.w = y*(WIDTH/4) */
     move.w 22(%sp),%d1      /* x */
-    move.w %d1,%d2	
+    move.w %d1,%d2
     lsr.w #2,%d1           /* d1 = x/4 */
     add.w %d1,%d0          /* d0 = y*(WIDTH/4) + x/4 */
     and.w #0xFFFF,%d0      
     add.l %d0,%d0          /* this may exceed 64k */
 	move.l #0x600000,%a0
     add.l %d0,%a0          /* a0 = 0x600000 + (y*WIDTH/4+x/4)*2 */
-    and.l #3,%d2           /* d2 = x%4 */
-    add.w %d2,%d2
-    move.w .jumptable(%pc,%d2.l),%d2
-    jmp %pc@(2,%d2:w)
-    .balignw 2,0x284c
-    .swbeg &4
-.jumptable:
-    .word .image0-.jumptable
-    .word .image1-.jumptable
-    .word .image2-.jumptable
-    .word .image3-.jumptable
+    btst #0,%d2
+    beq .even
+    btst #1,%d2
+    beq .image1
 """)
-for i in range(4):
-    print(".image%d:" % i)
-    print(makeImage(image,imageWidth,imageHeight,i))
-    print("    movem.l (%sp)+,%d0-%d2/%a0")
-    print("    rts")
+print(makeImage(image,imageWidth,imageHeight,3))
+print("""    movem.l (%sp)+,%d0-%d2/%a0
+    rts
+.even:
+    btst #1,%d2
+    beq .image0""")
+print(makeImage(image,imageWidth,imageHeight,2))
+print("""    movem.l (%sp)+,%d0-%d2/%a0
+    rts
+.image0:""")   
+print(makeImage(image,imageWidth,imageHeight,0))
+print("""    movem.l (%sp)+,%d0-%d2/%a0
+    rts
+.image1:""")   
+print(makeImage(image,imageWidth,imageHeight,1))
+print("""    movem.l (%sp)+,%d0-%d2/%a0
+    rts""")

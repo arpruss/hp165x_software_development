@@ -14,7 +14,6 @@ char _shape[112]; /* [4*4*7]; */
 #define GWIDTH 10
 #define GHEIGHT 22
 #define GHEIGHT_1 21
-char prevGrid[GHEIGHT][GWIDTH]={{0}};
 char grid[GHEIGHT][GWIDTH]={{0}};
 #define SQUARE_HEIGHT 17
 #define SQUARE_WIDTH  ADJUST_WIDTH(SQUARE_HEIGHT) // 19
@@ -111,7 +110,7 @@ void init()
 	maxwidth=GWIDTH;
 	for(int i=0;i<GHEIGHT;i++)
 		for (int j=0;j<GWIDTH;j++)
-			prevGrid[i][j]=grid[i][j] = 0;
+			grid[i][j] = 0;
     for(int i=0;i<112;i++) _shape[i]=0;
 #include "tristbl.c"
 }
@@ -187,10 +186,7 @@ void drawgrid()
     static int col;
     for(row=0; row<GHEIGHT; row++) for(col=0; col<GWIDTH; col++) {
 		char g = grid[row][col];
-		if (1 || g != prevGrid[row][col]) {
-			prevGrid[row][col] = g;
-			dosquare(row,col,g);
-		}
+		dosquare(row,col,g);
 	}
 }
 
