@@ -78,7 +78,7 @@ int level;
 int scores;
 // TODO: don't make the delays be longer when moving!!!
 #define DELAY_BASE 279 // 9.46sec on level drop in emulation of original DOS falling block game
-#define DELAY_TICK(x) ((x)*25/280) // 9.46sec on level drop in emulation of original DOS falling block game
+#define DELAY_TICK(x) ((x)*26/280) 
 uint32_t delayTicks[10]={ DELAY_TICK(280), DELAY_TICK(262), 
 	DELAY_TICK(233), DELAY_TICK(210), DELAY_TICK(175), 
 	DELAY_TICK(163), DELAY_TICK(140), DELAY_TICK(105), 
@@ -184,13 +184,21 @@ void dopiece(int row0,int col0,int n,int r,int c)
     }
 }
 
-void drawgrid()
+void drawgrid(char erase)
 {
     int row;
     int col;
-    for(row=0; row<GHEIGHT; row++) for(col=0; col<GWIDTH; col++) {
-		char g = grid[row][col];
-		dosquare(row,col,g);
+	if (erase) {
+		for(row=0; row<GHEIGHT; row++) for(col=0; col<GWIDTH; col++) {
+			char g = grid[row][col];
+			if (g) dosquare(row,col,0);
+		}
+	}
+	else {
+		for(row=0; row<GHEIGHT; row++) for(col=0; col<GWIDTH; col++) {
+			char g = grid[row][col];
+			dosquare(row,col,g);
+		}
 	}
 }
 
@@ -242,7 +250,7 @@ void killrow(int i)
     for(i2=i;i2<GHEIGHT-1;i2++) for(j=0;j<GWIDTH;j++)
       grid[i2][j] = grid[i2+1][j];
     for(j=0;j<GWIDTH;j++) grid[GHEIGHT-1][j]=0;
-    drawgrid();
+    drawgrid(0);
     fulls++;
     if(fulls>=10 && level<9)
     {
@@ -456,11 +464,20 @@ void drop()
                    case KEY_STOP:
 					  reload();
                       return;
-                   case KEY_SELECT:
-				      drawTextAt(0,10,"PAUSE");
+                   case KEY_SELECT: {
+					  uint32_t tick = getVBLCounter();
+					  drawgrid(1);
+					  dopiece(row,col,piece,rot,0);
+					  doshownext(nextpiece,nextrot,0);
+				      drawTextAt(34,10,"PAUSED");
                       getKeyWait();
-				      drawTextAt(0,10,"     ");
+				      drawTextAt(34,10,"      ");
+					  drawgrid(0);
+					  dopiece(row,col,piece,rot,1);
+					  doshownext(nextpiece,nextrot,shownext);
+					  setVBLCounter(tick);
                       break;
+				   }
                  }
 			  }
 			  
@@ -495,6 +512,7 @@ void drop()
 
 int main()
 {
+	char randomized = 0;
 	patchVBL();
 	
 	
@@ -520,6 +538,11 @@ int main()
 	  drawTextAt(0,29-13,"Stop: exit");
 	  
 	  k = getKeyWait();
+	  
+	  if (!randomized) {
+		  srand(getVBLCounter());
+		  randomized = 1;
+	  }
       switch(k) {
 		  case KEY_0:
 			level = 0;
@@ -557,8 +580,7 @@ int main()
 		  default:
 			level = 3;
 			break;
-	  }
-	  
+	  }	  
       init();
       cls();
       addtoscore(0);
