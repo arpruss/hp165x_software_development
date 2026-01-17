@@ -1,0 +1,1 @@
+./gw read --format ibm.scan --tracks=c=0-79:h=0-1 $1.hfe::bitrate=500
