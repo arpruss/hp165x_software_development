@@ -13,6 +13,8 @@
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384
 #define SCREEN_WIDTH 592
+#define WRITE_FILE 2
+#define READ_FILE  1
 
 #define KEY_NONE 0x0000
 #define KEY_0 0x0240
@@ -64,6 +66,14 @@ typedef void (*SetCoordinates_t)(uint32_t,uint32_t);
 typedef void (*Reload_t)(void);
 #define _reload ((Reload_t)0x0000ece2)
 typedef void (*SetCoordinates_t)(uint32_t,uint32_t);
+typedef int16_t (*OpenFile_t)(const char* filename, uint16_t type, uint16_t mode);
+#define openFile ((OpenFile_t)0x0000eb74)
+typedef void (*CloseFile_t)(int16_t fd);
+#define closeFile ((CloseFile_t)0x0000eb7a)
+typedef int (*ReadFile_t)(int16_t fd, void* data, int32_t size);
+#define readFile ((ReadFile_t)0x0000eb86)
+typedef int (*WriteFile_t)(int16_t fd, const void* data, int32_t size);
+#define writeFile ((WriteFile_t)0x0000eb80)
 uint16_t getKeyWait(void);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
 void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);
@@ -71,6 +81,6 @@ void waitSeconds(uint16_t n);
 uint32_t getVBLCounter(void);
 void patchVBL(void);
 void unpatchVBL(void);
-uint32_t setVBLCounter(uint32_t value);
+void setVBLCounter(uint32_t value);
 
 #endif

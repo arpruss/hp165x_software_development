@@ -513,8 +513,7 @@ void drop()
 int main()
 {
 	char randomized = 0;
-	patchVBL();
-	
+	patchVBL();	
 	
 //    ozsetrepeatspeed(5);
 //    ozsetrepeatdelay(16);

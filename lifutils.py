@@ -231,16 +231,17 @@ if tracks == 0:
     sides = 2
     blocksPerTrack = 20
     diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)
-if tracks > RESERVED_TRACK:
-    print("fixing track info to take into account reserved track")
-    tracks = RESERVED_TRACK
-    diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)    
-totalBlocks = tracks * sides * blocksPerTrack
 if lifHeader != 0x8000:
     print("Not a valid lif file")
     sys.exit(2)
 if lifId != 0x1000:
     print("Invalid lif ID %04x" % lifId)
+    sys.exit(3)
+if tracks > RESERVED_TRACK:
+    print("fixing track info to take into account reserved track")
+    tracks = RESERVED_TRACK
+    diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)    
+totalBlocks = tracks * sides * blocksPerTrack
 print("Volume:",name.decode())
 print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
 print("Tracks: %u\nSides: %u\nBlocks per track: %u" % (tracks,sides,blocksPerTrack))

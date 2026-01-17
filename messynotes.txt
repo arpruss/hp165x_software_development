@@ -23,7 +23,7 @@ From PVTEST_
 
 FUN_00993044: args: push string, push length 
 
-FUN_00992ff6: DrawString: push string, zero terminated
+FUN_00992ff6: DrawText: push string, zero terminated
 
 FUN_00992fc0: DrawRect:
  push thickness, height, width, y, x
@@ -86,6 +86,10 @@ void FUN_00a04b12(ushort param_1,ushort param_2)
 }
 
 // only the last 4 bits of each display byte are used
+
+From SYSTEM_:
+	009c2482: SystemOpenFile (calls ROM's OpenFile)
+	
 
 ROM routines:
 
@@ -158,10 +162,32 @@ at 0x9a070E.w have some kind of current spinner position, not corresponding to a
   FFF6: turn left
   FFF4: turn right
 
-@eaba:
-4ef9000092da4ef90000198e4ef9000014A04EF9000017DA4EF9000018F6
-jmp table: 92DA
-@92da:
-4e56ffc848ee9193ffc833ee00080098077e46790098077e207c0020100030390098077ee14832390098077C100130804Cee0103FFC84E5E4E754E56FFC848EE0007FFC8
+_SYSTEM
 
+Serial programming
+
+Token/command table starts:
+ 00a023b8: string: COM^MAND [null terminated, 0x20 padded after null] : 0x0E bytes
+           word: some sort of index that is non-increasing from entry to entry, sometimes staying the same
+Address of token table stored in 00a23b8a		   
+
+File System
+
+eb74 int OpenFile(char *filename,short filetype,short mode)
+ Modes are either 1 (read) or 2 (write)
+ E.g.: OpenFile(s_AUTOLOAD_000064da,0xc301,2);
+       OpenFile("SYSTEM_",0xc001,1);
+       OpenFile("PVTEST_",0xc001,1);	   
+implemented at 390C	   
+	
+eb86 int ReadFile(short fd, void* out, int size)?? size could be -1??!; out could be NULL
+implemented at 3c98
+
+eb80 int WriteFile(short fd,void* in,int size)
+implemented at 3f96
+
+eb7a CloseFile(short fparam)
+implemented at 3a5c
+
+0x984166: some kind of open file info area, with entries of length 0x138?	   
 

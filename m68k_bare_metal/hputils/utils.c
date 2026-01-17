@@ -15,7 +15,7 @@ uint32_t getVBLCounter(void) {
 	return vblCounterValue;
 }
 
-uint32_t setVBLCounter(uint32_t value) {
+void setVBLCounter(uint32_t value) {
 	vblCounterValue = value;
 }
 
