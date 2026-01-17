@@ -12,7 +12,8 @@ Using EASy68K, you can assemble a 68K assembly file with an origin of 0x984500 t
 in asm/file.S68. Then you can create an .hfe virtual disc by running:
   ./builddisc.sh file
 By default it also copies it to e:/DSKA0004.HFE. If you put that in your Gotek, you can either boot
-your logic analyzer to it, or you can load it using the logic analyzer's IO menu as a "self test".
+your logic analyzer to it, or you can load it using the logic analyzer's IO menu as a "self test"
+(the latter doesn't always work as well).
 
 If you get Tom Storey's bare metal toolkit (https://github.com/tomstorey/m68k_bare_metal) and a 
 copy of m68k-elf-gcc (https://sourceforge.net/projects/mingw-gcc-68k-elf/), you can build C 

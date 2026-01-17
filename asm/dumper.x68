@@ -9,9 +9,12 @@
     include hpdefs.x68
     
 START:                  ; first instruction of program
-     jsr ClearToBlack
+;     jsr ClearToBlack
      jsr ClearToWhite
      move.w #WRITE_BLACK,SCREEN_MEMORY_CONTROL
+     pea TEXT_MODE_NORMAL
+     jsr ROM_SET_TEXT_MODE
+     add #4,SP
      bsr ResetBold
      clr.w LAST_KEY
 
@@ -191,6 +194,7 @@ continuous: dc.b $1
     
     include utilities.x68
     END    START        ; last line of source
+
 
 
 

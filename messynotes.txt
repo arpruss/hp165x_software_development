@@ -64,6 +64,8 @@ completely. But this seems to work:
  only seem to reverse pixels drawn in a certain mode.
  
  
+$980716 is copied to $202000
+ 
  BEEP --> $FF to $203000, then $FE to $203000. In between, call $8002 with argument of 8.l (pause?).
 
 Draw pixel in SYSTEM_:
@@ -92,7 +94,7 @@ ea06: one arg 1e
 eac6: 8,8,170,240 (after 0000eaae : fe) : clears rectangle on screen
 
 eade: bold : set bold if 1, set normal if 0
-eb08: text color?? : 0 = black on white ; else: white background, no text
+eb08: text color?? : 0 = black on white (9800b2 set to 4) ; else: white background, no text (9800b2 set to 7)
 eae4: y,x : set coordinates
 eaf6: print 0-terminated string
 eacc: 2,coordinates,coordinates :  

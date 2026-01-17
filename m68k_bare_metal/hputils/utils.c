@@ -112,3 +112,29 @@ uint16_t getKeyWait() {
 	} while(1);
 }
 
+void waitSeconds(uint16_t n) {
+	for (int i=0;i<2*n;i++) {
+		asm("  movem.l %d0-%d1/%a0,-(%sp)\n"
+			"  move.w #60606,%d0\n"
+			"  move.w %d0,%d1\n"
+			".wait1:\n"         
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  add.w %d1,%d1\n"   // 8 cycles
+			"  dbra %d0,.wait1\n" // 4 cycles
+		    "  movem.l (%sp)+,%d0-%d1/%a0");
+	}
+}
