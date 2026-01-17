@@ -78,6 +78,11 @@ int level;
 int scores;
 // TODO: don't make the delays be longer when moving!!!
 #define DELAY_BASE 279 // 9.46sec on level drop in emulation of original DOS falling block game
+#define DELAY_TICK(x) ((x)*25/280) // 9.46sec on level drop in emulation of original DOS falling block game
+uint32_t delayTicks[10]={ DELAY_TICK(280), DELAY_TICK(262), 
+	DELAY_TICK(233), DELAY_TICK(210), DELAY_TICK(175), 
+	DELAY_TICK(163), DELAY_TICK(140), DELAY_TICK(105), 
+	DELAY_TICK(81), DELAY_TICK(52) };
 int delays[10]={ DELAY_BASE*280, DELAY_BASE*262, DELAY_BASE*233, DELAY_BASE*210, DELAY_BASE*175, DELAY_BASE*163, DELAY_BASE*140,
 DELAY_BASE*105, DELAY_BASE*81, DELAY_BASE*52 };
 int fulls;
@@ -366,10 +371,9 @@ void drop()
     int piece;
     int rot;
     int row,col;
-    int i;
     int rot2;
     int col2;
-    int curdelay;
+    uint32_t curdelay;
     int droppedfrom;
     int nextrot,nextpiece;
     int curheight;
@@ -385,12 +389,13 @@ void drop()
         nextrot=rand()%NROTS;
         nextpiece=rand()%NSHAPES;
         if(shownext) doshownext(nextpiece,nextrot,1);
-        curdelay=delays[level];
+        curdelay=delayTicks[level];
         droppedfrom=-1;
         for(row=curheight; row>=0; row--)
         {
+		   setVBLCounter(0);
            dopiece(row,col,piece,rot,1);
-           for(i=0;i<curdelay;i++) {
+           while(getVBLCounter() < curdelay) {
 			  c = getKeyNoWait();
               if(c) {
 				 //*LAST_KEY = 0;
@@ -422,7 +427,7 @@ void drop()
                             if(level<9)
                               {
                                 level++;
-                                curdelay=delays[level];
+                                curdelay=delayTicks[level];
                                 showlevel();
                               }
                               break;
@@ -488,9 +493,11 @@ void drop()
     dopiece(curheight,col,piece,rot,1);
 }
 
-
 int main()
 {
+	patchVBL();
+	
+	
 //    ozsetrepeatspeed(5);
 //    ozsetrepeatdelay(16);
 //    load_scores();
@@ -563,3 +570,4 @@ int main()
    reload();
    return 0;
 }
+ 

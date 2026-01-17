@@ -62,7 +62,9 @@ completely. But this seems to work:
  FE00 --> $201000 = write white pixels
  Other values like 0002 and 0008 sometimes reverse things. And sometimes they
  only seem to reverse pixels drawn in a certain mode.
- 
+
+The Level 1 interrupt autovector is at 60Hz, so it's probably the vertical blanking interrupt.
+It can be used for a timer. 
  
 $980716 is copied to $202000
  

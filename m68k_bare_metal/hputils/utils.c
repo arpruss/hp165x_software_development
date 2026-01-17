@@ -1,6 +1,42 @@
 #include "utils.h"
 #define INITIAL_MARGIN 8
 
+asm(
+"_vbl_counter_code:\n"
+"  add.l #1,vblCounterValue\n"
+"_vbl_counter_jmp:\n"
+"  jmp 0xDEADBEEF\n");
+
+volatile uint32_t vblCounterValue = 0;
+extern void _vbl_counter_code(void);
+extern void _vbl_counter_jmp(void);
+
+uint32_t getVBLCounter(void) {
+	return vblCounterValue;
+}
+
+uint32_t setVBLCounter(uint32_t value) {
+	vblCounterValue = value;
+}
+
+void unpatchVBL() {
+	if (*(volatile uint16_t*)0x980000 == 0x4EF9 && *(volatile uint32_t*)0x980002 == (uint32_t)_vbl_counter_code) {
+		*(volatile uint32_t*)0x980002 = *(volatile uint32_t*)((volatile uint8_t*)_vbl_counter_jmp+2);
+	}
+}
+
+void patchVBL() {
+	if (*(volatile uint16_t*)0x980000 == 0x4EF9) {
+		if (*(volatile uint32_t*)0x980002 == (uint32_t)_vbl_counter_code) // already patched
+			return;
+		*(volatile uint32_t*)((volatile uint8_t*)_vbl_counter_jmp+2) = *(volatile uint32_t*)0x980002;
+		asm(
+			"move.l #_vbl_counter_code,0x980002\n\t"
+			);
+//		*(volatile uint32_t*)0x980002 = (uint32_t)_vbl_counter_code;
+	}
+}
+
 uint16_t getKey(void) {
 	uint16_t k = *LAST_KEY;
 	*LAST_KEY = 0;
@@ -38,6 +74,7 @@ void initialScreen() {
 }
 
 void reload(void) {
+	unpatchVBL();
 	initialScreen();
 	_reload();
 }
@@ -138,3 +175,4 @@ void waitSeconds(uint16_t n) {
 		    "  movem.l (%sp)+,%d0-%d1/%a0");
 	}
 }
+

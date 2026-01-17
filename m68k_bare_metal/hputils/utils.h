@@ -68,5 +68,9 @@ uint16_t getKeyWait(void);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
 void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);
 void waitSeconds(uint16_t n); 
+uint32_t getVBLCounter(void);
+void patchVBL(void);
+void unpatchVBL(void);
+uint32_t setVBLCounter(uint32_t value);
 
 #endif
