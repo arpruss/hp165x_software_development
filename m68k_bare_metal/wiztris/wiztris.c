@@ -538,7 +538,7 @@ int main()
       shownext=0;
       cls();
 	  drawTextAt(0,13-13,gameName);
-	  drawTextAt(0,15-13,"zzCopyright (c) 2002-26 Alexander Pruss");
+	  drawTextAt(0,15-13,"Copyright (c) 2002-26 Alexander Pruss");
 	  drawTextAt(0,18-13,"In-game controls:");
 	  drawTextAt(2,19-13,"      0/.: move");
 	  drawTextAt(2,20-13,"      1/2: rotate");

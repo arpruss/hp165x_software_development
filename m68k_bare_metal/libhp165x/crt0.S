@@ -62,13 +62,29 @@ _exit:
 		move.w	#31,%d0
 1:
 		tst.l	(%a0)
-		bne		3f
+		bne		4f
 2:		
 		sub.l	#4,%a0
 		dbra	%d0,1b
+
+		move.l	0,%d0
+
+3:
+		move.l  %d0,-(%sp) /* save d0 */
+
+		move.l  %d0,-(%sp)
+		jsr		0x0000eb7a /* close file */
+		add.l	#4,%sp
+		
+		move.l	(%sp)+,%d0 /* restore d0 */
+		
+		add.l	#1,%d0
+		cmp.l	#16,%d0  /* very conservative: my 1653B's 1987 ROM only allows one file open! */
+		bne		3b
+
 hang:
 		bra 	hang
-3:
+4:
 		movem.l	%d0/%a0,-(%sp)
 
 		move.l	(%a0),%a0
@@ -76,7 +92,5 @@ hang:
 
 		movem.l	(%sp)+,%d0/%a0
 		bra		2b
-		
-		
 		
         .end
