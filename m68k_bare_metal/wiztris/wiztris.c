@@ -35,17 +35,24 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 #define MAXHIGH 10
 
 void putchar_(int c) {}
+char reverseColor = 0;
 
 typedef void (*function_one_arg_t)(uint16_t);
 
 void drawTextAt(uint16_t x, uint16_t y, char* s) {
 	volatile uint16_t* pos = SCREEN + y * (14*(SCREEN_WIDTH/4)) + x*2;
+	uint8_t colorXOR;
+	if (reverseColor)
+		colorXOR = 0;
+	else
+		colorXOR = 0xFF;
+		
 	while(*s) {
 		uint16_t c = *s++ & 0xFF;
 		uint8_t* glyph = font8x14 + c*14;
 		volatile uint16_t* pos2 = pos;
 		for (uint16_t row = 0; row < 14; row++) {
-			uint8_t g = *glyph;
+			uint8_t g = colorXOR ^ *glyph;
 			*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 			*pos2 = (~g)>>4;
 			pos2[1] = (~g)&0xF;

@@ -1,10 +1,10 @@
 Memory map:
-1mb RAM from 980000 to A7FFFF ???
+1mb RAM from 980000 to A7FFFF 
 
 code starts at 002C in the pvtest file, which is loaded at 0x984500 (this is 
 probably user-selectable).
                  
-Stack pointer: 00A7FFDE 
+Initial stack pointer: 00A7FFDE 
 
 Strings are null terminated.
 
@@ -56,20 +56,11 @@ To turn off writing:
     addq.l     #2 ,SP
 # f1, f9, -9, fd, fb
 
-At 201000.w: graphics writing mode control. Maybe some kind of mask and value? I can't figure it out
-completely. But this seems to work:
- FF00 --> $201000 = write black pixels
- FE00 --> $201000 = write white pixels
- Other values like 0002 and 0008 sometimes reverse things. And sometimes they
- only seem to reverse pixels drawn in a certain mode.
-
 The Level 1 interrupt autovector is at 60Hz, so it's probably the vertical blanking interrupt.
 It can be used for a timer. 
  
 $980716 is copied to $202000
  
- BEEP --> $FF to $203000, then $FE to $203000. In between, call $8002 with argument of 8.l (pause?).
-
 Draw pixel in SYSTEM_:
 
 void FUN_00a04b12(ushort param_1,ushort param_2)
@@ -107,21 +98,22 @@ eacc: 2,coordinates,coordinates :
 ecd0: beep --> 0F70
 ece2: reload system!
 eb38: get key --> D0w  [ actual code at 12F4 ] ; sometimes waits, sometimes doesn't ??!
-b164/ec58 ?? write text at coordinates: 0.w, y.w, x.w, message.l
+ec58 ?? write text at coordinates: 0.w, y.w, x.w, message.l, implemented at b164
 calls 0F8E(1.l,1.l)
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
 D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
 trap handler starts at #6B52
 
-at 0x980700.w have the current key
-at 0x980702.b have 03 if a key is pressed and 00 otherwise
-at 0x980704.w have the last key pressed (FFFF if spinner)
-at 0x980706.b have 01 if last event was spinner and 00 if it was a key
-at 0x98070A.w have the duration of last key down event (including spinner in any direction)
-at 0x9a070C.b have 01 if last spinner movement was right and FF if it was left
-at 0x9a070D.b have some sort of spinner speed value
-at 0x9a070E.w have some kind of current spinner position, not corresponding to angle : a full rotation is about 115-122
+ROM keyboard routine:
+at 0x980700.w:  the current key
+at 0x980702.b: 03 if a key is pressed and 00 otherwise
+at 0x980704.w: the last key pressed (FFFF if spinner)
+at 0x980706.b: 01 if last event was spinner and 00 if it was a key
+at 0x98070A.w: the duration of last key down event (including spinner in any direction)
+at 0x9a070C.b: 01 if last spinner movement was right and FF if it was left
+at 0x9a070D.b: some sort of spinner speed value
+at 0x9a070E.w: some kind of current spinner position, not corresponding to angle : a full rotation is about 115-122
 
   ;; there is some way to toggle whether keys click ; when loading as PVTEST_, they click ; when
   ;; loading as SYSTEM_, they don't
@@ -158,9 +150,27 @@ at 0x9a070E.w have some kind of current spinner position, not corresponding to a
   counterclockwise = 0082
   clockwise = 0081
   
-0x20F000:
-  FFF6: turn left
-  FFF4: turn right
+HARDWARE
+  
+At 201000.w: graphics writing mode control. Maybe some kind of mask and value? I can't figure it out
+completely. But this seems to work:
+ FF00 --> $201000 = write black pixels
+ FE00 --> $201000 = write white pixels
+ Other values like 0002 and 0008 sometimes reverse things. And sometimes they
+ only seem to reverse pixels drawn in a certain mode.
+
+0x203000.b: BEEP: 0xFF on, $FE off
+
+0x206000.b: spinner speed
+
+0x207000.l (write): -1 does something spinnery
+
+0x20d003.l: read/write. unknown. Serial port??
+
+0x20F000.b:
+bit 0: unknown, checked in a disc related context
+bit 1: last spinner turn was to the right
+bit 4: no disc in drive
 
 _SYSTEM
 
