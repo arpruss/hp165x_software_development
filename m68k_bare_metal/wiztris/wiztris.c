@@ -43,9 +43,9 @@ void drawTextAt(uint16_t x, uint16_t y, char* s) {
 	volatile uint16_t* pos = SCREEN + y * (14*(SCREEN_WIDTH/4)) + x*2;
 	uint8_t colorXOR;
 	if (reverseColor)
-		colorXOR = 0;
-	else
 		colorXOR = 0xFF;
+	else
+		colorXOR = 0;
 		
 	while(*s) {
 		uint16_t c = *s++ & 0xFF;
@@ -517,10 +517,13 @@ void drop()
     dopiece(curheight,col,piece,rot,1);
 }
 
+
 int main()
 {
 	char randomized = 0;
 	patchVBL();	
+	
+	cls();
 	
 //    ozsetrepeatspeed(5);
 //    ozsetrepeatdelay(16);
