@@ -92,4 +92,6 @@ void patchVBL(void);
 void unpatchVBL(void);
 void setVBLCounter(uint32_t value);
 
+#include "puttext.h"
+
 #endif

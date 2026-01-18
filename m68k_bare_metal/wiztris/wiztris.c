@@ -23,10 +23,17 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 #define BOARD_X ((SCREEN_WIDTH-SQUARE_WIDTH*GWIDTH)/2)
 
 
-#include "ibm8x14.c"
+//#include "ibm8x14.c"
 
+#define BLACK_ON_WHITE 0
+
+#if BLACK_ON_WHITE
 #define DRAW_FOREGROUND WRITE_WHITE
 #define DRAW_BACKGROUND WRITE_BLACK
+#else
+#define DRAW_FOREGROUND WRITE_WHITE
+#define DRAW_BACKGROUND WRITE_BLACK
+#endif
 
 #define HEADER 43
 
@@ -34,38 +41,6 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 #define REPEAT_SPEED  8
 
 #define MAXHIGH 10
-
-void putchar_(int c) {}
-char reverseColor = 0;
-
-typedef void (*function_one_arg_t)(uint16_t);
-
-void drawTextAt(uint16_t x, uint16_t y, char* s) {
-	volatile uint16_t* pos = SCREEN + y * (14*(SCREEN_WIDTH/4)) + x*2;
-	uint8_t colorXOR;
-	if (reverseColor)
-		colorXOR = 0xFF;
-	else
-		colorXOR = 0;
-		
-	while(*s) {
-		uint16_t c = *s++ & 0xFF;
-		uint8_t* glyph = font8x14 + c*14;
-		volatile uint16_t* pos2 = pos;
-		for (uint16_t row = 0; row < 14; row++) {
-			uint8_t g = colorXOR ^ *glyph;
-			*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
-			*pos2 = (~g)>>4;
-			pos2[1] = (~g)&0xF;
-			*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
-			*pos2 = g>>4;
-			pos2[1] = g&0xF;
-			glyph++;
-			pos2 += SCREEN_WIDTH/4;			
-		}
-		pos += 2;
-	}
-}
 
 typedef struct
 {
@@ -97,22 +72,23 @@ int fulls;
 
 char* gameName="Wiztris 1.96";
 
+void drawTextAt(uint16_t x, uint16_t y, char* s) {
+	setTextXY(x,y);
+	putText(s);
+}
+
 void showlevel()
 {
     drawTextAt(0,0,gameName);
-	drawTextAt(0,2,"Level: ");
-    char s[2];
-    s[0]='0'+level;
-    s[1]=0;
-	drawTextAt(7,2,s);
+	setTextXY(0,2);
+	printf("Level: %d", level);
 }
 
 void addtoscore(int s)
 {
-    char score[20];
     thescore += s;
-    sprintf(score,"Score: %ld",thescore);
-	drawTextAt(0,1,score);
+	setTextXY(0,3);
+    printf("Score: %ld",thescore);
 }
 
 void init()
@@ -140,34 +116,6 @@ void dosquare(int i,int j,int c)  /* row,column,color */
 		*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 	
 	SQUARE(x,y);
-#if 0
-	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH / 4) + x/4;
-	volatile uint16_t* pos2;
-	uint16_t mask = 8>>(x%4);
-	uint16_t value = 0;
-
-	for (uint16_t dx = 0 ; dx < SQUARE_WIDTH ; dx++) {
-		value |= mask;
-		mask >>= 1;
-		if (mask == 0) {
-			pos2 = pos;
-			for (uint16_t dy = 0 ; dy < SQUARE_HEIGHT ; dy++) {
-				*pos2 = value;
-				pos2 += SCREEN_WIDTH / 4;
-			}
-			pos++;
-			mask = 8;
-			value = 0;
-		}
-	}
-	if (value != 0) {
-		pos2 = pos;
-		for (uint16_t dy = 0 ; dy < SQUARE_HEIGHT ; dy++) {
-			*pos2 = value;
-			pos2 += SCREEN_WIDTH / 4;
-		}
-	}
-#endif	
 }
 
 void dopiece(int row0,int col0,int n,int r,int c)
@@ -532,10 +480,7 @@ int main()
 
 	patchVBL();	
 	atexit(reload);
-	
-	int z=openFile("silly", 28, 2);
-	writeFile(z,"alabama", 7);
-	closeFile(z);
+	setTextBlackOnWhite(BLACK_ON_WHITE);
 	
     uint16_t k;
     do {
