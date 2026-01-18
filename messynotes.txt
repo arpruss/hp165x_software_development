@@ -1,10 +1,19 @@
-Memory map:
-1mb RAM from 980000 to A7FFFF 
+MEMORY MAP
+00980000-00A7FFFF: 1mb RAM
+00000000-0000FFFF: 64kb ROM
 
-code starts at 002C in the pvtest file, which is loaded at 0x984500 (this is 
-probably user-selectable).
-                 
-Initial stack pointer: 00A7FFDE 
+EXECUTABLE FILE FORMAT
+LIF file type C001
+
+0x0000: dword:    length
+0x0004: char[20]: comment (space filled)
+0x0024: dword:	  code length
+0x0028: dword:    code loading location, normally 0x00984500
+0x002C: char[code length]:  code
+0x002c + code length: dword:   data(?) loading location, 0x00A20000 in PVTEST_ and SYSTEM_
+0x002c + code length + 4: data to end of file
+
+Observed initial stack pointer : 00A7FFDE 
 
 Strings are null terminated.
 
