@@ -57,6 +57,8 @@ void fillScreen(void);
 void drawBlack(void);
 void drawWhite(void);
 void reload(void);
+void _exit(int status);
+void exit(int status);
 typedef void (*SetTextMode_t)(uint16_t);
 #define setTextMode ((SetTextMode_t)0xeb08)
 typedef void (*DrawText_t)(char*);

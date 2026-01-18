@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "hp165x.h"
 #define INITIAL_MARGIN 8
 
@@ -26,13 +27,18 @@ void unpatchVBL() {
 }
 
 void patchVBL() {
+	static char registeredAtExit = 0;
+
+	if (!registeredAtExit) {
+		atexit(unpatchVBL);
+		registeredAtExit = 1;
+	}
+	
 	if (*(volatile uint16_t*)0x980000 == 0x4EF9) {
 		if (*(volatile uint32_t*)0x980002 == (uint32_t)_vbl_counter_code) // already patched
 			return;
 		*(volatile uint32_t*)((volatile uint8_t*)_vbl_counter_jmp+2) = *(volatile uint32_t*)0x980002;
-		asm(
-			"move.l #_vbl_counter_code,0x980002\n\t"
-			);
+		asm("move.l #_vbl_counter_code,0x980002");
 //		*(volatile uint32_t*)0x980002 = (uint32_t)_vbl_counter_code;
 	}
 }

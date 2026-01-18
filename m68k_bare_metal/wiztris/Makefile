@@ -97,7 +97,7 @@ dump:
 	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.rodata -j.data -j.bss -j.heap -j.stack bmbinary
 
 dumps:
-	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
+	#$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
 	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -St -j.text bmbinary
 	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.rodata -j.data -j.bss -j.heap -j.stack bmbinary
 

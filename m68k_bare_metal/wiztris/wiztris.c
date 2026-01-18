@@ -470,7 +470,7 @@ void drop()
                           droppedfrom=getlowestrow(row,piece,rot);
                       break;
                    case KEY_STOP:
-					  reload();
+					  _exit(0);
                       return;
                    case KEY_SELECT: {
 					  uint32_t tick = getVBLCounter();
@@ -518,24 +518,27 @@ void drop()
     dopiece(curheight,col,piece,rot,1);
 }
 
+void exit1(void) {
+	drawTextAt(0,0,"EXIT 1");
+}
+
+void exit2(void) {
+	drawTextAt(0,0,"EXIT 2");
+}
 
 int main()
 {
 	char randomized = 0;
+
 	patchVBL();	
+	atexit(reload);
 	
-	cls();
-	
-//    ozsetrepeatspeed(5);
-//    ozsetrepeatdelay(16);
-//    load_scores();
-//    ozclick(0);
     uint16_t k;
     do {
       shownext=0;
       cls();
 	  drawTextAt(0,13-13,gameName);
-	  drawTextAt(0,15-13,"Copyright (c) 2002-26 Alexander Pruss");
+	  drawTextAt(0,15-13,"zzCopyright (c) 2002-26 Alexander Pruss");
 	  drawTextAt(0,18-13,"In-game controls:");
 	  drawTextAt(2,19-13,"      0/.: move");
 	  drawTextAt(2,20-13,"      1/2: rotate");
@@ -585,8 +588,7 @@ int main()
 			level = 9;
 			break;
 	      case KEY_STOP:
-			reload();
-			break;
+			return 0;
 		  default:
 			level = 3;
 			break;
@@ -599,7 +601,6 @@ int main()
       drawTextAt(0,4,"Again? (0/1)");
 	  k = getKeyWait();
    } while(k!=KEY_0 && k!=KEY_STOP);
-   reload();
    return 0;
 }
  

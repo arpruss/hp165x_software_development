@@ -17,9 +17,11 @@
  * stack space to prevent it overwriting the upper areas of the heap.
  */
 _ram_base = 0x980000;
-_stack_sz = 4K;
+_stack_sz = 16K;
+_stack_sz += 15;
+_stack_sz &= ~0xF;
 _ram_sz = 1024K - _stack_sz; 
-
+_stack_start = _ram_base + _ram_sz + _stack_sz - 4;
 
 /*
  * Dont modify below this line (unless you know what youre doing),
@@ -37,8 +39,6 @@ __text_sz = _ram_sz - 0x4500;
 
 /* Make sure stack size is a multiple of 16, and at least the amount the user
  * thought they were getting. */
-/* _stack_sz += 15;
-_stack_sz &= ~0xF; */
 
 MEMORY {
     text         (rwx!w) : ORIGIN = __text_org, LENGTH = __text_sz
