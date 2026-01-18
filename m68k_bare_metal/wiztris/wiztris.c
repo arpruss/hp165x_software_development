@@ -533,6 +533,10 @@ int main()
 	patchVBL();	
 	atexit(reload);
 	
+	int z=openFile("silly", 28, 2);
+	writeFile(z,"alabama", 7);
+	closeFile(z);
+	
     uint16_t k;
     do {
       shownext=0;

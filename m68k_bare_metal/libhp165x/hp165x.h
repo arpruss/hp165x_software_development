@@ -59,23 +59,17 @@ void drawWhite(void);
 void reload(void);
 void _exit(int status);
 void exit(int status);
-typedef void (*SetTextMode_t)(uint16_t);
-#define setTextMode ((SetTextMode_t)0xeb08)
-typedef void (*DrawText_t)(char*);
-#define drawText ((DrawText_t)(0x0000eaf6))
-typedef void (*SetCoordinates_t)(uint32_t,uint32_t);
-#define setCoordinates ((SetCoordinates_t)(0x0000eae4))
+
+void setTextMode(uint32_t mode);
+void drawText(const char* p);
+void setCoordinates(int32_t x, int32_t y);
+int openFile(const char* filename, uint32_t fileType, uint32_t mode);
+int writeFile(int32_t fd, const void* data, int32_t size);
+int readFile(int32_t fd, void* data, int32_t size);
+void closeFile(int32_t fd);
+
 typedef void (*Reload_t)(void);
 #define _reload ((Reload_t)0x0000ece2)
-typedef void (*SetCoordinates_t)(uint32_t,uint32_t);
-typedef int16_t (*OpenFile_t)(const char* filename, uint16_t type, uint16_t mode);
-#define openFile ((OpenFile_t)0x0000eb74)
-typedef void (*CloseFile_t)(int16_t fd);
-#define closeFile ((CloseFile_t)0x0000eb7a)
-typedef int (*ReadFile_t)(int16_t fd, void* data, int32_t size);
-#define readFile ((ReadFile_t)0x0000eb86)
-typedef int (*WriteFile_t)(int16_t fd, const void* data, int32_t size);
-#define writeFile ((WriteFile_t)0x0000eb80)
 
 typedef struct {
 	char name[10];
@@ -86,12 +80,8 @@ typedef struct {
 	uint8_t misc[6];
 } DirEntry_t;
 
-typedef int (*FindDirEntry_t)(const char*filename, uint32_t type, DirEntry_t* dirEntry,uint32_t startIndex, uint32_t nameLength);
-#define findDirEntry ((FindDirEntry_t)0x0000eb98)
-typedef int (*GetDirEntry_t)(int index, DirEntry_t* dirEntry);
-#define getDirEntry ((FindDirEntry_t)0x0000eb98)
-
-
+int findDirEntry(const char*filename, uint32_t type, DirEntry_t* dirEntry,uint32_t startIndex, uint32_t nameLength);
+int getDirEntry(int index, DirEntry_t* dirEntry);
 
 uint16_t getKeyWait(void);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);

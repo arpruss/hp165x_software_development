@@ -182,3 +182,85 @@ void waitSeconds(uint16_t n) {
 	}
 }
 
+/* 
+   I don't know which registers are clobbered by the OS routines, so to
+   be safe, we save all the ones that gcc requires to callee to be 
+   responsible for saving: D2-D7 and A2-A6, for a total of 44 bytes. 
+   */
+#define WRAP_0(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+		
+#define WRAP_1(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"addq #4,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+		
+#define WRAP_2(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+2*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+2*4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"addq #8,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+		
+#define WRAP_3(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"add.l #12,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+
+#define WRAP_4(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"add.l #16,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+
+#define WRAP_5(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"add.l #20,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+
+WRAP_1(drawText,0xeaf6);
+WRAP_1(setTextMode,0xeb08);
+WRAP_2(setCoordinates,0xeae4);
+WRAP_3(openFile,0xeb74);
+WRAP_1(closeFile,0xeb7a);
+WRAP_3(readFile,0xeb86);
+WRAP_3(writeFile,0xeb80);
+WRAP_5(findDirEntry,0xeb98);
+WRAP_2(getDirEntry,0xebce);
+
