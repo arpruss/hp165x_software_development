@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stddef.h>
-#include "utils.h"
+#include <hp165x.h>
+
 typedef uint8_t byte;
 
 #define SQUARE blacksquare

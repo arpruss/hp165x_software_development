@@ -15,7 +15,7 @@
 #
 #   SRCS=main.c user.c \
 #        driver.s
-SRCS=main.c utils.c 
+SRCS=hp165x.c 
 
 # Specify the CPU type that you are targeting your build towards.
 #
@@ -39,8 +39,9 @@ CC=$(PREFIX)-gcc
 LD=$(PREFIX)-ld
 OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
+AR = $(PREFIX)-ar
 
-CFLAGS=-m$(CPU) -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../include -I. -msoft-float -MMD -MP -O99
+CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../include -I. -msoft-float -MMD -MP -O99
 LFLAGS=--script=platform.ld -L../libmetal -lmetal-$(CPU)
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
@@ -49,19 +50,19 @@ OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))
 DEPS=$(OBJS:.o=.d)
 
 
-all: bmbinary.s68
+all: libhp165x.a
 
 
-.PHONY: bmbinary release all crt clean rom dump dumps hexdump
-
-bmbinary: $(OBJS)
-	$(LD) -o $@ $(OBJS) $(LFLAGS)
+.PHONY: crt clean
 
 release: CFLAGS+= -DNDEBUG
 release: all
 
 $(BUILDDIR):
 	mkdir -p $@
+
+libhp165x.a: $(OBJS) platform.ld crt0.o
+	$(AR) rcs libhp165x.a $(OBJS) crt0.o
 
 $(BUILDDIR)/%.c.o: %.c
 	mkdir -p $(@D)
@@ -85,10 +86,6 @@ crt0.o: crt0.S
 clean:
 	rm -rf $(BUILDDIR)/*
 	rm -f bmbinary*
-
-bmbinary.s68: bmbinary
-	$(OBJCOPY) -O binary bmbinary bmbinary.rom
-	$(OBJCOPY) -O srec bmbinary bmbinary.s68
 
 dump:
 	#$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary

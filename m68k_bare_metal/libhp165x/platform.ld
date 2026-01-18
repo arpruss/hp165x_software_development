@@ -17,9 +17,9 @@
  * stack space to prevent it overwriting the upper areas of the heap.
  */
 _ram_base = 0x980000;
-_ram_sz = 512K; /* it's probably 1M, but let's stay safe */
+_stack_sz = 4K;
+_ram_sz = 1024K - _stack_sz; 
 
-/*_stack_sz = 4K;*/
 
 /*
  * Dont modify below this line (unless you know what youre doing),

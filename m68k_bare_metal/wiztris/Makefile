@@ -15,7 +15,7 @@
 #
 #   SRCS=main.c user.c \
 #        driver.s
-SRCS=wiztris.c ../hputils/utils.c blacksquare.S graysquare.S
+SRCS=wiztris.c blacksquare.S graysquare.S
 
 # Specify the CPU type that you are targeting your build towards.
 #
@@ -40,8 +40,8 @@ LD=$(PREFIX)-ld
 OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 
-CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../include -I. -msoft-float -MMD -MP -O99
-LFLAGS=--script=platform.ld -L../libmetal -lmetal-$(CPU)
+CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I../include -I. -msoft-float -MMD -MP -O99
+LFLAGS=-L../libhp165x -L../libmetal --script=platform.ld -lmetal-$(CPU) -lhp165x -lhp165x
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
 OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))
@@ -52,7 +52,7 @@ DEPS=$(OBJS:.o=.d)
 all: bmbinary.s68
 
 
-.PHONY: bmbinary release all crt clean rom dump dumps hexdump
+.PHONY: bmbinary release all clean rom dump dumps hexdump
 
 graysquare.S: imagetoassembly.py graysquare.txt
 	python imagetoassembly.py graysquare.txt > graysquare.S
@@ -82,11 +82,6 @@ $(BUILDDIR)/%.s.o: %.s
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 -include $(DEPS)
-crt: crt0.o
-
-crt0.o: crt0.S
-	$(CC) $(CFLAGS) -c -o crt0.o crt0.S
-	rm -f crt0.d
 
 clean:
 	rm -rf $(BUILDDIR)/*
