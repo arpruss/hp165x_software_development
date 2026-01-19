@@ -3,28 +3,6 @@
 #include "hp165x.h"
 #define INITIAL_MARGIN 8
 
-static const struct {
-	uint16_t key;
-	char	 ascii;
-} keyToASCII[] = {
-	{ KEY_0, '0' },
-	{ KEY_1, '1' },
-	{ KEY_2, '2' },
-	{ KEY_3, '3' },
-	{ KEY_4, '4' },
-	{ KEY_5, '5' },
-	{ KEY_6, '6' },
-	{ KEY_7, '7' },
-	{ KEY_8, '8' },
-	{ KEY_9, '9' },
-	{ KEY_A, 'A' },
-	{ KEY_B, 'B' },
-	{ KEY_C, 'C' },
-	{ KEY_D, 'D' },
-	{ KEY_E, 'E' },
-	{ KEY_F, 'F' },
-};
-
 asm(
 "_vbl_counter_code:\n"
 "  add.l #1,vblCounterValue\n"
@@ -64,20 +42,6 @@ void patchVBL() {
 		asm("move.l #_vbl_counter_code,0x980002");
 //		*(volatile uint32_t*)0x980002 = (uint32_t)_vbl_counter_code;
 	}
-}
-
-char parseKey(uint16_t k) {
-	for (unsigned i=0; i<sizeof(keyToASCII)/sizeof(*keyToASCII); i++) {
-		if (k == keyToASCII[i].key)
-			return keyToASCII[i].ascii;
-	}
-	return 0;
-}
-
-uint16_t getKey(void) {
-	uint16_t k = *LAST_KEY;
-	*LAST_KEY = 0;
-	return k;
 }
 
 void drawBlack(void) {
@@ -175,17 +139,6 @@ void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2) {
 		*pos = value;
 }
 
-uint16_t getKeyWait() {
-	*LAST_KEY = 0;
-	do {
-		uint16_t k = *LAST_KEY;
-		if (k) {
-			*LAST_KEY = 0;
-			return k;
-		}
-	} while(1);
-}
-
 void waitSeconds(uint16_t n) {
 	for (int i=0;i<2*n;i++) {
 		asm("  movem.l %d0-%d1/%a0,-(%sp)\n"
@@ -225,7 +178,7 @@ _WRAP_5(findDirEntry,0xeb98);
 _WRAP_2(getDirEntry,0xebce);
 _WRAP_0(_ebb0, 0xebb0);
 _WRAP_1(_eb62, 0x227c);
-_WRAP_0_RET_D1(getKeyClick,0xeb38);
+_WRAP_0_RET_D1(getKeyBIOS,0xeb38);
 
 void _eb62(int x);
 int _ebb0(void);

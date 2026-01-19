@@ -62,12 +62,12 @@ int scores;
 // TODO: don't make the delays be longer when moving!!!
 #define DELAY_BASE 279 // 9.46sec on level drop in emulation of original DOS falling block game
 #define DELAY_TICK(x) ((x)*26/280) 
-uint32_t delayTicks[10]={ DELAY_TICK(280), DELAY_TICK(262), 
+uint32_t delayInTicks[10]={ DELAY_TICK(280), DELAY_TICK(262), 
 	DELAY_TICK(233), DELAY_TICK(210), DELAY_TICK(175), 
 	DELAY_TICK(163), DELAY_TICK(140), DELAY_TICK(105), 
 	DELAY_TICK(81), DELAY_TICK(52) };
-int delays[10]={ DELAY_BASE*280, DELAY_BASE*262, DELAY_BASE*233, DELAY_BASE*210, DELAY_BASE*175, DELAY_BASE*163, DELAY_BASE*140,
-DELAY_BASE*105, DELAY_BASE*81, DELAY_BASE*52 };
+//int delays[10]={ DELAY_BASE*280, DELAY_BASE*262, DELAY_BASE*233, DELAY_BASE*210, DELAY_BASE*175, DELAY_BASE*163, DELAY_BASE*140,
+//DELAY_BASE*105, DELAY_BASE*81, DELAY_BASE*52 };
 int fulls;
 
 char* gameName="Wiztris 1.96";
@@ -269,7 +269,7 @@ void cls() {
   for (volatile uint16_t* p=SCREEN;p<SCREEN+SCREEN_WIDTH*SCREEN_HEIGHT/4;p++)
 	  *p = 0x0F;
 }
-
+ 
 void help()
 {
     cls();
@@ -283,50 +283,6 @@ void drawbox() {
 		drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH+i,0,GHEIGHT*SQUARE_HEIGHT);
 		drawHorizontalLine(BOARD_X-3,GHEIGHT*SQUARE_HEIGHT+i,BOARD_X+GWIDTH*SQUARE_WIDTH+1);
 	}
-}
-
-uint16_t getKeyNoWait(void) { // TODO: turn off interrupts
-	static uint16_t lastKey = 0;
-	static int32_t lastKeyTime = 0;
-	uint16_t k = *LAST_KEY;
-	
-	if (k != 0) {
-		*LAST_KEY = 0;
-		lastKeyTime = 0;
-		lastKey = k;
-		return k;
-	}
-	else {
-		k = *CURRENT_KEY;
-		if (k == 0) {
-			lastKey = 0;
-			return 0;
-		}
-		else {
-			if (k != lastKey) {
-				lastKey = 0;
-				lastKeyTime = 0;
-				return 0;//TODO: fix
-			}
-			else {
-				uint16_t t = *LAST_KEY_DURATION;
-				
-				if (lastKeyTime == 0) {
-					if (t >= REPEAT_DELAY) {
-						lastKeyTime = t;
-						return lastKey;
-					}
-				}
-				else {
-					if (t >= lastKeyTime + REPEAT_SPEED) {
-						lastKeyTime = t;
-						return lastKey;
-					}
-				}
-			}
-		}
-	}
-	return 0;
 }
 
 void drop()
@@ -353,14 +309,14 @@ void drop()
         nextrot=rand()%NROTS;
         nextpiece=rand()%NSHAPES;
         if(shownext) doshownext(nextpiece,nextrot,1);
-        curdelay=delayTicks[level];
+        curdelay=delayInTicks[level];
         droppedfrom=-1;
         for(row=curheight; row>=0; row--)
         {
 		   setVBLCounter(0);
            dopiece(row,col,piece,rot,1);
            while(getVBLCounter() < curdelay) {
-			  c = getKeyNoWait();
+			  c = getKey();
               if(c) {
 				 //*LAST_KEY = 0;
 				 switch(c)
@@ -370,6 +326,7 @@ void drop()
                             doshownext(nextpiece,nextrot,shownext);
                             break;
                    case KEY_2:
+				   case KEY_TURN_CW:
                             rot2=(rot+NROTS-1)%NROTS;
                             if(fitq(row,col,piece,rot2))
                             {
@@ -379,6 +336,7 @@ void drop()
                             }
                             break;
                    case KEY_1:
+				   case KEY_TURN_CCW:
                             rot2=(rot+1)%NROTS;
                             if(fitq(row,col,piece,rot2))
                             {
@@ -391,7 +349,7 @@ void drop()
                             if(level<9)
                               {
                                 level++;
-                                curdelay=delayTicks[level];
+                                curdelay=delayInTicks[level];
                                 showlevel();
                               }
                               break;
@@ -426,7 +384,7 @@ void drop()
 					  dopiece(row,col,piece,rot,0);
 					  doshownext(nextpiece,nextrot,0);
 				      drawTextAt(34,10,"PAUSED");
-                      getKeyWait();
+                      getKey();
 				      drawTextAt(34,10,"      ");
 					  drawgrid(0);
 					  dopiece(row,col,piece,rot,1);
@@ -481,6 +439,7 @@ int main()
 	patchVBL();	
 	atexit(reload);
 	setTextBlackOnWhite(BLACK_ON_WHITE);
+	setKeyRepeat(20,8);
 	
     uint16_t k;
     do {
@@ -499,7 +458,7 @@ int main()
 	  drawTextAt(0,28-13,"0-9:  start at given level [3=default]");
 	  drawTextAt(0,29-13,"Stop: exit");
 	  
-	  k = getKeyWait();
+	  while (! (k = getKey()) );
 	  
 	  if (!randomized) {
 		  srand(getVBLCounter());
@@ -548,7 +507,7 @@ int main()
       drop();
 	  drawTextAt(0,3,"Game over!");
       drawTextAt(0,4,"Again? (0/1)");
-	  k = getKeyWait();
+	  while (!(k = getKey()));
    } while(k!=KEY_0 && k!=KEY_STOP);
    return 0;
 }

@@ -195,10 +195,19 @@ def readDir(quiet=False):
             entry = DirEntry(diskData[offset:offset+DIR_ENTRY_SIZE])
             if entry.fileType:
                 directory.append((i,entry))
-                if directory[-1][1].startBlock + directory[-1][1].blocks > lastBlock:
-                    lastBlock = directory[-1][1].startBlock + directory[-1][1].blocks
+                if entry.startBlock + entry.blocks > lastBlock:
+                    lastBlock = entry.startBlock + entry.blocks
                 if not quiet:
-                    print(directory[-1][0],str(directory[-1][1]))
+                    if entry.fileType == 0xC001:
+                        comment = ''
+                        try:
+                            start = entry.startBlock
+                            comment = "[" + entry.unchunkedFile[4:4+26].decode().strip() + " : " + entry.unchunkedFile[4+26:4+26+6].decode().strip() + "]"
+                        except:
+                            pass
+                        print(i,entry,comment)                            
+                    else:
+                        print(i,entry)
     if not quiet:
         print("Last block",lastBlock)
         

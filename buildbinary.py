@@ -27,13 +27,20 @@ with open(sys.argv[1],"r") as s:
                 binary += data
                 
 origLength = len(binary)
-                
-# I don't know what this padding is for!
+
+# no separate data area                
 binary = binary + 4 * b'\x00' 
+
+name = os.path.splitext(os.path.basename(sys.argv[2]))[0].encode('ascii')
+    
+if len(name) > 26:
+    name = name[:26]
+else:
+    name = name.ljust(26, b' ')
                 
-with open("binaryfile","wb") as p:
+with open(sys.argv[2],"wb") as p:
     length = len(binary) + 8
-    p.write( struct.pack(">I26s6sII", length, b"My Test Code".ljust(26, b' '), b"V00.00", origLength, 0x984500) )
+    p.write( struct.pack(">I26s6sII", length, name, b"V00.00", origLength, 0x984500) )
     p.write(binary)
     
     

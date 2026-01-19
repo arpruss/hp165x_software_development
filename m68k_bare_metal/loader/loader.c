@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <hp165x.h>
 
-#define MAX_FILES 16
+#define MAX_FILES 64
 
 char _names[MAX_FILES][MAX_FILENAME_LENGTH+1];
 char* names[MAX_FILES];
@@ -13,35 +13,6 @@ int numNames = 0;
 
 char SYSTEM[] = "SYSTEM_   ";
 char PVTEST[] = "PVTEST_   ";
-
-enum { SELECT=0, WAIT } mode;
-
-uint16_t myGetKey() {
-	uint16_t k = *LAST_KEY;
-	if (k == 0) {
-		return 0;
-	}
-	if (k == 0xFFFF) {
-		if (*KEY_HOLD_TIME < 10)
-			return 0;
-		*KEY_HOLD_TIME = 0;
-		uint32_t spinnerState = *(volatile uint32_t*)0x98070C;
-		*BEEPER = BEEPER_ON;
-		//delayTicks(1);
-		*BEEPER = BEEPER_OFF;
-		if (spinnerState & 0x80000000)
-			return KEY_TURN_CCW;
-		else
-			return KEY_TURN_CW;
-	}
-	else {
-		*LAST_KEY = 0;
-		*BEEPER = BEEPER_ON;
-		//delayTicks(1);
-		*BEEPER = BEEPER_OFF;
-		return k;
-	}
-}
 
 void bubbleSort() {
 	uint16_t swapped;
@@ -70,23 +41,29 @@ void getFiles(void) {
 	
 	int i = 0;
 	int pvtest = -1;
+	int pvtestBlocks = 0;
 	int system = -1;
+	int systemBlocks = 0;
 	
 	while(numNames < MAX_FILES && -1 != (i=getDirEntry(in, &entry))) {
 		if ((uint16_t)i == (uint16_t)0xC001) {
 			_names[numNames][MAX_FILENAME_LENGTH] = 0;
 			memcpy(_names[numNames], entry.name, MAX_FILENAME_LENGTH);
 			names[numNames] = _names[numNames];
-			if (!strcmp(names[numNames],SYSTEM))
+			if (!strcmp(names[numNames],SYSTEM)) {
 				system = numNames;
-			else if (!strcmp(names[numNames],PVTEST))
+				systemBlocks = entry.numBlocks;
+			}
+			else if (!strcmp(names[numNames],PVTEST)) {
 				pvtest = numNames;
+				pvtestBlocks = entry.numBlocks;
+			}
 			numNames++;
 		}
 		in++;
 	}
 	
-	if (pvtest >= 0 && system >=0) {
+	if (pvtest >= 0 && system >=0 && pvtestBlocks == systemBlocks) {
 		if (pvtest != numNames - 1) {
 			memmove(names+pvtest, names+pvtest+1, (numNames - 1 - pvtest) * sizeof(char*));
 		}
@@ -102,8 +79,7 @@ void scan(void) {
 			setTextXY(0,0);
 			putText("No disc in drive...");
 			while ( (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS ) ) {
-				uint16_t k = myGetKey(); *LAST_KEY;
-				//*LAST_KEY = 0;
+				uint16_t k = getKey(); 
 				if (k != 0) {
 					if (k == KEY_STOP)
 						reload();
@@ -129,8 +105,14 @@ void scan(void) {
 
 void drawEntry(int16_t pos,int16_t inv) {
 	setTextBlackOnWhite(inv);
-	setTextXY(0,1+pos);
-	printf(" [%X] %s \n", pos, names[pos]);
+	setTextXY((pos/16)*16,2+(pos%16));
+	if (pos < 16)
+		printf(" [%X] %s ", pos, names[pos]);
+	else {
+		putText("   ");
+		putText(names[pos]);
+		putText(" ");
+	}
 	setTextBlackOnWhite(0);
 }
 
@@ -139,13 +121,12 @@ void menu(void) {
 	drawBlack();
 	fillScreen();
 	setTextXY(0,0);
-	putText("Choose program to execute:\n\n");
+	putText("Choose program to execute, STOP to reboot:");
 	for (int i=0; i<numNames; i++) {
 		drawEntry(i, i==selected);
 	}
 	while (1) {
-		uint16_t k = myGetKey(); //*LAST_KEY;
-		//*LAST_KEY = 0;
+		uint16_t k = getKey(); 
 		if (k == KEY_STOP)
 			reload();
 		if (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS )

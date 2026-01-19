@@ -41,7 +41,7 @@
 #define KEY_7 0x0208
 #define KEY_8 0x0408
 #define KEY_9 0x0808
-#define KEY_DONTCARE 0x0110
+#define KEY_DONT_CARE 0x0110
 #define KEY_RUN 0x0102
 #define KEY_A 0x0204
 #define KEY_B 0x0404
@@ -112,8 +112,11 @@ void initialScreen();
 char parseKey(uint16_t key);
 int loadAndRun(const char* filename);
 int refreshDir(void);
-uint16_t getKeyClick(void);
 void delayTicks(uint32_t ticks);
+void setKeyClick(uint8_t _click);
+void setKeyRepeat(uint16_t delay, uint16_t rate);
+uint16_t getKey(void);
+uint16_t getKeyBIOS(void);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to
