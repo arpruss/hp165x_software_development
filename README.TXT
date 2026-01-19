@@ -24,3 +24,16 @@ is included in the c/ directory.
 
 The notes are based on reverse engineering of both the SYSTEM_ and PVTEST_ programs, as well as parts
 of the ROM.
+
+I recommend the following way to run the stuff:
+ 1. Put my c/loader program as SYSTEM_ (and maybe PVTEST_) in a LIF volume (file type 0xc001).
+    You can automatically put it into software.lif by doing:
+      ./s68todisc.sh loader	  
+ 2. Put all other programs you want to use in under their own names. 
+	E.g.:
+      ./s68todisc.sh wiztris
+ 3. To create software.hfe, run:
+      ./lif2hfe.sh software
+ 4. Copy software.hfe to a floppy disc or a Gotek drive.
+ 5. When you boot the volume on your HP165x, you will get the loader which lets you choose what to run.
+
