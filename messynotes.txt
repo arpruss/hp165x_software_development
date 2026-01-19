@@ -3,7 +3,7 @@ MEMORY MAP
 00000000-0000FFFF: 64kb ROM
 
 EXECUTABLE FILE FORMAT
-LIF file type C001
+LIF file type 0xC001
 
 0x0000: dword:    length
 0x0004: char[20]: comment (space filled)
@@ -18,7 +18,7 @@ Observed initial stack pointer : 00A7FFDE
 Strings are null terminated.
 
 Screen size: 592x384
-Some of the ROM routines (e.g., DrawString) enforce a margin.
+Some of the ROM routines (e.g., DrawString) enforce an 8-pixel margin.
 
 From PVTEST_
 
@@ -31,26 +31,18 @@ From PVTEST_
         0098a50a 50  8f           addq.l     #0x8 ,SP
 
 FUN_00993044: args: push string, push length 
-
 FUN_00992ff6: DrawText: push string, zero terminated
-
 FUN_00992fc0: DrawRect:
  push thickness, height, width, y, x
-Good test location: 0098a3d6/5f02
-
 LAB_00992fe6+4: DrawChar: push char (.w) to draw
-
 FUN_00992fde.l: SetBold: push word: 1 bold, 0 normal
-
 FUN_00993014: takes two coordinate pairs; line?
-
 0098a078: DrawKeyboard
-
 0098a934: TestKeys
-
 FUN_00993038: get key --> D0 ; probably -1 is none
 
 at 600000: graphics memory, draw in white by default.
+
 screen: write word at a time to even addresses ; only lowest 4 bits matter
 
 To switch to black:
@@ -63,7 +55,7 @@ To turn off writing:
     move.w     #$fe ,-(SP )
     jsr        $0000eaae
     addq.l     #2 ,SP
-# f1, f9, -9, fd, fb
+# f1, f9, -9, fd, fb have been sighted
 
 The Level 1 interrupt autovector is at 60Hz, so it's probably the vertical blanking interrupt.
 It can be used for a timer. 
@@ -194,23 +186,25 @@ Address of token table stored in 00a23b8a
 
 ROM File System
 
-eb74 int OpenFile(char *filename,short filetype,short mode)
+eb74 int OpenFile(char *filename,int filetype,int mode)
  Modes are either 1 (read) or 2 (write)
  E.g.: OpenFile(s_AUTOLOAD_000064da,0xc301,2);
        OpenFile("SYSTEM_",0xc001,1);
        OpenFile("PVTEST_",0xc001,1);	   
 implemented at 390C	   
 	
-eb86 int ReadFile(short fd, void* out, int size) ?? size could be -1??!; out could be NULL
+eb86 int ReadFile(int fd, void* out, int size) 
+	if size is -1, reads to end (dangerous if you don't know the size)
+	if out is NULL and size <= 64K, it presumably writes to ROM (I've seen this in ROM code to skip stuff in the file)
 implemented at 3c98
 
-eb80 int WriteFile(short fd,void* in,int size)
+eb80 int WriteFile(int fd,void* in,int size)
 implemented at 3f96
 
-eb7a CloseFile(short fparam)
+eb7a CloseFile(int fparam)
 implemented at 3a5c
 
-eb98 FindDirEntry(char* filename,uint16 type,char* direntry32bytes,uint32 searchStartIndex,uint32 filename_length); return -5 if filename doesn't exist; returns index in directory otherwise
+eb98 FindDirEntry(char* filename,int16 type,char* direntry32bytes,uint32 searchStartIndex,uint32 filename_length); return -5 if filename doesn't exist; returns index in directory otherwise
 
 ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done
 
