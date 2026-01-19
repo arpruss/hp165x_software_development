@@ -41,7 +41,7 @@ OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 
 CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I../include -I. -msoft-float -MMD -MP -O99
-LFLAGS=-L../libhp165x -L../libmetal --script=platform.ld -lmetal-$(CPU) -lhp165x -lhp165x
+LFLAGS=-L../libhp165x -L../libmetal --script=platform.ld -lhp165x -lmetal-$(CPU) 
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
 OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))

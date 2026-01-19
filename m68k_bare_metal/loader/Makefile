@@ -15,7 +15,7 @@
 #
 #   SRCS=main.c user.c \
 #        driver.s
-SRCS=hp165x.c puttext.c loadexec.c
+SRCS=loader.c
 
 # Specify the CPU type that you are targeting your build towards.
 #
@@ -39,10 +39,9 @@ CC=$(PREFIX)-gcc
 LD=$(PREFIX)-ld
 OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
-AR = $(PREFIX)-ar
 
-CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../include -I. -msoft-float -MMD -MP -O99
-LFLAGS=--script=platform.ld -L../libmetal -lmetal-$(CPU)
+CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I../include -I. -msoft-float -MMD -MP -O99
+LFLAGS=-L../libhp165x -L../libmetal --script=platform.ld -lhp165x -lmetal-$(CPU) -lhp165x -lmetal-$(CPU) 
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
 OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))
@@ -50,19 +49,25 @@ OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))
 DEPS=$(OBJS:.o=.d)
 
 
-all: libhp165x.a
+all: bmbinary.s68
 
 
-.PHONY: crt clean
+.PHONY: bmbinary release all clean rom dump dumps hexdump
+
+graysquare.S: imagetoassembly.py graysquare.txt
+	python imagetoassembly.py graysquare.txt > graysquare.S
+
+blacksquare.S: imagetoassembly.py blacksquare.txt
+	python imagetoassembly.py blacksquare.txt > blacksquare.S
+
+bmbinary: $(OBJS)
+	$(LD) -o $@ $(OBJS) $(LFLAGS)
 
 release: CFLAGS+= -DNDEBUG
 release: all
 
 $(BUILDDIR):
 	mkdir -p $@
-
-libhp165x.a: $(OBJS) platform.ld crt0.o
-	$(AR) rcs libhp165x.a $(OBJS) crt0.o
 
 $(BUILDDIR)/%.c.o: %.c
 	mkdir -p $(@D)
@@ -77,15 +82,14 @@ $(BUILDDIR)/%.s.o: %.s
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 -include $(DEPS)
-crt: crt0.o
-
-crt0.o: crt0.S
-	$(CC) $(CFLAGS) -c -o crt0.o crt0.S
-	rm -f crt0.d
 
 clean:
 	rm -rf $(BUILDDIR)/*
 	rm -f bmbinary*
+
+bmbinary.s68: bmbinary
+	$(OBJCOPY) -O binary bmbinary bmbinary.rom
+	$(OBJCOPY) -O srec bmbinary bmbinary.s68
 
 dump:
 	#$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
@@ -93,7 +97,7 @@ dump:
 	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.rodata -j.data -j.bss -j.heap -j.stack bmbinary
 
 dumps:
-	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
+	#$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
 	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -St -j.text bmbinary
 	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.rodata -j.data -j.bss -j.heap -j.stack bmbinary
 

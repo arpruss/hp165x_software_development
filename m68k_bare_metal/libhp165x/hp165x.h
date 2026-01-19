@@ -60,6 +60,9 @@ void reload(void);
 void _exit(int status);
 void exit(int status);
 
+#define OPEN_READ 1
+#define OPEN_WRITE 2
+
 void setTextMode(uint32_t mode);
 void drawText(const char* p);
 void setCoordinates(int32_t x, int32_t y);
