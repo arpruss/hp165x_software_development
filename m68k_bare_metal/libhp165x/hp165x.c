@@ -139,30 +139,20 @@ void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2) {
 		*pos = value;
 }
 
+		// https://stackoverflow.com/questions/66586687/delay-loop-in-68k-assembly
+
+// the processor is supposed to be 10MHz, but my timing shows more like 8.5MHz
+static void waitSecond(void) {
+	asm volatile("  move.l #(8500000/16),%%d0\n" 
+		"  moveq.l #1,%%d1\n"
+		"1:\n"
+		"  sub.l %%d1,%%d0\n"
+		"  bne.s 1b\n" : : : "d0", "d1");
+}
+
 void waitSeconds(uint16_t n) {
-	for (int i=0;i<2*n;i++) {
-		asm("  movem.l %d0-%d1/%a0,-(%sp)\n"
-			"  move.w #60606,%d0\n"
-			"  move.w %d0,%d1\n"
-			".wait1:\n"         
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  add.w %d1,%d1\n"   // 8 cycles
-			"  dbra %d0,.wait1\n" // 4 cycles
-		    "  movem.l (%sp)+,%d0-%d1/%a0");
+	for (int i=0;i<n;i++) {
+		waitSecond();
 	}
 }
 

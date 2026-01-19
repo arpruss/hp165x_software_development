@@ -435,11 +435,19 @@ void exit2(void) {
 int main()
 {
 	char randomized = 0;
+	
+	*LAST_KEY = 0;
 
 	patchVBL();	
 	atexit(reload);
 	setTextBlackOnWhite(BLACK_ON_WHITE);
 	setKeyRepeat(20,8);
+	
+	drawBlack();
+	fillScreen();
+	waitSeconds(10);
+	drawWhite();
+	fillScreen();
 	
     uint16_t k;
     do {
