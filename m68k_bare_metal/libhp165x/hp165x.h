@@ -7,6 +7,10 @@
 #define LAST_KEY ((volatile uint16_t*)0x980704)
 #define LAST_KEY_DURATION ((volatile uint16_t*)0x98070A)
 #define SCREEN_MEMORY_CONTROL ((volatile uint16_t*)0x201000)
+#define HARDWARE_STATUS ((volatile uint16_t*)0x20F000)
+
+#define HARDWARE_STATUS_NO_DISC (1<<3)
+
 //#define WRITE_REVERSE 0x0008
 #define WRITE_BLACK 0xFF00
 #define WRITE_WHITE 0xFE00
@@ -62,10 +66,12 @@ void exit(int status);
 
 #define OPEN_READ 1
 #define OPEN_WRITE 2
+#define MAX_FILENAME_LENGTH 10
 
 void setTextMode(uint32_t mode);
 void drawText(const char* p);
 void setCoordinates(int32_t x, int32_t y);
+int _openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int writeFile(int32_t fd, const void* data, int32_t size);
 int readFile(int32_t fd, void* data, int32_t size);
@@ -86,6 +92,8 @@ typedef struct {
 int findDirEntry(const char*filename, uint32_t type, DirEntry_t* dirEntry,uint32_t startIndex, uint32_t nameLength);
 int getDirEntry(int index, DirEntry_t* dirEntry);
 
+#define ERROR_FILE_NOT_FOUND (-5)
+
 uint16_t getKeyWait(void);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
 void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);
@@ -94,6 +102,9 @@ uint32_t getVBLCounter(void);
 void patchVBL(void);
 void unpatchVBL(void);
 void setVBLCounter(uint32_t value);
+void initialScreen();
+char parseKey(uint16_t key);
+int loadAndRun(const char* filename);
 
 #include "puttext.h"
 

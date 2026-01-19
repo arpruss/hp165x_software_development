@@ -178,10 +178,10 @@ completely. But this seems to work:
 
 0x20d003.l: read/write. unknown. Serial port??
 
-0x20F000.b:
+0x20F000.w:
 bit 0: unknown, checked in a disc related context
 bit 1: last spinner turn was to the right
-bit 4: no disc in drive
+bit 3: no disc in drive
 
 _SYSTEM
 

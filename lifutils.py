@@ -103,24 +103,28 @@ def delete(name):
     return retype(name, 0)
     
 def rename(name, newName):
+    name = name.upper()
+    newName = newName.upper()
     for i in range(len(directory)):
-        if name == directory[i][1].name:
+        if name == directory[i][1].name.upper():
             directory[i][1].name = newName
             directory[i][1].put(directory[i][0])
             return True
     return False
     
 def retype(name, newType):
+    name = name.upper()
     for i in range(len(directory)):
-        if name == directory[i][1].name:
+        if name == directory[i][1].name.upper():
             directory[i][1].fileType = newType
             directory[i][1].put(directory[i][0])
             return True
     return False
     
 def get(inFile,outFile):
+    inFile = inFile.upper()
     for i in range(len(directory)):
-        if inFile == directory[i][1].name:
+        if inFile == directory[i][1].name.upper():
             with open(outFile, "wb") as outf:
                 outf.write(directory[i][1].unchunkedFile)
             return True
@@ -134,6 +138,7 @@ def pack():
     
     for _,entry in directory:
         diskData[filePos*BLOCK_SIZE:filePos*BLOCK_SIZE + len(entry.chunkedFile)] = entry.chunkedFile
+        entry.name = entry.name.upper()
         entry.startBlock = filePos
         newDirectory += entry.toBinary()
         filePos += entry.blocks
@@ -143,14 +148,16 @@ def pack():
     fillFF( dirStart * BLOCK_SIZE + len(newDirectory), dirEntries * DIR_ENTRY_SIZE - len(newDirectory))
     
 def put(inFile, outFile, fileType):
+    outFile = outFile.upper()
     with open(inFile, "rb") as inf:
         data = chunkFile(inf.read())
     blocksNeeded = (len(data) + BLOCK_SIZE - 1) // BLOCK_SIZE
     data += (blocksNeeded * BLOCK_SIZE - len(data)) * b'\xFF'
     for i in range(len(directory)):
         entry = directory[i][1]
-        if entry.name == outFile and entry.blocks == blocksNeeded:
+        if entry.name.upper() == outFile and entry.blocks == blocksNeeded:
             entry.fileType = fileType
+            entry.name = outFile
             entry.put(i)
             diskData[entry.startBlock * BLOCK_SIZE : (entry.startBlock + blocksNeeded) * BLOCK_SIZE] = data
             print("Replaced in place")

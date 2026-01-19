@@ -1,6 +1,29 @@
 #include <stdlib.h>
+#include <string.h>
 #include "hp165x.h"
 #define INITIAL_MARGIN 8
+
+static const struct {
+	uint16_t key;
+	char	 ascii;
+} keyToASCII[] = {
+	{ KEY_0, '0' },
+	{ KEY_1, '1' },
+	{ KEY_2, '2' },
+	{ KEY_3, '3' },
+	{ KEY_4, '4' },
+	{ KEY_5, '5' },
+	{ KEY_6, '6' },
+	{ KEY_7, '7' },
+	{ KEY_8, '8' },
+	{ KEY_9, '9' },
+	{ KEY_A, 'A' },
+	{ KEY_B, 'B' },
+	{ KEY_C, 'C' },
+	{ KEY_D, 'D' },
+	{ KEY_E, 'E' },
+	{ KEY_F, 'F' },
+};
 
 asm(
 "_vbl_counter_code:\n"
@@ -41,6 +64,14 @@ void patchVBL() {
 		asm("move.l #_vbl_counter_code,0x980002");
 //		*(volatile uint32_t*)0x980002 = (uint32_t)_vbl_counter_code;
 	}
+}
+
+char parseKey(uint16_t k) {
+	for (unsigned i=0; i<sizeof(keyToASCII)/sizeof(*keyToASCII); i++) {
+		if (k == keyToASCII[i].key)
+			return keyToASCII[i].ascii;
+	}
+	return 0;
 }
 
 uint16_t getKey(void) {
@@ -257,10 +288,18 @@ void waitSeconds(uint16_t n) {
 WRAP_1(drawText,0xeaf6);
 WRAP_1(setTextMode,0xeb08);
 WRAP_2(setCoordinates,0xeae4);
-WRAP_3(openFile,0xeb74);
+WRAP_3(_openFile,0xeb74);
 WRAP_1(closeFile,0xeb7a);
 WRAP_3(readFile,0xeb86);
 WRAP_3(writeFile,0xeb80);
 WRAP_5(findDirEntry,0xeb98);
 WRAP_2(getDirEntry,0xebce);
 
+int openFile(const char* name, uint32_t fileType, uint32_t mode) {
+	char paddedName[MAX_FILENAME_LENGTH] = "          "; // 10
+	int length = strlen(name);
+	if (length > MAX_FILENAME_LENGTH)
+		return ERROR_FILE_NOT_FOUND;
+	memcpy(paddedName, name, strlen(name));
+	return _openFile(paddedName, fileType, mode);
+}

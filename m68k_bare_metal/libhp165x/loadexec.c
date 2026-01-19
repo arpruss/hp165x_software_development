@@ -2,28 +2,35 @@
 #include <string.h>
 #include "hp165x.h"
 
-// in progress!
-
 void _loadexec_relocatable_start(void);
 void _loadexec_relocatable_end(void);
 
-#define _loadexec_relocatable_SIZE ( (uint32_t)( (uint8_t*)&_loadexec_relocatable_end - (uint8_t*)&_loadexec_relocatable_start ) )
+#define RELOCATABLE_SIZE ( (uint32_t)( (uint8_t*)&_loadexec_relocatable_end - (uint8_t*)&_loadexec_relocatable_start ) )
 
-int loadAndRun(char* filename) {
+int loadAndRun(const char* filename) {
 	uint8_t header[0x24];
 	uint32_t codeAddress;
 	uint32_t codeSize;
-	uint8_t relocatableCode[_loadexec_relocatable_SIZE + 2048]; // safety margin for stack
+	uint8_t relocatableCode[RELOCATABLE_SIZE + 2048]; // safety margin for stack
 	
-	memcpy(relocatableCode, _loadexec_relocatable_start, _loadexec_relocatable_SIZE);
+	memcpy(relocatableCode, _loadexec_relocatable_start, RELOCATABLE_SIZE);
 	
-	int fd = openFile(filename, 0, OPEN_READ);
+	int fd = openFile(filename, 0xC001, OPEN_READ);
 	if (fd < 0)
 		return fd;
 	if (sizeof(header) != readFile(fd, header, sizeof(header)) || 4 != readFile(fd, &codeSize, 4) ||
 		4 != readFile(fd, &codeAddress, 4) ) {
 		closeFile(fd);
 		return -1;
+	}
+	
+	initialScreen();
+
+	if (! strcmp(filename, "SYSTEM_") || ! strcmp(filename, "SYSTEM_   ")) {
+		closeFile(fd);
+		unpatchVBL();
+		_reload();
+		return -1;// should not happen
 	}
 
 	asm volatile(
