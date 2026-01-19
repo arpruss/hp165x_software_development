@@ -121,7 +121,9 @@ void menu(void) {
 	drawBlack();
 	fillScreen();
 	setTextXY(0,0);
-	putText("Choose program to execute, STOP to reboot:");
+	putText("Choose program to execute:");
+	setTextXY(0,TEXT_ROWS-1);
+	putText("STOP: reboot, RUN: refresh");
 	for (int i=0; i<numNames; i++) {
 		drawEntry(i, i==selected);
 	}
@@ -129,6 +131,8 @@ void menu(void) {
 		uint16_t k = getKey(); 
 		if (k == KEY_STOP)
 			reload();
+		else if (k == KEY_RUN)
+			return;
 		if (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS )
 			return;
 		int c = parseKey(k);

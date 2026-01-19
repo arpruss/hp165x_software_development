@@ -53,25 +53,26 @@ void drawWhite(void) {
 }
 
 void initialScreen() {
-	volatile uint16_t* pos = SCREEN;
-	for (unsigned y=0;y<SCREEN_HEIGHT;y++) {
-		if (y<INITIAL_MARGIN || SCREEN_HEIGHT-INITIAL_MARGIN <= y) {
-			*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
-			for (unsigned x4=0; x4<SCREEN_WIDTH/4; x4++)
-				*pos++ = 0x0F;
-		}
-		else {
-			*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
-			for (unsigned x4=0; x4<INITIAL_MARGIN/4; x4++)
-				*pos++ = 0x0F;
-			*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
-			for (unsigned x4=0; x4<(SCREEN_WIDTH-2*INITIAL_MARGIN)/4; x4++)
-				*pos++ = 0x0F;
-			*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
-			for (unsigned x4=0; x4<INITIAL_MARGIN/4; x4++)
-				*pos++ = 0x0F;
-		}
-	}		
+	volatile uint32_t* pos;
+	volatile uint32_t* pos2;
+
+	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+	fillScreen();
+
+	*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
+	pos = (uint32_t*)SCREEN;
+	pos2 = pos + (SCREEN_HEIGHT-INITIAL_MARGIN) * (SCREEN_WIDTH/8);
+	for (int16_t i = (SCREEN_WIDTH/8) * INITIAL_MARGIN ; i >= 0 ; i--) {
+		*pos2++ = *pos++ = 0x000F000F;
+	}
+	pos = (uint32_t*)SCREEN + INITIAL_MARGIN * (SCREEN_WIDTH/8);
+	pos2 = pos + (SCREEN_WIDTH/8) - 1;
+	for (int16_t y = SCREEN_HEIGHT - 2 * INITIAL_MARGIN ; y >= 0 ; y--) {
+		*pos = 0x000F000F;
+		*pos2 = 0x000F000F;
+		pos += SCREEN_WIDTH/8;
+		pos2 += SCREEN_WIDTH/8;
+	}
 }
 
 void reload(void) {
@@ -88,8 +89,21 @@ void drawPixel(uint16_t x, uint16_t y) {
 
 // TODO: assembly
 void fillScreen(void) {
-	for (uint16_t i = 0 ; i < SCREEN_WIDTH/4 * SCREEN_HEIGHT ; i++)
-		SCREEN[i] = 0xF;
+asm(
+	"  move.l #0x000F000F, %%d0\n"
+    "  move.l %%d0,%%d1\n"
+    "  move.l %%d0,%%d2\n"
+    "  move.l %%d0,%%d3\n"
+    "  move.l %%d0,%%d4\n"
+    "  move.l %%d0,%%d5\n"
+    "  move.l %%d0,%%d6\n"
+    "  move.l %%d0,%%d7\n"
+    "  move.l #(0x600000+(592*384/2)), %%a0\n" // ; 592*384/2 is divisible by 64
+    "  move.l #0x600000, %%a1\n"
+	"1:\n"
+	"  movem.l %%d0-%%d7,-(%%a0)\n" // ; clear 16 display words at once, decrementing A0 by 32
+    "  cmp.l %%a1,%%a0\n"
+	"  bge 1b\n" : : : "d2", "d3", "d4", "d5", "d6", "d7" );
 }
 
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2) {

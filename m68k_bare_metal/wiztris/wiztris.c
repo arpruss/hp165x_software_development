@@ -266,8 +266,7 @@ void doshownext(int piece,int rot,int c)
 
 void cls() {
   *SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
-  for (volatile uint16_t* p=SCREEN;p<SCREEN+SCREEN_WIDTH*SCREEN_HEIGHT/4;p++)
-	  *p = 0x0F;
+  fillScreen();
 }
  
 void help()
@@ -442,12 +441,6 @@ int main()
 	atexit(reload);
 	setTextBlackOnWhite(BLACK_ON_WHITE);
 	setKeyRepeat(20,8);
-	
-	drawBlack();
-	fillScreen();
-	waitSeconds(10);
-	drawWhite();
-	fillScreen();
 	
     uint16_t k;
     do {
