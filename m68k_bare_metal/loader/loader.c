@@ -16,12 +16,39 @@ char PVTEST[] = "PVTEST_   ";
 
 enum { SELECT=0, WAIT } mode;
 
+uint16_t myGetKey() {
+	uint16_t k = *LAST_KEY;
+	if (k == 0) {
+		return 0;
+	}
+	if (k == 0xFFFF) {
+		if (*KEY_HOLD_TIME < 10)
+			return 0;
+		*KEY_HOLD_TIME = 0;
+		uint32_t spinnerState = *(volatile uint32_t*)0x98070C;
+		*BEEPER = BEEPER_ON;
+		//delayTicks(1);
+		*BEEPER = BEEPER_OFF;
+		if (spinnerState & 0x80000000)
+			return KEY_TURN_CCW;
+		else
+			return KEY_TURN_CW;
+	}
+	else {
+		*LAST_KEY = 0;
+		*BEEPER = BEEPER_ON;
+		//delayTicks(1);
+		*BEEPER = BEEPER_OFF;
+		return k;
+	}
+}
+
 void bubbleSort() {
 	uint16_t swapped;
 	for (uint16_t i=0; i<numNames-1; i++) {
 		swapped = 0;
 		for (uint16_t j=0; j < numNames - i - 1 ; j++) {
-			if (!strcmp(names[j+1],SYSTEM) || strcmp(names[j],names[j+1])>0 ) {
+			if (!strcmp(names[j+1],SYSTEM) || (strcmp(names[j],names[j+1])>0 && strcmp(names[j],SYSTEM) ) ) {
 				char* z = names[j];
 				names[j] = names[j+1];
 				names[j+1] = z;
@@ -75,7 +102,7 @@ void scan(void) {
 			setTextXY(0,0);
 			putText("No disc in drive...");
 			while ( (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS ) ) {
-				uint16_t k = getKeyClick(); *LAST_KEY;
+				uint16_t k = myGetKey(); *LAST_KEY;
 				//*LAST_KEY = 0;
 				if (k != 0) {
 					if (k == KEY_STOP)
@@ -117,7 +144,7 @@ void menu(void) {
 		drawEntry(i, i==selected);
 	}
 	while (1) {
-		uint16_t k = getKeyClick(); //*LAST_KEY;
+		uint16_t k = myGetKey(); //*LAST_KEY;
 		//*LAST_KEY = 0;
 		if (k == KEY_STOP)
 			reload();
@@ -160,6 +187,8 @@ void menu(void) {
 
 
 int main(void) {
+	*LAST_KEY = 0;
+	
 	setTextBlackOnWhite(0);
 	
 	while(1) {

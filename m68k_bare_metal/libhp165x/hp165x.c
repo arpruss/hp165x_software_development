@@ -244,3 +244,12 @@ int openFile(const char* name, uint32_t fileType, uint32_t mode) {
 	return _openFile(paddedName, fileType, mode);
 }
 
+asm(".globl delayTicks\n" 
+	"delayTicks:\n\t" 
+	"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+	"move.l (44+4)(%sp),%d0\n\t" \
+	"move.l #0x1C,%d7\n\t" \
+	"trap #0\n\t" \
+	"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+	"rts");
+		

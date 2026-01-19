@@ -6,8 +6,14 @@
 #define CURRENT_KEY ((volatile uint16_t*)0x980700)
 #define LAST_KEY ((volatile uint16_t*)0x980704)
 #define LAST_KEY_DURATION ((volatile uint16_t*)0x98070A)
+#define SPINNER_STATE ((volatile uint32_t*)0x98070C)
+#define KEY_HOLD_TIME ((volatile uint32_t*)0x980708)
 #define SCREEN_MEMORY_CONTROL ((volatile uint16_t*)0x201000)
 #define HARDWARE_STATUS ((volatile uint16_t*)0x20F000)
+#define BEEPER ((volatile uint8_t*)0x203000)
+#define BEEPER_ON 0xFF
+#define BEEPER_OFF 0xFE
+
 
 #define HARDWARE_STATUS_NO_DISC (1<<3)
 
@@ -107,6 +113,7 @@ char parseKey(uint16_t key);
 int loadAndRun(const char* filename);
 int refreshDir(void);
 uint16_t getKeyClick(void);
+void delayTicks(uint32_t ticks);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to

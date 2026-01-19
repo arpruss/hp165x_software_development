@@ -191,12 +191,14 @@ def readDir(quiet=False):
     lastBlock = dirStart + dirBlocks
     for i in range(dirEntries):
         offset = dirStart * BLOCK_SIZE + i * DIR_ENTRY_SIZE
-        if diskData[offset] != 0xFF and struct.unpack(">H", diskData[offset+10:offset+12])[0] != 0:
-            directory.append((i,DirEntry(diskData[offset:offset+DIR_ENTRY_SIZE])))
-            if directory[-1][1].startBlock + directory[-1][1].blocks > lastBlock:
-                lastBlock = directory[-1][1].startBlock + directory[-1][1].blocks
-            if not quiet:
-                print(directory[-1][0],str(directory[-1][1]))
+        if diskData[offset] != 0xFF:
+            entry = DirEntry(diskData[offset:offset+DIR_ENTRY_SIZE])
+            if entry.fileType:
+                directory.append((i,entry))
+                if directory[-1][1].startBlock + directory[-1][1].blocks > lastBlock:
+                    lastBlock = directory[-1][1].startBlock + directory[-1][1].blocks
+                if not quiet:
+                    print(directory[-1][0],str(directory[-1][1]))
     if not quiet:
         print("Last block",lastBlock)
         
