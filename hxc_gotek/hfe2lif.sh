@@ -1,1 +1,0 @@
-./hxcfe -finput:$1.hfe -conv:RAW_LOADER -foutput:$1.lif
