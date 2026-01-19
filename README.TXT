@@ -27,7 +27,7 @@ of the ROM.
 
 I recommend the following way to run the stuff:
  1. Put my c/loader program as SYSTEM_ (and maybe PVTEST_) in a LIF volume (file type 0xc001).
-    You can automatically put it into software.lif by doing:
+    If you have it built, you can put it into software.lif by doing:
       ./s68todisc.sh loader	  
  2. Put all other programs you want to use in under their own names. 
 	E.g.:
@@ -37,3 +37,5 @@ I recommend the following way to run the stuff:
  4. Copy software.hfe to a floppy disc or a Gotek drive.
  5. When you boot the volume on your HP165x, you will get the loader which lets you choose what to run.
 
+You can actually skip steps 1-3 if you just get this distribution, since the included software.{hfe,lif}
+already includes loader and wiztris.
