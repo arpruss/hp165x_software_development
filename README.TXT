@@ -16,9 +16,11 @@ your logic analyzer to it, or you can load it using the logic analyzer's IO menu
 (the latter doesn't always work as well).
 
 If you get Tom Storey's bare metal toolkit (https://github.com/tomstorey/m68k_bare_metal) and a 
-copy of m68k-elf-gcc (https://sourceforge.net/projects/mingw-gcc-68k-elf/), you can build C 
-programs. A falling blocks game based on code from my 2002 Wiztris game for the Sharp 7xx organizer
-is included in m68k_bare_metal.
+copy of m68k-elf-gcc (Windows: https://sourceforge.net/projects/mingw-gcc-68k-elf/), you can build C 
+programs. Drop it in the same directory as this, build libmetal, and you can compile the projects in c/.
+
+A falling blocks game based on code from my 2002 Wiztris game for the Sharp 7xx organizer
+is included in the c/ directory.
 
 The notes are based on reverse engineering of both the SYSTEM_ and PVTEST_ programs, as well as parts
 of the ROM.

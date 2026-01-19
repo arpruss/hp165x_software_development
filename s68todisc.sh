@@ -1,5 +1,5 @@
-if [ -f m68k_bare_metal/$1/bmbinary.s68 ] ; then
-  python buildbinary.py m68k_bare_metal/$1/bmbinary.s68 $1.bin
+if [ -f c/$1/bmbinary.s68 ] ; then
+  python buildbinary.py c/$1/bmbinary.s68 $1.bin
 else
   python buildbinary.py asm/$1.s68 $1.bin
 fi || exit 1
