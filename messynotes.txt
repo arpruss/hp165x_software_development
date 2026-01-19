@@ -219,3 +219,6 @@ ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done
 eb92: check if packing is needed??
 
 eb9e: pack??
+
+eb62: some kind of directory refresh
+ebb0: some sort of status check; 0=ok

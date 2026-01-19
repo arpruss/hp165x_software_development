@@ -105,6 +105,90 @@ void setVBLCounter(uint32_t value);
 void initialScreen();
 char parseKey(uint16_t key);
 int loadAndRun(const char* filename);
+int refreshDir(void);
+uint16_t getKeyClick(void);
+
+/* 
+   I don't know which registers are clobbered by the OS routines, so to
+   be safe, we save all the ones that gcc requires to callee to be 
+   responsible for saving: D2-D7 and A2-A6, for a total of 44 bytes. 
+   */
+#define _WRAP_0(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+		
+#define _WRAP_0_RET_D1(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"move %d1,%d0\n\t" \
+		"rts")
+		
+#define _WRAP_1(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"addq #4,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+		
+#define _WRAP_2(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+2*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+2*4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"addq #8,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+		
+#define _WRAP_3(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"add.l #12,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+
+#define _WRAP_4(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"add.l #16,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+
+#define _WRAP_5(name,address) \
+	asm(".globl " #name "\n" \
+		#name ":\n\t" \
+		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"jsr " #address "\n\t" \
+		"add.l #20,%sp\n\t" \
+		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
+		"rts")
+
 
 #include "puttext.h"
 

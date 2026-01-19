@@ -213,87 +213,27 @@ void waitSeconds(uint16_t n) {
 	}
 }
 
-/* 
-   I don't know which registers are clobbered by the OS routines, so to
-   be safe, we save all the ones that gcc requires to callee to be 
-   responsible for saving: D2-D7 and A2-A6, for a total of 44 bytes. 
-   */
-#define WRAP_0(name,address) \
-	asm(".globl " #name "\n" \
-		#name ":\n\t" \
-		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
-		"jsr " #address "\n\t" \
-		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
-		"rts")
-		
-#define WRAP_1(name,address) \
-	asm(".globl " #name "\n" \
-		#name ":\n\t" \
-		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
-		"move.l (44+4)(%sp),-(%sp)\n\t" \
-		"jsr " #address "\n\t" \
-		"addq #4,%sp\n\t" \
-		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
-		"rts")
-		
-#define WRAP_2(name,address) \
-	asm(".globl " #name "\n" \
-		#name ":\n\t" \
-		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
-		"move.l (44+2*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+2*4)(%sp),-(%sp)\n\t" \
-		"jsr " #address "\n\t" \
-		"addq #8,%sp\n\t" \
-		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
-		"rts")
-		
-#define WRAP_3(name,address) \
-	asm(".globl " #name "\n" \
-		#name ":\n\t" \
-		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
-		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+3*4)(%sp),-(%sp)\n\t" \
-		"jsr " #address "\n\t" \
-		"add.l #12,%sp\n\t" \
-		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
-		"rts")
 
-#define WRAP_4(name,address) \
-	asm(".globl " #name "\n" \
-		#name ":\n\t" \
-		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
-		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+4*4)(%sp),-(%sp)\n\t" \
-		"jsr " #address "\n\t" \
-		"add.l #16,%sp\n\t" \
-		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
-		"rts")
+_WRAP_1(drawText,0xeaf6);
+_WRAP_1(setTextMode,0xeb08);
+_WRAP_2(setCoordinates,0xeae4);
+_WRAP_3(_openFile,0xeb74);
+_WRAP_1(closeFile,0xeb7a);
+_WRAP_3(readFile,0xeb86);
+_WRAP_3(writeFile,0xeb80);
+_WRAP_5(findDirEntry,0xeb98);
+_WRAP_2(getDirEntry,0xebce);
+_WRAP_0(_ebb0, 0xebb0);
+_WRAP_1(_eb62, 0x227c);
+_WRAP_0_RET_D1(getKeyClick,0xeb38);
 
-#define WRAP_5(name,address) \
-	asm(".globl " #name "\n" \
-		#name ":\n\t" \
-		"movem.l %d2-%d7/%a2-%a6,-(%sp)\n\t" \
-		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
-		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
-		"jsr " #address "\n\t" \
-		"add.l #20,%sp\n\t" \
-		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
-		"rts")
+void _eb62(int x);
+int _ebb0(void);
 
-WRAP_1(drawText,0xeaf6);
-WRAP_1(setTextMode,0xeb08);
-WRAP_2(setCoordinates,0xeae4);
-WRAP_3(_openFile,0xeb74);
-WRAP_1(closeFile,0xeb7a);
-WRAP_3(readFile,0xeb86);
-WRAP_3(writeFile,0xeb80);
-WRAP_5(findDirEntry,0xeb98);
-WRAP_2(getDirEntry,0xebce);
+int refreshDir(void) {
+	_eb62(0);
+	return _ebb0();
+}
 
 int openFile(const char* name, uint32_t fileType, uint32_t mode) {
 	char paddedName[MAX_FILENAME_LENGTH] = "          "; // 10
@@ -303,3 +243,4 @@ int openFile(const char* name, uint32_t fileType, uint32_t mode) {
 	memcpy(paddedName, name, strlen(name));
 	return _openFile(paddedName, fileType, mode);
 }
+

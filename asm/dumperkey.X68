@@ -7,7 +7,7 @@ START:                  ; first instruction of program
     jsr ClearToWhite
 LOOP:
     jsr ROM_GET_KEY
-    cmp.w 0,D1
+    cmp.w #$FFFF,D1
     beq LOOP
     move.w D1,-(SP)
     lsr #8,D1
@@ -22,6 +22,7 @@ try:
     dc.l 0
 
     END    START        ; last line of source
+
 
 
 

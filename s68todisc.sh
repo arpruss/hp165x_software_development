@@ -6,7 +6,7 @@ fi || exit 1
 if ! [ -f software.lif ] ; then
   python lifutils.py create software.lif
 fi
-if [ "$1" == "$loader" ] ; then
+if [ "$1" == "loader" ] ; then
 	python lifutils.py put software.lif binaryfile SYSTEM_ c001
 	python lifutils.py put software.lif binaryfile PVTEST_ c001
 else

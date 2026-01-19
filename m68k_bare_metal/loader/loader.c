@@ -7,39 +7,77 @@
 
 #define MAX_FILES 16
 
-char names[MAX_FILES][MAX_FILENAME_LENGTH+1];
+char _names[MAX_FILES][MAX_FILENAME_LENGTH+1];
+char* names[MAX_FILES];
 int numNames = 0;
+
+char SYSTEM[] = "SYSTEM_   ";
+char PVTEST[] = "PVTEST_   ";
 
 enum { SELECT=0, WAIT } mode;
 
+void bubbleSort() {
+	uint16_t swapped;
+	for (uint16_t i=0; i<numNames-1; i++) {
+		swapped = 0;
+		for (uint16_t j=0; j < numNames - i - 1 ; j++) {
+			if (!strcmp(names[j+1],SYSTEM) || strcmp(names[j],names[j+1])>0 ) {
+				char* z = names[j];
+				names[j] = names[j+1];
+				names[j+1] = z;
+				swapped = 1;
+			}
+		}
+		if (!swapped)
+			break;
+	}
+}
+
 void getFiles(void) {
 	DirEntry_t entry;
+
+	refreshDir();
 	
 	int in = 0;
 	numNames = 0;
 	
 	int i = 0;
+	int pvtest = -1;
+	int system = -1;
+	
 	while(numNames < MAX_FILES && -1 != (i=getDirEntry(in, &entry))) {
 		if ((uint16_t)i == (uint16_t)0xC001) {
-			printf(entry.name);
-			names[numNames][MAX_FILENAME_LENGTH] = 0;
-			memcpy(names[numNames], entry.name, MAX_FILENAME_LENGTH);
+			_names[numNames][MAX_FILENAME_LENGTH] = 0;
+			memcpy(_names[numNames], entry.name, MAX_FILENAME_LENGTH);
+			names[numNames] = _names[numNames];
+			if (!strcmp(names[numNames],SYSTEM))
+				system = numNames;
+			else if (!strcmp(names[numNames],PVTEST))
+				pvtest = numNames;
 			numNames++;
 		}
 		in++;
 	}
+	
+	if (pvtest >= 0 && system >=0) {
+		if (pvtest != numNames - 1) {
+			memmove(names+pvtest, names+pvtest+1, (numNames - 1 - pvtest) * sizeof(char*));
+		}
+		numNames--;
+	}
+	
+	bubbleSort(names);
 }
 
 void scan(void) {
-	*LAST_KEY = 0;
 	while(1) {
 		if ( (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS ) ) {
 			setTextXY(0,0);
 			putText("No disc in drive...");
 			while ( (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS ) ) {
-				uint16_t k = *LAST_KEY;
-				*LAST_KEY = 0;
-				if (k) {
+				uint16_t k = getKeyClick(); *LAST_KEY;
+				//*LAST_KEY = 0;
+				if (k != 0) {
 					if (k == KEY_STOP)
 						reload();
 				}
@@ -62,33 +100,60 @@ void scan(void) {
 	} while(numNames == 0);
 }
 
+void drawEntry(int16_t pos,int16_t inv) {
+	setTextBlackOnWhite(inv);
+	setTextXY(0,1+pos);
+	printf(" [%X] %s \n", pos, names[pos]);
+	setTextBlackOnWhite(0);
+}
+
 void menu(void) {
+	int selected = 0;
 	drawBlack();
 	fillScreen();
 	setTextXY(0,0);
 	putText("Choose program to execute:\n\n");
 	for (int i=0; i<numNames; i++) {
-		printf(" [%X] %s\n", i, names[i]);
+		drawEntry(i, i==selected);
 	}
 	while (1) {
-		uint16_t k = *LAST_KEY;
-		*LAST_KEY = 0;
+		uint16_t k = getKeyClick(); //*LAST_KEY;
+		//*LAST_KEY = 0;
 		if (k == KEY_STOP)
-			return;
+			reload();
 		if (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS )
 			return;
 		int c = parseKey(k);
 		if ('0' <= c && c <= '9') {
 			c -= '0';
-			if (c < numNames)
+			drawEntry(selected, 0);
+			if (c < numNames) {
+				drawEntry(c, 1);
 				loadAndRun(names[c]);
+			}
 			continue;
 		}
 		else if ('A' <= c && c <= 'F') {
 			c += 10 - 'A';
-			if (c < numNames)
+			drawEntry(selected, 0);
+			if (c < numNames) {
+				drawEntry(c, 1);
 				loadAndRun(names[c]);
+			}
 			continue;
+		}
+		else if (KEY_SELECT == k) {
+			loadAndRun(names[selected]);
+		}
+		else if (KEY_TURN_CW == k) {
+			drawEntry(selected, 0);
+			selected = (selected + 1) % numNames;
+			drawEntry(selected, 1);
+		}
+		else if (KEY_TURN_CCW == k) {
+			drawEntry(selected, 0);
+			selected = (selected + numNames - 1) % numNames;
+			drawEntry(selected, 1);
 		}
 	}
 }
@@ -96,7 +161,7 @@ void menu(void) {
 
 int main(void) {
 	setTextBlackOnWhite(0);
-
+	
 	while(1) {
 		drawBlack();
 		fillScreen();
