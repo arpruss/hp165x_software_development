@@ -16,12 +16,10 @@
  * grow into the heap, the user is responsible for reserving sufficient
  * stack space to prevent it overwriting the upper areas of the heap.
  */
-_ram_base = 0x980000;
-_stack_sz = 16K;
-_stack_sz += 15;
-_stack_sz &= ~0xF;
-_ram_sz = 1024K - _stack_sz; 
-_stack_start = _ram_base + _ram_sz + _stack_sz - 4;
+_program_base = 0x984500;
+_program_end = 0xa60000;
+_stack_start = 0x00A7FFFC;
+_program_sz = _program_end - _program_base;
 
 /*
  * Dont modify below this line (unless you know what youre doing),
@@ -31,10 +29,8 @@ _stack_start = _ram_base + _ram_sz + _stack_sz - 4;
 STARTUP(crt0.o)
 OUTPUT_ARCH(m68k)
 
-__ram_end = (_ram_base + _ram_sz);
-
-__text_org = _ram_base + 0x4500;
-__text_sz = _ram_sz - 0x4500;
+__text_org = _program_base;
+__text_sz = _program_sz;
 
 
 /* Make sure stack size is a multiple of 16, and at least the amount the user
@@ -76,13 +72,7 @@ SECTIONS {
 
     .heap : {
         _heap_start = .;
-        . += (__text_sz /*- _stack_sz*/ - SIZEOF(.bss) - SIZEOF(.data) - SIZEOF(.text) - SIZEOF(.rodata));
+        . += (__text_sz - SIZEOF(.bss) - SIZEOF(.data) - SIZEOF(.text) - SIZEOF(.rodata));
         _heap_end = .;
     } > text
-/*
-    .stack : {
-        _stack_start = .;
-        . += _stack_sz;
-        _stack_end = .;
-    } > text */
 }

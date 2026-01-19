@@ -1,7 +1,10 @@
 MEMORY MAP
 00980000-00A7FFFF: 1mb RAM
 00000000-0000FFFF: 64kb ROM
-
+		 
+Stuff happens in ROM regarding data in a60000-a6ffff, so it's probably safe to 
+end program storage at a5ffff.		 
+		 
 EXECUTABLE FILE FORMAT
 LIF file type 0xC001
 
@@ -18,7 +21,7 @@ Observed initial stack pointer : 00A7FFDE
 Strings are null terminated.
 
 Screen size: 592x384
-Some of the ROM routines (e.g., DrawString) enforce an 8-pixel margin.
+Some of the ROM routines (e.g., DrawText) enforce an 8-pixel margin.
 
 From PVTEST_
 
@@ -92,9 +95,9 @@ ea06: one arg 1e
 eac6: 8,8,170,240 (after 0000eaae : fe) : clears rectangle on screen
 
 eade: bold : set bold if 1, set normal if 0
-eb08: text color?? : 0 = black on white (9800b2 set to 4) ; else: white background, no text (9800b2 set to 7)
+eb08: text mode?? : 0 = black on white (9800b2 set to 4) ; else: white background, no text (9800b2 set to 7)
 eae4: y,x : set coordinates
-eaf6: print 0-terminated string
+eaf6: DrawText: print 0-terminated string
 eacc: 2,coordinates,coordinates :  
 ecd0: beep --> 0F70
 ece2: reload system!
