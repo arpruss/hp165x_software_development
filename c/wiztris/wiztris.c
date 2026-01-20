@@ -3,8 +3,12 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <hp165x.h>
+#include <string.h>
 
 typedef uint8_t byte;
+
+const char scoreFilename[] = "WIZTRISHI";
+#define FILETYPE_SCORE 0x0020
 
 #define SQUARE blacksquare
 
@@ -35,11 +39,6 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 #define DRAW_BACKGROUND WRITE_BLACK
 #endif
 
-#define HEADER 43
-
-#define REPEAT_DELAY 20
-#define REPEAT_SPEED  8
-
 #define MAXHIGH 10
 
 typedef struct
@@ -48,8 +47,12 @@ typedef struct
     char initials[4];
 } score_t;
 
-score_t highscores[MAXHIGH];
+char last_initials[4] = "";
+
+score_t highscores[MAXHIGH] = { {0,""} };
 byte numhigh=0;
+byte scores_changed=0;
+void save_scores(void);
 
 int maxheight;
 int maxwidth;
@@ -70,6 +73,8 @@ uint32_t delayInTicks[10]={ DELAY_TICK(280), DELAY_TICK(262),
 //DELAY_BASE*105, DELAY_BASE*81, DELAY_BASE*52 };
 int fulls;
 
+static char outBuffer[70];
+
 char* gameName="Wiztris 1.96";
 
 void drawTextAt(uint16_t x, uint16_t y, char* s) {
@@ -81,14 +86,16 @@ void showlevel()
 {
     drawTextAt(0,0,gameName);
 	setTextXY(0,2);
-	printf("Level: %d", level);
+	sprintf(outBuffer, "Level: %d", level);
+	putText(outBuffer);
 }
 
 void addtoscore(int s)
 {
     thescore += s;
 	setTextXY(0,3);
-    printf("Score: %ld",thescore);
+	sprintf(outBuffer, "Score: %ld", thescore);
+	putText(outBuffer);
 }
 
 void init()
@@ -299,8 +306,13 @@ void drop()
     rot=rand()%NROTS;
 	piece=rand()%NSHAPES;
     col=3;
-//    while(ozkeylower(0xff));
     showlevel();
+    if(numhigh)
+    {
+        sprintf(outBuffer,"%s %ld",highscores[0].initials,highscores[0].score);
+		setTextXY(0,5);
+		putText(outBuffer);
+    }
     curheight=GHEIGHT_1-getlowestrow(0,piece,rot);
 	drawbox();
     while(fitq(curheight,col,piece,rot))
@@ -423,13 +435,178 @@ void drop()
     dopiece(curheight,col,piece,rot,1);
 }
 
-void exit1(void) {
-	drawTextAt(0,0,"EXIT 1");
+void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
+	uint16_t w = getFontWidth();
+	uint16_t h = getFontLineHeight();
+	uint16_t x = col * w;
+	uint16_t y = row * h;
+	
+	*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
+	drawHorizontalLine(x-2,y-2,x+w*length);
+	drawHorizontalLine(x-2,y+h+1,x+w*length);
+	drawVerticalLine(x-2,y-2,y+h+1);
+	drawVerticalLine(x+w*length+1,y-2,y+h+1);
+	
+	memset(out, 0, length+1);
+	strcpy(out, last_initials);	
+	uint16_t have = strlen(out);
+	uint16_t cursorPosition = 0;
+	
+	while(1) {
+		if (have>length)
+			have = length;
+		if (have==0) {
+			cursorPosition = 0;
+		}
+		else if (have == length) {
+			cursorPosition = length - 1;
+		}
+		else {
+			cursorPosition = have;
+		}
+		char c = out[cursorPosition];
+		if (c == 0) {
+			c = ' ';
+			out[cursorPosition] = ' ';
+		}
+
+		setTextXY(col,row);
+		for (int i=0;i<length;i++) {
+			setTextBlackOnWhite(BLACK_ON_WHITE ^ (cursorPosition==i));
+			putChar(out[i]);
+		}
+		setTextBlackOnWhite(BLACK_ON_WHITE);
+		uint16_t k;
+		while (! (k = getKey())) ;
+		switch(k) {
+			case KEY_TURN_CW:
+				if (c < 'A' || c > 'Z') {
+					c = 'A';
+				}
+				else {
+					c++;
+					if (c > 'Z')
+						c = 'A';
+				}
+				out[cursorPosition] = c;
+				break;
+			case KEY_TURN_CCW:
+				if (c < 'A' || c > 'Z') {
+					c = 'Z';
+				}
+				else {
+					c--;
+					if (c < 'A')
+						c = 'Z';
+				}
+				out[cursorPosition] = c;
+				break;
+			case KEY_RUN:
+				drawTextAt(col,row,out);
+				for (int i=strlen(out);i<length;i++) putText(" ");
+				return;
+			case KEY_SELECT:
+				have++;
+				if (have>length) {
+					out[length] = 0;
+					drawTextAt(col,row,out);
+					return;
+				}
+				break;
+			case KEY_CLEAR:
+				if(have>0) {
+					have--;
+					out[have] = 0;
+				}
+				else {
+					out[cursorPosition] = ' ';
+				}
+				break;
+			case KEY_A:
+			case KEY_B:
+			case KEY_C:
+			case KEY_D:
+			case KEY_E:
+			case KEY_F:
+			case KEY_DONT_CARE:
+				out[cursorPosition] = parseKey(k);
+				have++;
+				break;
+		}
+	}
 }
 
-void exit2(void) {
-	drawTextAt(0,0,"EXIT 2");
+void add_high_score(void)
+{
+    char initials[4] = "";
+	
+	drawTextAt(0,9, "Initials:");	
+	drawTextAt(0,11, "SELECT: Next, RUN: Done");
+	getinitials(initials, 3, 10, 9);
+	strcpy(last_initials,initials);
+
+	int16_t i;
+    for(i=MAXHIGH-1;i>=0 && thescore>highscores[i].score;i--) ;
+    i++;
+    if(numhigh<MAXHIGH) numhigh++;
+    for(int16_t j=numhigh-1;j>i;j--)
+    {
+        highscores[j].score=highscores[j-1].score;
+        strcpy(highscores[j].initials,highscores[j-1].initials);
+    }
+    highscores[i].score=thescore;
+    strcpy(highscores[i].initials,initials);
+	scores_changed = 1;
+#if 0	
+	int16_t y = getTextRows()-1;
+	drawTextAt(0,y,"saving");
+	save_scores();
+	drawTextAt(0,y,"      ");
+#endif	
 }
+
+void load_scores(void)
+{
+    int handle;
+	
+	handle = openFile(scoreFilename, FILETYPE_SCORE, READ_FILE);
+	
+	if (handle < 0)
+		return;
+	
+	if (sizeof(numhigh) != readFile(handle, &numhigh, sizeof(numhigh)) ||
+		sizeof(highscores) != readFile(handle, highscores, sizeof(highscores))) {
+		numhigh = 0;
+	}
+	
+	readFile(handle, last_initials, sizeof(last_initials)-1);
+
+	closeFile(handle);
+}	
+
+void save_scores(void)
+{
+    if(!scores_changed) return;
+	
+	int handle = openFile(scoreFilename, FILETYPE_SCORE, WRITE_FILE);
+	
+	if (handle < 0) {
+		setTextXY(0,0);
+		printf(" erorr %d ", handle);
+		waitSeconds(5);
+		return;
+	}
+	
+	writeFile(handle, &numhigh, sizeof(numhigh));
+	writeFile(handle, highscores, sizeof(highscores));
+	writeFile(handle, last_initials, sizeof(last_initials)-1);
+	last_initials[3] = 0;
+	
+	closeFile(handle);
+	scores_changed = 0;
+}
+
+
 
 int main()
 {
@@ -441,24 +618,36 @@ int main()
 	atexit(reload);
 	setTextBlackOnWhite(BLACK_ON_WHITE);
 	setKeyRepeat(20,8);
-	
+	load_scores();
+	atexit(save_scores);
+
     uint16_t k;
     do {
       shownext=0;
       cls();
-	  drawTextAt(0,13-13,gameName);
-	  drawTextAt(0,15-13,"Copyright (c) 2002-26 Alexander Pruss");
-	  drawTextAt(0,18-13,"In-game controls:");
-	  drawTextAt(2,19-13,"      0/.: move");
-	  drawTextAt(2,20-13,"      1/2: rotate");
-	  drawTextAt(2,21-13,"      CHS: drop");
-	  drawTextAt(2,22-13,"      Run: level up");
-	  drawTextAt(2,23-13,"  Display: show next");
-	  drawTextAt(2,24-13,"     Stop: exit");
+	  drawTextAt(0,0,gameName);
+	  drawTextAt(0,2,"Copyright (c) 2002-26 Alexander Pruss");
+	  drawTextAt(0,5,"In-game controls:");
+	  drawTextAt(2,6,"      0/.: move");
+	  drawTextAt(2,7,"      1/2: rotate");
+	  drawTextAt(2,8,"      CHS: drop");
+	  drawTextAt(2,9,"      Run: level up");
+	  drawTextAt(2,10,"  Display: show next");
+	  drawTextAt(2,11,"     Stop: exit");
 	  
-	  drawTextAt(0,28-13,"0-9:  start at given level [3=default]");
-	  drawTextAt(0,29-13,"Stop: exit");
-	  
+	  drawTextAt(0,15,"0-9:  start at given level [3=default]");
+	  drawTextAt(0,16,"Stop: exit");
+	  if(numhigh)
+      {
+		uint16_t x = getTextColumns()/2+10;
+        drawTextAt(x,0,"HIGH SCORES:");
+        for(uint16_t i=0;i<numhigh;i++)
+        {
+           drawTextAt(x,2+i,highscores[i].initials);
+           sprintf(outBuffer,"%-6ld",highscores[i].score);
+		   drawTextAt(x+4,2+i,outBuffer);
+        }
+      }	  
 	  while (! (k = getKey()) );
 	  
 	  if (!randomized) {
@@ -506,10 +695,18 @@ int main()
       cls();
       addtoscore(0);
       drop();
-	  drawTextAt(0,3,"Game over!");
-      drawTextAt(0,4,"Again? (0/1)");
-	  while (!(k = getKey()));
+      if(thescore<=highscores[MAXHIGH-1].score) {
+		 drawTextAt(0,7,"Game over!");
+		 drawTextAt(0,8,"Again? (0/1)");
+		 while (!(k = getKey()));
+	  }
+      else
+      {
+         drawTextAt(0,7,"High score!");
+         add_high_score();
+		 k = 0;
+      }
    } while(k!=KEY_0 && k!=KEY_STOP);
    return 0;
 }
- 
+  

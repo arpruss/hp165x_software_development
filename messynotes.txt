@@ -54,6 +54,12 @@ To switch to black:
     addq.l     #2 ,SP
  FF does nothing?!  00 draws black, 04 draws black, 
 
+05 : unknown! ---> ~05 becomes the high byte at 0x201000; low byte comes from 98077c.
+
+low byte values: f0,f8,
+
+font locations: a674 (bold), 9e74; 16 bytes per char 
+
 To turn off writing:
     move.w     #$fe ,-(SP )
     jsr        $0000eaae

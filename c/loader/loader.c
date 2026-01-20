@@ -122,7 +122,7 @@ void menu(void) {
 	fillScreen();
 	setTextXY(0,0);
 	putText("Choose program to execute:");
-	setTextXY(0,TEXT_ROWS-1);
+	setTextXY(0,getTextRows()-1);
 	putText("STOP: reboot, RUN: refresh");
 	for (int i=0; i<numNames; i++) {
 		drawEntry(i, i==selected);

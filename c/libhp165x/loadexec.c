@@ -62,10 +62,16 @@ int loadAndRun(const char* filename) {
 		"  add #12,%%sp\n"
 		"  tst.l %%d0\n"
 		"  bmi 4f\n"
+		"  move.l %[fd], -(%%sp)\n"
+		"  jsr 0xeb7a\n" // close file
+		"  add #4,%%sp\n"
 		"  move.l _codeAddress(%%pc),%%a0\n"
 		"  move.l #0x00A7FFFC,%%sp\n" // hope the code here doesn't get overwritten too quickly
 		"  jsr (%%a0)\n" // should not return
 		"4:\n"
+		"  move.l %[fd], -(%%sp)\n"
+		"  jsr 0xeb7a\n" // close file
+		"  add #4,%%sp\n"
 		"  move.l #0x00A7FFFC,%%sp\n"
 		"5:\n"
 		"  jsr 0xece2\n" // reload

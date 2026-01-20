@@ -4,9 +4,6 @@
 
 #include <stdint.h>
 
-#define TEXT_ROWS (SCREEN_HEIGHT/14)
-#define TEXT_COLUMNS (SCREEN_WIDTH/8)
-
 void setTextBlackOnWhite(char value);
 uint16_t getTextX(void);
 uint16_t getTextY(void);
@@ -15,5 +12,14 @@ void setTextX(uint16_t x);
 void setTextY(uint16_t x);
 void putText(char* s);
 void putchar_(int c);
+#define putChar putchar_
+void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight);
+uint16_t getFontLineHeight(void);
+uint16_t getFontWidth(void);
+uint16_t getTextRows(void);
+uint16_t getTextColumns(void);
+void setFontSystem(uint8_t bold);
+
+
 
 #endif
