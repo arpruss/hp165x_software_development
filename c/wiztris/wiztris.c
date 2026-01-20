@@ -588,12 +588,14 @@ void save_scores(void)
 {
     if(!scores_changed) return;
 	
+	
+	drawTextAt(0,getTextRows()-1,"Saving...");
+	
 	int handle = openFile(scoreFilename, FILETYPE_SCORE, WRITE_FILE);
 	
 	if (handle < 0) {
-		setTextXY(0,0);
-		printf(" erorr %d ", handle);
-		waitSeconds(5);
+		drawTextAt(0,getTextRows()-1,"Error    ");
+		waitSeconds(1);
 		return;
 	}
 	
@@ -604,6 +606,8 @@ void save_scores(void)
 	
 	closeFile(handle);
 	scores_changed = 0;
+	drawTextAt(0,getTextRows()-1,"         ");
+	
 }
 
 
