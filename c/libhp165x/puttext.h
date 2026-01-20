@@ -18,7 +18,7 @@ uint16_t getFontLineHeight(void);
 uint16_t getFontWidth(void);
 uint16_t getTextRows(void);
 uint16_t getTextColumns(void);
-void setFontSystem(uint8_t bold);
+//void setFontSystem(uint8_t bold);
 
 
 

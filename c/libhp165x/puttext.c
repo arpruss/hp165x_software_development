@@ -131,6 +131,7 @@ void putchar_(int c) {
 	putText(s);
 }
 
+#if 0
 static uint8_t* romFind(uint32_t value) {
 	for (uint32_t* p = (uint32_t*)65536-1 ; p > (uint32_t*)256 ; p--) {
 		if (*p == value)
@@ -143,6 +144,7 @@ static void _setFontSystem(uint32_t defaultLocation, uint32_t testLocation, uint
 	uint8_t* location = 0;
 	if (*(uint32_t*)testLocation == testValue) {
 		location = (uint8_t*)defaultLocation;
+		setFont(location, 16, 16);
 	}
 	else {
 		location = romFind(testValue);
@@ -165,3 +167,4 @@ void setFontSystem(uint8_t bold) {
 		_setFontSystem(0x9e74,0xa288,0xF884C448); // start of B
 	}
 }
+#endif
