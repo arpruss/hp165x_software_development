@@ -187,15 +187,14 @@ Here are some useful modes:
  FE06 --> $201000 = write white pixels with reading
  0007 --> $201000 = reverses pixels written in black or white---but oddly does not seem to reverse 
 					reversed pixels
-
+					
 What seems reliable for reading and writing is to use the xx06 modes exclusively. If you write in one
 of the xx00 or 0007 modes, you can't always read back what's on the screen. For instance, writing in
 0007 mode, you read back what you wrote, not what's on the screen.
 
 On thing about reversing is super weird. It seems that each pixel has four modes: reversible black, reversible white,
 irreversible black, and irreversible white. Writing in reverse mode takes reversible black to irreversible
-white and reversible white to irreversible black. I wonder if this is some glitchy analog thing with the
-video memory. 				
+white and reversible white to irreversible black. 
  
 Here are some patterns:
 	If bit 0 of low byte is 0, we always get white or black pixels (never reverse or NOP).
@@ -224,6 +223,13 @@ and start the program with
  *SCREEN_MEMORY_CONTROL=WRITE_BACKGROUND; 
  fillScreen();
 and then alternate writing between WRITE_BACKGROUND and WRITE_FOREGROUND as needed.
+
+Gemini Pro guesses that we have a data plane and an attribute plane, and the display is a xor
+of the two. Mode 007 writes 1s to the attribute plane. Modes E07 and F07 write 1 and 0 respectively
+to the data plane, and 0s to the attribute plane. This fits all my observations as long as we suppose
+that reading gives back an OR between the two planes. Perhaps 00F which normally looked like NOP.
+
+It would be helpful to find a mode that clears bits on the attribute plane.
 
 0x203000.b: BEEP: 0xFF on, $FE off
 
