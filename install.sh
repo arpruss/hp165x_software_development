@@ -4,7 +4,7 @@ else
   python buildbinary.py asm/$1.s68 $1.bin
 fi || exit 1
 
-cp e:/DSKA0004.HFE mydisk.hfe || exit 1
+cp e:/DSKA0003.HFE mydisk.hfe || exit 1
 
 ./hfe2lif.sh mydisk
 
@@ -15,5 +15,5 @@ else
 	python lifutils.py put mydisk.lif $1.bin $1 c001
 fi
 ./lif2hfe.sh mydisk
-cp mydisk.hfe e:/DSKA0004.HFE # if appropriate
-echo DSKA0004.HFE
+cp mydisk.hfe e:/DSKA0003.HFE # if appropriate
+echo DSKA0003.HFE

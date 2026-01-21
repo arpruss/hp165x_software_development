@@ -17,9 +17,9 @@
 
 #define HARDWARE_STATUS_NO_DISC (1<<3)
 
-//#define WRITE_REVERSE 0x0008
-#define WRITE_BLACK 0xFF00
-#define WRITE_WHITE 0xFE00
+#define WRITE_BLACK   0xFF00
+#define WRITE_WHITE   0xFE00
+#define WRITE_REVERSE 0x0007
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384
 #define SCREEN_WIDTH 592
@@ -100,7 +100,7 @@ int getDirEntry(int index, DirEntry_t* dirEntry);
 
 #define ERROR_FILE_NOT_FOUND (-5)
 
-uint16_t getKeyWait(void);
+void setKeyWait(uint8_t w);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
 void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);
 void waitSeconds(uint16_t n); 

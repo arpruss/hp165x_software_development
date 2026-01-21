@@ -164,12 +164,31 @@ at 0x9a070E.w: some kind of current spinner position, not corresponding to angle
   
 HARDWARE
   
-At 201000.w: graphics writing mode control. Maybe some kind of mask and value? I can't figure it out
-completely. But this seems to work:
+At 201000.w: graphics writing mode control. Maybe some kind of mask and value? I can't figure it out.
+
+But here is what I know. Only the first four bits of each byte of the mode register matter.
+For all 256 possible modes, writing 0 bits to the screen does nothing. Only 1 bits do something.
+There are four possible actions they can do: draw black, draw white, reverse pixel, nothing.
+I can't figure out the pattern of how the 256 modes map to the four actions.
+
+Here is what I have settled on for my code:
  FF00 --> $201000 = write black pixels
  FE00 --> $201000 = write white pixels
- Other values like 0002 and 0008 sometimes reverse things. And sometimes they
- only seem to reverse pixels drawn in a certain mode.
+ 0007 --> $201000 = reverse pixels
+ 
+Here are some patterns:
+	If bit 0 of low byte is 0, we always get white or black pixels (never reverse or NOP).
+	If bit 3 of high byte is 1, we never get reversing.
+	If bit 3 of high byte is 0 and low byte is 7, we get reverse (but not only then).
+	If low byte is f, we get NOP (but not only then).
+	If high byte is e, we get white for even low byte and NOP for odd low byte.
+	If high byte is f, we get black for even low byte and NOP for odd low byte.
+
+Low byte is recorded at 0x98077c
+High byte is recorded at 0x98077e
+When writing black on white text: 98077e: FFFB, 98077c: 0000, so should be FB00.
+
+I have not found a way to read screen data.
 
 0x203000.b: BEEP: 0xFF on, $FE off
 

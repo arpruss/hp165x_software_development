@@ -615,7 +615,7 @@ int getDirEntry(int index, DirEntry_t* dirEntry);
 
 
 
-uint16_t getKeyWait(void);
+void setKeyWait(uint8_t w);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
 void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);
 void waitSeconds(uint16_t n);
@@ -634,7 +634,12 @@ uint16_t getKey(void);
 uint16_t getKeyBIOS(void);
 # 203 "../libhp165x/hp165x.h"
 # 1 "../libhp165x/puttext.h" 1
-# 10 "../libhp165x/puttext.h"
+
+
+
+
+
+
 void setTextBlackOnWhite(char value);
 uint16_t getTextX(void);
 uint16_t getTextY(void);
@@ -643,6 +648,12 @@ void setTextX(uint16_t x);
 void setTextY(uint16_t x);
 void putText(char* s);
 void putchar_(int c);
+
+void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight);
+uint16_t getFontLineHeight(void);
+uint16_t getFontWidth(void);
+uint16_t getTextRows(void);
+uint16_t getTextColumns(void);
 # 204 "../libhp165x/hp165x.h" 2
 # 7 "rdump.c" 2
 
