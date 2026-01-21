@@ -4,7 +4,8 @@
 
 #include <stdint.h>
 
-void setTextBlackOnWhite(char value);
+void setTextColors(uint16_t f, uint16_t b);
+void setTextReverse(char reverse);
 uint16_t getTextX(void);
 uint16_t getTextY(void);
 void setTextXY(uint16_t x, uint16_t y);

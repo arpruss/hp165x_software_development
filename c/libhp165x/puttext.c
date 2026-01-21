@@ -22,6 +22,7 @@ static uint8_t* font = font8x14;
 static uint16_t fontHeight = 14;
 static uint16_t fontLineHeight = 14;
 static uint16_t numRows = (SCREEN_HEIGHT/14);
+static uint8_t reverse = 0;
 
 void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight) {
 	uint16_t pixelY = curY * fontLineHeight;
@@ -50,15 +51,13 @@ uint16_t getTextColumns(void) {
 	return TEXT_COLUMNS;
 }
 
-void setTextBlackOnWhite(char value) {
-	if (value) {
-		foreground = WRITE_BLACK;
-		background = WRITE_WHITE;
-	}
-	else {
-		background = WRITE_BLACK;
-		foreground = WRITE_WHITE;
-	}
+void setTextReverse(char _reverse) {
+	reverse = _reverse;
+}
+
+void setTextColors(uint16_t f, uint16_t b) {
+	foreground = f;
+	background = b;
 }
 
 uint16_t getTextX(void) {
@@ -84,6 +83,16 @@ void setTextY(uint16_t x) {
 
 void putText(char* s) {
 	volatile uint16_t* pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4)) + curX*2;
+	uint16_t bg;
+	uint16_t fg;
+	if (reverse) {
+		bg = foreground;
+		fg = background;
+	}
+	else {
+		bg = background;
+		fg = foreground;
+	}
 		
 	while(*s) {
 		uint16_t c = 0xFF & *s++;
@@ -103,17 +112,17 @@ void putText(char* s) {
 		uint16_t row;
 		for (row = 0; row < fontHeight; row++) {
 			uint8_t g = *glyph;
-			*SCREEN_MEMORY_CONTROL = background;
+			*SCREEN_MEMORY_CONTROL = bg;
 			*pos2 = (~g)>>4;
 			pos2[1] = (~g)&0xF;
-			*SCREEN_MEMORY_CONTROL = foreground;
+			*SCREEN_MEMORY_CONTROL = fg;
 			*pos2 = g>>4;
 			pos2[1] = g&0xF;
 			glyph++;
 			pos2 += SCREEN_WIDTH/4;			
 		}
 		for (; row < fontLineHeight; row++) {
-			*SCREEN_MEMORY_CONTROL = background;
+			*SCREEN_MEMORY_CONTROL = bg;
 			*pos2 = 0xF;
 			pos2[1] = 0xF;
 			pos2 += SCREEN_WIDTH/4;			

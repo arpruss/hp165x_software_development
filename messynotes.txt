@@ -174,7 +174,12 @@ I can't figure out the pattern of how the 256 modes map to the four actions.
 Here is what I have settled on for my code:
  FF00 --> $201000 = write black pixels
  FE00 --> $201000 = write white pixels
- 0007 --> $201000 = reverse pixels
+ 0007 --> $201000 = reverses pixels written in black or white---but oddly does not seem to reverse 
+					reversed pixels
+The last is really weird. It seems that each pixel has four modes: reversible black, reversible white,
+irreversible black, and irreversible white. Writing in reverse mode takes reversible black to irreversible
+white and reversible white to irreversible black. I wonder if this is some glitchy analog thing with the
+video memory. 				
  
 Here are some patterns:
 	If bit 0 of low byte is 0, we always get white or black pixels (never reverse or NOP).
@@ -183,12 +188,25 @@ Here are some patterns:
 	If low byte is f, we get NOP (but not only then).
 	If high byte is e, we get white for even low byte and NOP for odd low byte.
 	If high byte is f, we get black for even low byte and NOP for odd low byte.
-
+	
 Low byte is recorded at 0x98077c
 High byte is recorded at 0x98077e
 When writing black on white text: 98077e: FFFB, 98077c: 0000, so should be FB00.
 
-I have not found a way to read screen data.
+I have not found a way to read current screen buffer data, though interestingly you can read back
+the last reverse-mode write to each bit (which is not the same as what is visible on screen),
+as long as you are in reverse-mode. An ordinary write to the bit then clears the read back bit.
+If this is reliable, you could do this trick. Clear the screen to black. Then treat reverse-write
+as white-write, alternating between black-write and reverse-write as needed. (You could also do
+this with white and black swapped.) Now that I think about it, maybe this is the intended way to 
+use the screen? You would just need to ensure when you start a program that you clear the screen
+to the desired background color. A nice way to do this in your program would be to set:
+ #define WRITE_BACKGROUND WRITE_BLACK  // or WRITE_WHITE if you prefer
+ #define WRITE_FOREGROUND WRITE_REVERSE
+and start the program with 
+ *SCREEN_MEMORY_CONTROL=WRITE_BACKGROUND; 
+ fillScreen();
+and then alternate writing between WRITE_BACKGROUND and WRITE_FOREGROUND as needed.
 
 0x203000.b: BEEP: 0xFF on, $FE off
 

@@ -32,12 +32,11 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 #define BLACK_ON_WHITE 0
 
 #if BLACK_ON_WHITE
-#define DRAW_FOREGROUND WRITE_WHITE
-#define DRAW_BACKGROUND WRITE_BLACK
+#define DRAW_BACKGROUND WRITE_WHITE
 #else
-#define DRAW_FOREGROUND WRITE_WHITE
 #define DRAW_BACKGROUND WRITE_BLACK
 #endif
+#define DRAW_FOREGROUND WRITE_REVERSE
 
 #define MAXHIGH 10
 
@@ -472,10 +471,10 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 
 		setTextXY(col,row);
 		for (int i=0;i<length;i++) {
-			setTextBlackOnWhite(BLACK_ON_WHITE ^ (cursorPosition==i));
+			setTextReverse((cursorPosition==i));
 			putChar(out[i]);
 		}
-		setTextBlackOnWhite(BLACK_ON_WHITE);
+		setTextReverse(0);
 		uint16_t k;
 		while (! (k = getKey())) ;
 		switch(k) {
@@ -620,7 +619,8 @@ int main()
 
 	patchVBL();	
 	atexit(reload);
-	setTextBlackOnWhite(BLACK_ON_WHITE);
+	setTextColors(DRAW_FOREGROUND,DRAW_BACKGROUND);
+	setTextReverse(0);
 	setKeyRepeat(20,8);
 	load_scores();
 	atexit(save_scores);

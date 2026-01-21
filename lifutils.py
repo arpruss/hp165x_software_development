@@ -148,7 +148,7 @@ def pack():
     fillFF( dirStart * BLOCK_SIZE + len(newDirectory), dirEntries * DIR_ENTRY_SIZE - len(newDirectory))
     
 def put(inFile, outFile, fileType):
-    outFile = outFile.upper()
+    outFile = outFile.upper()[:10]
     with open(inFile, "rb") as inf:
         data = chunkFile(inf.read())
     blocksNeeded = (len(data) + BLOCK_SIZE - 1) // BLOCK_SIZE

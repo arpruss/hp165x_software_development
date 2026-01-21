@@ -7,6 +7,9 @@
 
 #define MAX_FILES 64
 
+#define DRAW_BACKGROUND WRITE_BLACK
+#define DRAW_FOREGROUND WRITE_REVERSE
+
 char _names[MAX_FILES][MAX_FILENAME_LENGTH+1];
 char* names[MAX_FILES];
 int numNames = 0;
@@ -103,8 +106,8 @@ void scan(void) {
 	} while(numNames == 0);
 }
 
-void drawEntry(int16_t pos,int16_t inv) {
-	setTextBlackOnWhite(inv);
+void drawEntry(int16_t pos,char inv) {
+	setTextReverse(inv);
 	setTextXY((pos/16)*16,2+(pos%16));
 	if (pos < 16)
 		printf(" [%X] %s ", pos, names[pos]);
@@ -113,12 +116,12 @@ void drawEntry(int16_t pos,int16_t inv) {
 		putText(names[pos]);
 		putText(" ");
 	}
-	setTextBlackOnWhite(0);
+	setTextReverse(0);
 }
 
 void menu(void) {
 	int selected = 0;
-	drawBlack();
+	*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 	fillScreen();
 	setTextXY(0,0);
 	putText("Choose program to execute:");
@@ -174,10 +177,11 @@ void menu(void) {
 int main(void) {
 	*LAST_KEY = 0;
 	
-	setTextBlackOnWhite(0);
+	setTextReverse(0);
+	setTextColors(DRAW_FOREGROUND, DRAW_BACKGROUND);
 	
 	while(1) {
-		drawBlack();
+		*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 		fillScreen();
 		
 		scan();
