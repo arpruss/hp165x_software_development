@@ -164,19 +164,35 @@ at 0x9a070E.w: some kind of current spinner position, not corresponding to angle
   
 HARDWARE
   
-At 201000.w: graphics writing mode control. Maybe some kind of mask and value? I can't figure it out.
+At 201000.w: graphics memory access mode control. Maybe some kind of mask and value? I can't figure it out.
 
 But here is what I know. Only the first four bits of each byte of the mode register matter.
 For all 256 possible modes, writing 0 bits to the screen does nothing. Only 1 bits do something.
-There are four possible actions they can do: draw black, draw white, reverse pixel, nothing.
-I can't figure out the pattern of how the 256 modes map to the four actions.
+There are four possible visible actions they can do: draw black, draw white, reverse pixel, 
+nothing. I can't figure out the pattern of how the 256 modes map to the four actions. Moreover,
+the 256 modes, even within the same visible action, differently affect what you can read from
+screen memory in mode 7.
 
-Here is what I have settled on for my code:
- FF00 --> $201000 = write black pixels
- FE00 --> $201000 = write white pixels
+Reading a memory location returns 0 unless the low byte (or low nybble) is 3, 5, 6 or 7.
+
+There is a distinction between what one finds in memory in one of the read modes and what is shown
+on screen. For instance, if one writes bits in mode E06, one gets white pixels on screen that can be
+read back as 1. But if one writes bits in mode E00, one gets white pixels on screen that read back
+(after changing to a mode where reading works) as 0.
+
+Here are some useful modes:
+ FF00 --> $201000 = write black pixels without reading 
+ FF06 --> $201000 = write black pixels with reading 
+ FE00 --> $201000 = write white pixels without reading
+ FE06 --> $201000 = write white pixels with reading
  0007 --> $201000 = reverses pixels written in black or white---but oddly does not seem to reverse 
 					reversed pixels
-The last is really weird. It seems that each pixel has four modes: reversible black, reversible white,
+
+What seems reliable for reading and writing is to use the xx06 modes exclusively. If you write in one
+of the xx00 or 0007 modes, you can't always read back what's on the screen. For instance, writing in
+0007 mode, you read back what you wrote, not what's on the screen.
+
+On thing about reversing is super weird. It seems that each pixel has four modes: reversible black, reversible white,
 irreversible black, and irreversible white. Writing in reverse mode takes reversible black to irreversible
 white and reversible white to irreversible black. I wonder if this is some glitchy analog thing with the
 video memory. 				
@@ -188,6 +204,7 @@ Here are some patterns:
 	If low byte is f, we get NOP (but not only then).
 	If high byte is e, we get white for even low byte and NOP for odd low byte.
 	If high byte is f, we get black for even low byte and NOP for odd low byte.
+	Reading only works if and only if low byte is 3, 5, 6 or 7.
 	
 Low byte is recorded at 0x98077c
 High byte is recorded at 0x98077e

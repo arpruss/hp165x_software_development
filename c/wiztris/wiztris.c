@@ -29,14 +29,13 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 
 //#include "ibm8x14.c"
 
-#define BLACK_ON_WHITE 0
-
-#if BLACK_ON_WHITE
-#define DRAW_BACKGROUND WRITE_WHITE
-#else
+#ifndef BLACK_ON_WHITE
 #define DRAW_BACKGROUND WRITE_BLACK
+#define DRAW_FOREGROUND WRITE_WHITE
+#else
+#define DRAW_BACKGROUND WRITE_WHITE
+#define DRAW_FOREGROUND WRITE_BLACK
 #endif
-#define DRAW_FOREGROUND WRITE_REVERSE
 
 #define MAXHIGH 10
 
@@ -394,7 +393,7 @@ void drop()
 					  dopiece(row,col,piece,rot,0);
 					  doshownext(nextpiece,nextrot,0);
 				      drawTextAt(34,10,"PAUSED");
-                      getKey();
+                      while(!getKey());
 				      drawTextAt(34,10,"      ");
 					  drawgrid(0);
 					  dopiece(row,col,piece,rot,1);
@@ -588,7 +587,7 @@ void save_scores(void)
     if(!scores_changed) return;
 	
 	
-	drawTextAt(0,getTextRows()-1,"Saving...");
+	//drawTextAt(0,getTextRows()-1,"Saving...");
 	
 	int handle = openFile(scoreFilename, FILETYPE_SCORE, WRITE_FILE);
 	
@@ -605,7 +604,7 @@ void save_scores(void)
 	
 	closeFile(handle);
 	scores_changed = 0;
-	drawTextAt(0,getTextRows()-1,"         ");
+//	drawTextAt(0,getTextRows()-1,"         ");
 	
 }
 
@@ -653,6 +652,7 @@ int main()
         }
       }	  
 	  while (! (k = getKey()) );
+	  *SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
 	  
 	  if (!randomized) {
 		  srand(getVBLCounter());

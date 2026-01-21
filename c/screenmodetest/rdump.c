@@ -25,7 +25,6 @@ void test(uint16_t mode, uint16_t x, uint16_t y) {
 }
 
 int main(void) {
-	setTextBlackOnWhite(0);
 	drawWhite();
 	fillScreen();
 	*SCREEN = 0b0101;

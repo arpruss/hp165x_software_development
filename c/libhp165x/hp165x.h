@@ -18,7 +18,9 @@
 #define HARDWARE_STATUS_NO_DISC (1<<3)
 
 #define WRITE_BLACK   0xFF00
+#define WRITE_BLACK_READ   0xFF06
 #define WRITE_WHITE   0xFE00
+#define WRITE_WHITE_READ   0xFE06
 #define WRITE_REVERSE 0x0007
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384
