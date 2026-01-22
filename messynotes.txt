@@ -224,12 +224,24 @@ and start the program with
  fillScreen();
 and then alternate writing between WRITE_BACKGROUND and WRITE_FOREGROUND as needed.
 
-Gemini Pro guesses that we have a data plane and an attribute plane, and the display is a xor
-of the two. Mode 007 writes 1s to the attribute plane. Modes E07 and F07 write 1 and 0 respectively
-to the data plane, and 0s to the attribute plane. This fits all my observations as long as we suppose
-that reading gives back an OR between the two planes. Perhaps 00F which normally looked like NOP.
+HYPOTHESIS
 
-It would be helpful to find a mode that clears bits on the attribute plane.
+Gemini Pro guesses that we have a data plane and an attribute plane, and the display is a xor
+of the two. Mode 007 writes 1s to the attribute plane. This fits my observations as long as we suppose
+that reading gives back an OR between the two planes. 
+
+Further observations suggest that modes x07 write the negation of bit 0 of x to the attribute plane. 
+Thus, 007 sets and 807 clears a bit on the attribute plane.
+
+Working with this hypothesis, the following look to be the case:
+  x07: set attribute bit for x<8
+  x07: clear attribute bit for x>=8
+  f00: clear data bit (i.e., make black) and clear attribute bit
+  e00: set data bit (i.e., make white) and clear attribute bit
+  x0f: nop for all x
+  
+It would be nice to find a mode that writes a data bit while keeping the attribute bit
+unchanged.  And to figure out separate reading of each plane if this is possible.
 
 0x203000.b: BEEP: 0xFF on, $FE off
 
