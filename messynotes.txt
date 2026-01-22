@@ -1,11 +1,15 @@
 MEMORY MAP
+
 00980000-00A7FFFF: 1mb RAM
+00600000-0061FFFF: video RAM, multiplexed between two planes, each with 64kb x 4bits of data
 00000000-0000FFFF: 64kb ROM
 		 
-Stuff happens in ROM regarding data in a60000-a6ffff, so it's probably safe to 
-end program storage at a5ffff.		 
+Stuff happens in ROM regarding data in a60000-a6ffff, so it's probably safest to 
+end program storage at a5ffff.
 		 
+
 EXECUTABLE FILE FORMAT
+
 LIF file type 0xC001
 
 0x0000: dword:    length
@@ -20,86 +24,80 @@ Observed initial stack pointer : 00A7FFDE
 
 Strings are null terminated.
 
+
+VIDEO
+
 Screen size: 592x384
 Some of the ROM routines (e.g., DrawText) enforce an 8-pixel margin.
 
-From PVTEST_
+The video memory consists of two bit-planes, a data plane and an attribute plane.
+The CRT shows the xor of the values in the two planes, with 1=white and 0=black. 
 
-992fe2+2: SetCoordinates:  push y, x
-        0098a500 48  78  00       pea        (0xb4 ).w
-                 b4
-        0098a504 48  78  01       pea        (0x15c ).w
-                 5c
-        0098a508 4e  93           jsr        (A3 => LAB_00992fe2+2 )
-        0098a50a 50  8f           addq.l     #0x8 ,SP
+This allows one to have cursors and selection boxes without rewriting screen data, 
+by putting the cursor images and boxes in the attribute plane and thereby inverting 
+what's in the data plane.
 
-FUN_00993044: args: push string, push length 
-FUN_00992ff6: DrawText: push string, zero terminated
-FUN_00992fc0: DrawRect:
- push thickness, height, width, y, x
-LAB_00992fe6+4: DrawChar: push char (.w) to draw
-FUN_00992fde.l: SetBold: push word: 1 bold, 0 normal
-FUN_00993014: takes two coordinate pairs; line?
-0098a078: DrawKeyboard
-0098a934: TestKeys
-FUN_00993038: get key --> D0 ; probably -1 is none
+The two planes are multiplexed for access at 0x600000. The data is stored row by
+row, with four bits per machine word. Only the lowest four bits of each machine
+word are valid, and they are displayed left-to-right from lowest to highest bit
+(not quite what you would expect on a big-endian system).
 
-at 600000: graphics memory, draw in white by default.
+Screen address (x,y) corresponds to the word at address: 0x600000 + y*0x0128 + x/4*2,
+with the relevant bit being 3-(x&0x3). 
 
-screen: write word at a time to even addresses ; only lowest 4 bits matter
+Only 1 bits affect anything as they are written to screen memory: 0 bits are
+completely ignored. To write a bit 1 to (x,y), you write a word to 
+0x600000 + y*0x0128 + x/4*2 with the lowest byte 8>>(x&0x3).
 
-To switch to black:
-    move.w     #4 ,-(SP ) ; other values 0,1,FF ;
-    jsr        $0000eaba
-    addq.l     #2 ,SP
- FF does nothing?!  00 draws black, 04 draws black, 
+Both planes share the same addresses. At 0x00201000 there is a one-word screen memory 
+control register that controls the multiplexing mode for the memory. This allows you
+to control both which plane(s) you are writing to as well as whether writing a 1 bit
+sets a bit or clears a bit in the plane(s).
 
-05 : unknown! ---> ~05 becomes the high byte at 0x201000; low byte comes from 98077c.
+Only the lowest 4 bits of each byte of the mode register matter. Here are expecially  
+useful modes:
+ f0a  = write black pixels (clear to 0) to data, leave attribute alone, read data
+ e0a  = write white pixels (set to 1) to data, leave attribute alone, read data
+ 007  = set attribute bits, leave data alone, read attribute
+ f07  = clear attribute bits, leave data alone, read attribute
+ 906  = write black pixels (clear bits) to data, clearing attribute pixels, read data|attr
+ a06  = write white pixels (set bits) to data, clearing attribute pixels, read data|attr
+In modes f00 and e00, reading will return the logical AND beween the data and attribute bits. 
+If you don't want to use the attribute plane, you can just alternate between modes a06 (white)
+and 906 (black), and if you used one of these modes to set or clear or all pixels, then reading
+gives you the pixel data, as it will be an OR between data and attribute, but the attribute
+will always be one.
 
-low byte values: f0,f8,
+A full list of the modes is in screenmodes.txt. It was based on automated data gathering via
+the c/idscreenmode program.
 
-font locations: a674 (bold), 9e74; 16 bytes per char 
+Font bitmap locations: a674 (bold), 9e74; 16 bytes per char 
 
-To turn off writing:
-    move.w     #$fe ,-(SP )
-    jsr        $0000eaae
-    addq.l     #2 ,SP
-# f1, f9, -9, fd, fb have been sighted
 
-The Level 1 interrupt autovector is at 60Hz, so it's probably the vertical blanking interrupt.
+INTERRUPTS
+
+The Level 1 interrupt autovector is at 60Hz, so it's surely the vertical blanking interrupt.
 It can be used for a timer. 
- 
-$980716 is copied to $202000
- 
-Draw pixel in SYSTEM_:
 
-void FUN_00a04b12(ushort param_1,ushort param_2)
-{
-  ushort uVar1;
-  
-  uVar1 = 8;
-  if ((param_1 & 3) != 0) {
-    uVar1 = 8 >> (param_1 & 3);
-  }
-  (x/4)*2 + y*(592/2) = 8 >> (x % 8)
-  *(ushort *)((uint)((param_1 & 0xfffc) >> 1) + (uint)param_2 * 0x128 + 0x600000) = uVar1;
-  return;
-}
 
-// only the last 4 bits of each display byte are used
+SPECIAL HARDWARE ADDRESSES
 
-From SYSTEM_:
-	009c2482: SystemOpenFile (calls ROM's OpenFile)
-	
+0x201000.w: screen memory control (see above)  
+0x203000.b: BEEP: 0xFF on, $FE off
+0x206000.b: spinner speed
+0x207000.l (write): -1 does something spinnery
+0x20d003.l: read/write. unknown. Serial port??
+0x20F000.w:
+	bit 0: unknown, checked in a disc related context
+	bit 1: last spinner turn was to the right
+	bit 3: no disc in drive
 
-ROM routines:
+
+ROM ROUTINES
 
 ead8: rectangle: 7,h,w,y,x ???? not quite
-
-ea06: one arg 1e
-
 eac6: 8,8,170,240 (after 0000eaae : fe) : clears rectangle on screen
-
+eaba: set high byte of 0x201000 mode register to the logical not of the uint16_t argument
 eade: bold : set bold if 1, set normal if 0
 eb08: text mode?? : 0 = black on white (9800b2 set to 4) ; else: white background, no text (9800b2 set to 7)
 eae4: y,x : set coordinates
@@ -117,7 +115,10 @@ trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of d
 D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
 trap handler starts at #6B52
 
-ROM keyboard routine:
+
+KEYBOARD
+
+ROM keyboard handler maintains this data:
 at 0x980700.w:  the current key
 at 0x980702.b: 03 if a key is pressed and 00 otherwise
 at 0x980704.w: the last key pressed (FFFF if spinner)
@@ -127,9 +128,7 @@ at 0x9a070C.b: 01 if last spinner movement was right and FF if it was left
 at 0x9a070D.b: some sort of spinner speed value
 at 0x9a070E.w: some kind of current spinner position, not corresponding to angle : a full rotation is about 115-122
 
-  ;; there is some way to toggle whether keys click ; when loading as PVTEST_, they click ; when
-  ;; loading as SYSTEM_, they don't
-  none = 0000 (is there a flag to wait?)
+  none = 0000 
   0 = 0240
   . = 0440
   chs = 0840
@@ -161,135 +160,9 @@ at 0x9a070E.w: some kind of current spinner position, not corresponding to angle
   select = 2001
   counterclockwise = 0082
   clockwise = 0081
-  
-HARDWARE
-  
-At 201000.w: graphics memory access mode control. Maybe some kind of mask and value? I can't figure it out.
 
-But here is what I know. Only the first four bits of each byte of the mode register matter.
-For all 256 possible modes, writing 0 bits to the screen does nothing. Only 1 bits do something.
-There are four possible visible actions they can do: draw black, draw white, reverse pixel, 
-nothing. I can't figure out the pattern of how the 256 modes map to the four actions. Moreover,
-the 256 modes, even within the same visible action, differently affect what you can read from
-screen memory in mode 7.
 
-Reading a memory location returns 0 unless the low byte (or low nybble) is 3, 5, 6 or 7.
-
-There is a distinction between what one finds in memory in one of the read modes and what is shown
-on screen. For instance, if one writes bits in mode E06, one gets white pixels on screen that can be
-read back as 1. But if one writes bits in mode E00, one gets white pixels on screen that read back
-(after changing to a mode where reading works) as 0.
-
-Here are some useful modes:
- FF00 --> $201000 = write black pixels without reading 
- FF06 --> $201000 = write black pixels with reading 
- FE00 --> $201000 = write white pixels without reading
- FE06 --> $201000 = write white pixels with reading
- 0007 --> $201000 = reverses pixels written in black or white---but oddly does not seem to reverse 
-					reversed pixels
-					
-What seems reliable for reading and writing is to use the xx06 modes exclusively. If you write in one
-of the xx00 or 0007 modes, you can't always read back what's on the screen. For instance, writing in
-0007 mode, you read back what you wrote, not what's on the screen.
-
-On thing about reversing is super weird. It seems that each pixel has four modes: reversible black, reversible white,
-irreversible black, and irreversible white. Writing in reverse mode takes reversible black to irreversible
-white and reversible white to irreversible black. 
- 
-Here are some patterns:
-	If bit 0 of low byte is 0, we always get white or black pixels (never reverse or NOP).
-	If bit 3 of high byte is 1, we never get reversing.
-	If bit 3 of high byte is 0 and low byte is 7, we get reverse (but not only then).
-	If low byte is f, we get NOP (but not only then).
-	If high byte is e, we get white for even low byte and NOP for odd low byte.
-	If high byte is f, we get black for even low byte and NOP for odd low byte.
-	Reading only works if and only if low byte is 3, 5, 6 or 7.
-	
-Low byte is recorded at 0x98077c
-High byte is recorded at 0x98077e
-When writing black on white text: 98077e: FFFB, 98077c: 0000, so should be FB00.
-
-I have not found a way to read current screen buffer data, though interestingly you can read back
-the last reverse-mode write to each bit (which is not the same as what is visible on screen),
-as long as you are in reverse-mode. An ordinary write to the bit then clears the read back bit.
-If this is reliable, you could do this trick. Clear the screen to black. Then treat reverse-write
-as white-write, alternating between black-write and reverse-write as needed. (You could also do
-this with white and black swapped.) Now that I think about it, maybe this is the intended way to 
-use the screen? You would just need to ensure when you start a program that you clear the screen
-to the desired background color. A nice way to do this in your program would be to set:
- #define WRITE_BACKGROUND WRITE_BLACK  // or WRITE_WHITE if you prefer
- #define WRITE_FOREGROUND WRITE_REVERSE
-and start the program with 
- *SCREEN_MEMORY_CONTROL=WRITE_BACKGROUND; 
- fillScreen();
-and then alternate writing between WRITE_BACKGROUND and WRITE_FOREGROUND as needed.
-
-HYPOTHESIS
-
-Gemini Pro guesses that we have a data plane and an attribute plane, and the display is a xor
-of the two. Mode 007 writes 1s to the attribute plane. This fits my observations as long as we suppose
-that reading gives back an OR between the two planes. 
-
-Further observations suggest that modes x07 write the negation of bit 0 of x to the attribute plane. 
-Thus, 007 sets and 807 clears a bit on the attribute plane.
-
-Working with this hypothesis, the following look to be the case:
-  x07: set attribute bit for x<8
-  x07: clear attribute bit for x>=8
-  f00: clear data bit (i.e., make black) and clear attribute bit
-  e00: set data bit (i.e., make white) and clear attribute bit
-  x0f: nop for all x
-  x08: set data bit and leave attribute bit alone, where x=0,1,6,8,9,e
-  x09: ditto, with x=0,1,8,9
-  x0c: ditto, with x=2,6,a,e
-  x0e: ditto, for x even
-  x0e: reverse data bit and leave attribute bit alone, where x is odd
-  x08: clear data bit and leave attribute bit alone, where x=2,3,7,a,b,f
-  x09: ditto, where x=2,3,a,b
-  x0a: ditto, where x=0,1,2,3,8,9,a,b,d,f
-  x0b: ditto, where x=0,1,2,3,8,9,a,b
-  x0c: ditto, where x=3,7,b,f
-  804: set data bit, clear attribute bit, read data
-  a0x: ditto, where x=0,2
-  c0x: ditto, where x=0,4
-
-Reading modes based on these hypotheses:
-  OR      x06
-  AND     x00
-  data    x0a,x0c,x0e
-  attr    x03,x04,x05,x07
-
-Useful modes: 
-  f0c: clear data, leave attribute alone, read data    
-  e0c: set data, leave attribute alone, read data
-  007: set attribute, leave data alone, read attribute
-  f07: clear attribute, leave data alone, read attribute
-  804: set data, clear attribute, read data
-  
-Might be nice to have clear data + clear attribute + read data, but doesn't seem to exist.
-  
-0x203000.b: BEEP: 0xFF on, $FE off
-0x206000.b: spinner speed
-0x207000.l (write): -1 does something spinne
-  
-  ry
-0x20d003.l: read/write. unknown. Serial port??
-
-0x20F000.w:
-bit 0: unknown, checked in a disc related context
-bit 1: last spinner turn was to the right
-bit 3: no disc in drive
-
-_SYSTEM
-
-Serial programming
-
-Token/command table starts:
- 00a023b8: string: COM^MAND [null terminated, 0x20 padded after null] : 0x0E bytes
-           word: some sort of index that is non-increasing from entry to entry, sometimes staying the same
-Address of token table stored in 00a23b8a		   
-
-ROM File System
+DISK I/O
 
 eb74 int OpenFile(char *filename,int filetype,int mode)
  Modes are either 1 (read) or 2 (write)
@@ -309,7 +182,9 @@ implemented at 3f96
 eb7a CloseFile(int fparam)
 implemented at 3a5c
 
-eb98 FindDirEntry(char* filename,int16 type,char* direntry32bytes,uint32 searchStartIndex,uint32 filename_length); return -5 if filename doesn't exist; returns index in directory otherwise
+eb98 FindDirEntry(char* filename,int16 type,char* direntry32bytes,uint32 searchStartIndex,uint32 filename_length)
+	return -5 if filename doesn't exist; returns index in directory otherwise.
+	These are standard LIF directory entries.
 
 ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done
 
@@ -320,4 +195,31 @@ eb92: check if packing is needed??
 eb9e: pack??
 
 eb62: some kind of directory refresh
-ebb0: some sort of status check; 0=ok
+ebb0: some sort of status check; 0=ok  
+
+ROM code suggests that only one file can be open at once, as some routines check to see if fparam is <= 0
+and exit if not.
+
+
+Some PVTEST_ functions:
+FUN_00993044: args: push string, push length 
+FUN_00992ff6: DrawText: push string, zero terminated
+FUN_00992fc0: DrawRect:
+ push thickness, height, width, y, x
+LAB_00992fe6+4: DrawChar: push char (.w) to draw
+FUN_00992fde.l: SetBold: push word: 1 bold, 0 normal
+FUN_00993014: takes two coordinate pairs; line?
+0098a078: DrawKeyboard
+0098a934: TestKeys
+FUN_00993038: get key --> D0 ; probably -1 is none
+
+
+NOTES ON SYSTEM_
+
+009c2482: SystemOpenFile (calls ROM's OpenFile)
+
+Serial programming token/command table starts:
+ 00a023b8: string: COM^MAND [null terminated, 0x20 padded after null] : 0x0E bytes
+           word: some sort of index that is non-increasing from entry to entry, sometimes staying the same
+Address of token table stored in 00a23b8a		   
+
