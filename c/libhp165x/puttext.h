@@ -4,6 +4,9 @@
 
 #include <stdint.h>
 
+#define FONT_WIDTH 8
+#define TEXT_COLUMNS (SCREEN_WIDTH/FONT_WIDTH)
+
 void setTextColors(uint16_t f, uint16_t b);
 void setTextReverse(char reverse);
 uint16_t getTextX(void);

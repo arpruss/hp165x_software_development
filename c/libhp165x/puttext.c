@@ -11,8 +11,6 @@ typedef uint8_t byte;
 
 #include "ibm8x14.c"
 
-#define FONT_WIDTH 8
-#define TEXT_COLUMNS (SCREEN_WIDTH/FONT_WIDTH)
 
 
 static uint16_t curX=0;
