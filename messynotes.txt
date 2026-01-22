@@ -239,16 +239,40 @@ Working with this hypothesis, the following look to be the case:
   f00: clear data bit (i.e., make black) and clear attribute bit
   e00: set data bit (i.e., make white) and clear attribute bit
   x0f: nop for all x
+  x08: set data bit and leave attribute bit alone, where x=0,1,6,8,9,e
+  x09: ditto, with x=0,1,8,9
+  x0c: ditto, with x=2,6,a,e
+  x0e: ditto, for x even
+  x0e: reverse data bit and leave attribute bit alone, where x is odd
+  x08: clear data bit and leave attribute bit alone, where x=2,3,7,a,b,f
+  x09: ditto, where x=2,3,a,b
+  x0a: ditto, where x=0,1,2,3,8,9,a,b,d,f
+  x0b: ditto, where x=0,1,2,3,8,9,a,b
+  x0c: ditto, where x=3,7,b,f
+  804: set data bit, clear attribute bit, read data
+  a0x: ditto, where x=0,2
+  c0x: ditto, where x=0,4
+
+Reading modes based on these hypotheses:
+  OR      x06
+  AND     x00
+  data    x0a,x0c,x0e
+  attr    x03,x04,x05,x07
+
+Useful modes: 
+  f0c: clear data, leave attribute alone, read data    
+  e0c: set data, leave attribute alone, read data
+  007: set attribute, leave data alone, read attribute
+  f07: clear attribute, leave data alone, read attribute
+  804: set data, clear attribute, read data
   
-It would be nice to find a mode that writes a data bit while keeping the attribute bit
-unchanged.  And to figure out separate reading of each plane if this is possible.
-
+Might be nice to have clear data + clear attribute + read data, but doesn't seem to exist.
+  
 0x203000.b: BEEP: 0xFF on, $FE off
-
 0x206000.b: spinner speed
-
-0x207000.l (write): -1 does something spinnery
-
+0x207000.l (write): -1 does something spinne
+  
+  ry
 0x20d003.l: read/write. unknown. Serial port??
 
 0x20F000.w:

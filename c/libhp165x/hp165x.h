@@ -17,12 +17,20 @@
 
 #define HARDWARE_STATUS_NO_DISC (1<<3)
 
-#define WRITE_WHITE_READ   0xFE06  // we don't right know what this does to the attribute
-#define WRITE_BLACK_READ   0xFF06  // we don't right know what this does to the attribute
+#define SCREEN_SET_DATA_CLEAR_ATTR   0xE00 // SET_DATA = WHITE
+#define SCREEN_CLEAR_DATA_CLEAR_ATTR 0xF00
+#define SCREEN_SET_DATA_ONLY		 0xE08 
+#define SCREEN_CLEAR_DATA_ONLY		 0xF08 
+#define SCREEN_SET_ATTR		         0x007 // also reads attr
+#define SCREEN_CLEAR_ATTR			 0xF07 // also reads attr
+#define SCREEN_NOP				     0x00F
+#define SCREEN_READ_ATTR			 0x007
+#define SCREEN_READ_DATA			 0xF0A
+
 #define WRITE_BLACK   0xFF00 // clears attribute 
 #define WRITE_WHITE   0xFE00 // clears attribute
 #define WRITE_SET_ATTRIBUTE   0x0007  // leaves data unchanged
-#define WRITE_CLEAR_ATTRIBUTE 0x0807  // leaves data unchanged
+#define WRITE_CLEAR_ATTRIBUTE 0x0F07  // leaves data unchanged
 
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384
