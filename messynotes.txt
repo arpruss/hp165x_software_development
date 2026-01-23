@@ -62,7 +62,8 @@ useful modes:
  f07  = clear attribute bits, leave data alone, read attribute
  906  = write black pixels (clear bits) to data, clearing attribute pixels, read data|attr
  a06  = write white pixels (set bits) to data, clearing attribute pixels, read data|attr
-In modes f00 and e00, reading will return the logical AND beween the data and attribute bits. 
+ 009  = NOP: no writing (or reading)
+
 If you don't want to use the attribute plane, you can just alternate between modes a06 (white)
 and 906 (black), and if you used one of these modes to set or clear or all pixels, then reading
 gives you the pixel data, as it will be an OR between data and attribute, but the attribute

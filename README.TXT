@@ -39,3 +39,6 @@ I recommend the following way to run the stuff:
 
 You can actually skip steps 1-3 if you just get this distribution, since the included software.{hfe,lif}
 already includes loader and wiztris.
+
+The lifutils.py utility can run hxcfe directly to convert hfe to/from lif seamlessly. Just make sure you
+have hxcfe in the same directory.

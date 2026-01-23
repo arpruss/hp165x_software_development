@@ -256,11 +256,43 @@ f0d zero       NOP        NOP
 f0e data       zero       NOP       
 f0f zero       NOP        NOP       
 
-Notes on bits:
+
+PATTERNS
 
 low byte:
 bit 0: if clear, write to data; if set, data writing not active
 bit 3: if clear, write to attr; if set, attr writing not active
 
 high byte:
-bit 0: if clear, set data and clear attr (if active); if set, opposite
+bit 0: if clear, set data (if writing active by bit 0 low byte); 
+	   if set, clear data (if active)
+bit 1: ignored
+bit 2: ignored	   
+bit 3: if set, clear attr (if active by bit 3 of low byte); if clear, 
+	   set attr (if active)
+
+The reading state depends only on the low byte. 
+
+When writing is active to exactly one bitplane (data or attr but not
+both), you can read that plane as long as bits 1 and 2 are not both 
+zero (if they are both zero, you read a zero no matter what). 
+
+When writing is active to both bitplanes, you read the logical OR if 
+bits 1 and 2 are 11; if the bits are 10 or 01, you read the logical
+AND; if they are 00, you read zero.
+
+When writing is active to neither bitplane, you read zero.
+
+The above patterns are sufficient to determine all the modes. 
+
+You can make any available function out of a bitwise combination of
+these:
+
+ NO_DATA_WRITE  = 0x001 // default: data write
+ NO_ATTR_WRITE  = 0x008 // default: attr write
+ CLEAR_DATA     = 0x100 // default: set data
+ CLEAR_ATTR     = 0x800 // default: set attr
+ READ_OR        = 0x006 // you can think of this as OR of all active planes
+ READ_ONE_PLANE = 0x006 // and hence if only one plane is active, you read that
+ READ_AND       = 0x002 
+  

@@ -1,5 +1,10 @@
 import sys
 import struct 
+try:
+    import runhxcfe
+    hxcfe=True
+except:
+    hxcfe=False
 
 BLOCK_SIZE = 256
 DIR_ENTRY_SIZE = 32
@@ -238,8 +243,12 @@ if cmd == "create":
     create(sys.argv[2])
     cmd = "dir"
 
-with open(sys.argv[2],"rb") as inf:
-    diskData = bytearray(inf.read())
+if hxcfe and sys.argv[2].lower().endswith(".hfe"):
+    print("Converting from hfe")
+    diskData = bytearray(runhxcfe.readHFE(sys.argv[2]))
+else:    
+    with open(sys.argv[2],"rb") as inf:
+        diskData = bytearray(inf.read())
 
 lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPerTrack = struct.unpack(">H6sIH2xIH2x3I", diskData[:36])
 dirEntries = dirBlocks * BLOCK_SIZE // DIR_ENTRY_SIZE
@@ -311,7 +320,11 @@ elif cmd != "dir":
 if rewrite:
     print("rewriting")
     readDir()
-    with open(sys.argv[2],"wb") as outf:
-        outf.write(diskData)
+    if hxcfe and sys.argv[2].lower().endswith(".hfe"):
+        print("Converting to hfe")
+        runhxcfe.writeHFE(sys.argv[2], diskData)
+    else:
+        with open(sys.argv[2],"wb") as outf:
+            outf.write(diskData)
         
         
