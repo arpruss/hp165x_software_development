@@ -50,7 +50,7 @@ class DirEntry:
             self.chunkedFile = bytearray()
         else:
             name,self.fileType,self.startBlock,self.blocks,self.year,self.month,self.day,self.hour,self.minute,self.second,self.misc = struct.unpack(">10sHII6B6s", args[0])
-            self.name = name.decode("ascii").strip()
+            self.name = name.decode("cp437").strip()
             self.chunkedFile = diskData[self.startBlock*BLOCK_SIZE:(self.startBlock+self.blocks)*BLOCK_SIZE]
             self.unchunkedFile = unchunkFile(self.chunkedFile)
      
@@ -64,7 +64,7 @@ class DirEntry:
         diskData[dirStart * BLOCK_SIZE + pos * 32 : dirStart * BLOCK_SIZE + pos * DIR_ENTRY_SIZE + DIR_ENTRY_SIZE] = self.toBinary()
                     
     def toBinary(self):
-        outName = (self.name + (10-len(self.name))*' ').encode("ascii")
+        outName = (self.name + (10-len(self.name))*' ').encode("cp437")
         return struct.pack(">10sHII6B6s", outName,self.fileType,self.startBlock,self.blocks,self.year,self.month,self.day,self.hour,self.minute,self.second,self.misc)                       
         
 def chunkFile(unchunked):

@@ -7,6 +7,7 @@
 
 
 int main(void) {
+	uint16_t oldMode = *SCREEN_MEMORY_CONTROL;
 	setTextBlackOnWhite(0);
 	
 	drawBlack();

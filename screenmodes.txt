@@ -1,3 +1,5 @@
+THIS ISN'T RIGHT YET!
+
 MODE READ	   DATA-WRITE ATTR-WRITE
 000 and        one        one       
 001 zero       NOP        one       

@@ -18,30 +18,29 @@
 #define HARDWARE_STATUS_NO_DISC (1<<3)
 
 // useful pieces
-#define SCREEN_SET_DATA_CLEAR_ATTR   0xE00 // SET_DATA = WHITE
-#define SCREEN_CLEAR_DATA_CLEAR_ATTR 0xF00
-#define SCREEN_SET_DATA_ONLY		 0xE08 
-#define SCREEN_CLEAR_DATA_ONLY		 0xF08 
-#define SCREEN_SET_ATTR		         0x007 // also reads attr
-#define SCREEN_CLEAR_ATTR			 0xF07 // also reads attr
-#define SCREEN_NOP				     0x00F
-#define SCREEN_READ_ATTR			 0x007
-#define SCREEN_READ_DATA			 0xF0A
+//#define SCREEN_SET_DATA_CLEAR_ATTR   0x806 // SET_DATA = WHITE
+//#define SCREEN_CLEAR_DATA_CLEAR_ATTR 0x906
+//#define SCREEN_SET_DATA_ONLY		 0x808 
+//#define SCREEN_CLEAR_DATA_ONLY		 0x908 
+//#define SCREEN_SET_ATTR		         0x007
+//#define SCREEN_CLEAR_ATTR			 0x907
+//#define SCREEN_NOP				     0x00F
+//#define SCREEN_READ_ATTR			 0x007
+//#define SCREEN_READ_DATA			 0x90A
 
 // components of the mode bitmap
-#define SCREEN_NO_DATA_WRITE  0x001 // default: data write
-#define SCREEN_NO_ATTR_WRITE  0x008 // default: attr write
-#define SCREEN_CLEAR_DATA     0x100 // default: set data
-#define SCREEN_CLEAR_ATTR     0x800 // default: set attr
-#define SCREEN_READ_OR        0x006 // you can think of this as OR of all active planes
-#define SCREEN_READ_PLANE     0x006 // and hence if only one plane is active, you read that
-#define SCREEN_READ_AND       0x002 
+//#define SCREEN_NO_DATA_WRITE  0x001 // default: data write
+//#define SCREEN_NO_ATTR_WRITE  0x008 // default: attr write
+//#define SCREEN_CLEAR_DATA     0x100 // default: set data
+//#define SCREEN_READ_OR        0x006 // you can think of this as OR of all active planes
+//#define SCREEN_READ_PLANE     0x006 // and hence if only one plane is active, you read that
+//#define SCREEN_READ_AND       0x002 
 
 // simple versions
-#define WRITE_BLACK   0xFF00 // clears attribute 
-#define WRITE_WHITE   0xFE00 // clears attribute
-#define WRITE_SET_ATTRIBUTE   0x0007  // leaves data unchanged
-#define WRITE_CLEAR_ATTRIBUTE 0x0F07  // leaves data unchanged
+#define WRITE_BLACK   0xF00 // clears attribute, apparently
+#define WRITE_WHITE   0xE00 // clears attribute, apparently
+#define WRITE_SET_ATTRIBUTE   0x007  // leaves data unchanged, apparently
+#define WRITE_CLEAR_ATTRIBUTE 0x907  // leaves data unchanged, apparently
 
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384

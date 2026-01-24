@@ -79,10 +79,10 @@ void setTextY(uint16_t x) {
 	curX = x;
 }
 
-void highlightText(uint16_t x, uint16_t y, uint16_t n, uint8_t highlightState) {
+void highlightText(uint16_t n, uint8_t highlightState) {
 	volatile uint16_t* pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4)) + curX*2;
 
-	*SCREEN_MEMORY_CONTROL = hightlightState ? SCREEN_SET_ATTR : SCREEN_CLEAR_ATTR;
+	*SCREEN_MEMORY_CONTROL = highlightState ? SCREEN_SET_ATTR : SCREEN_CLEAR_ATTR;
 	while(n--) {
 		if (curX >= TEXT_COLUMNS) {
 			curY++;
@@ -94,7 +94,7 @@ void highlightText(uint16_t x, uint16_t y, uint16_t n, uint8_t highlightState) {
 		volatile uint16_t* pos2 = pos;
 		uint16_t row;
 		for (row = 0; row < fontLineHeight; row++) {
-			*(uint32_t)pos2 = 0x0F0F;
+			*(uint32_t*)pos2 = 0x0F0F;
 			pos2 += SCREEN_WIDTH/4;			
 		}
 		pos += 2;

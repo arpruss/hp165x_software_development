@@ -30,14 +30,15 @@ VIDEO
 Screen size: 592x384
 Some of the ROM routines (e.g., DrawText) enforce an 8-pixel margin.
 
-The video memory consists of two bit-planes, a data plane and an attribute plane.
-The CRT shows the xor of the values in the two planes, with 1=white and 0=black. 
+Apparently the video memory apparently consists of two bit-planes, a data plane and 
+an attribute plane. The CRT shows the xor of the values in the two planes, with 1=white 
+and 0=black. 
 
 This allows one to have cursors and selection boxes without rewriting screen data, 
 by putting the cursor images and boxes in the attribute plane and thereby inverting 
 what's in the data plane.
 
-The two planes are multiplexed for access at 0x600000. The data is stored row by
+The two planes would be multiplexed for access at 0x600000. The data is stored row by
 row, with four bits per machine word. Only the lowest four bits of each machine
 word are valid, and they are displayed left-to-right from lowest to highest bit
 (not quite what you would expect on a big-endian system).
@@ -54,8 +55,11 @@ control register that controls the multiplexing mode for the memory. This allows
 to control both which plane(s) you are writing to as well as whether writing a 1 bit
 sets a bit or clears a bit in the plane(s).
 
-Only the lowest 4 bits of each byte of the mode register matter. Here are expecially  
-useful modes:
+Only the lowest 4 bits of each byte of the mode register matter. 
+
+***The following information is not all correct! It consists of guesses, and I have
+recently found data tot he contrary.***
+
  f0a  = write black pixels (clear to 0) to data, leave attribute alone, read data
  e0a  = write white pixels (set to 1) to data, leave attribute alone, read data
  007  = set attribute bits, leave data alone, read attribute
@@ -69,8 +73,12 @@ and 906 (black), and if you used one of these modes to set or clear or all pixel
 gives you the pixel data, as it will be an OR between data and attribute, but the attribute
 will always be one.
 
+The ROM routines store the current mode. At 0x98077c.w, we have the low byte, set via ROM function
+eaae. At 0x98077e.w, we have the high byte, set with ROM function eaba.
+
 A full list of the modes is in screenmodes.txt. It was based on automated data gathering via
 the c/idscreenmode program.
+
 
 Font bitmap locations: a674 (bold), 9e74; 16 bytes per char 
 
@@ -113,6 +121,7 @@ SPECIAL HARDWARE ADDRESSES
 0x20a007: ditto
 0x20d001.b: used in interrupt level 3 handler
 0x20d003.b: read/write. unknown. used in interrupt level 3 handler and may be connected with disk i/o
+0x20e001: ?? write
 0x20F000.w:
 	bit 0: unknown, checked in a disk related context (returned by ec04)
 	bit 1: last spinner turn was to the right
@@ -133,6 +142,7 @@ ROM ROUTINES
 ead8: rectangle: 7,h,w,y,x ???? not quite
 eac6: 8,8,170,240 (after 0000eaae : fe) : clears rectangle on screen
 eaba: set high byte of 0x201000 mode register to the logical not of the uint16_t argument
+eaae: set low byte of 0x201000 mode regster to the uint16_t argument
 eade: bold : set bold if 1, set normal if 0
 eb08: text mode?? : 0 = black on white (9800b2 set to 4) ; else: white background, no text (9800b2 set to 7)
 eae4: y,x : set coordinates
@@ -140,7 +150,7 @@ eaf6: DrawText: print 0-terminated string
 eacc: 2,coordinates,coordinates :  
 ecd0: beep --> 0F70
 ece2: reload system!
-eb38: get key --> D0w  [ actual code at 12F4 ] ; sometimes waits, sometimes doesn't ??!
+eb38: getkey --> D0w  [ actual code at 12F4 ] ; sometimes waits, sometimes doesn't ??!
 ec58 ?? write text at coordinates: 0.w, y.w, x.w, message.l, implemented at b164
 calls 0F8E(1.l,1.l)
 ec76: strcpy(dest,src)
@@ -229,6 +239,8 @@ eb9e: pack??
 
 eb62: some kind of directory refresh
 ebb0: some sort of status check; 0=ok; afterwards, 0x00984154 has the start of the A165 label from the LIF header
+
+ec82: some sort of string formatting
 
 ROM code suggests that only one file can be open at once, as some routines check to see if fparam is <= 0
 and exit if not.

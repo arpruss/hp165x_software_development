@@ -94,7 +94,9 @@ int main(void) {
 		sprintf(buffer + i*LINE_LENGTH, "%03x %s %s %s\n", (unsigned int)mode, functions[r], functions[d], functions[a]);
 //		sprintf(buffer + i*LINE_LENGTH, "%03x %x %x %x\n", (unsigned int)mode, (unsigned int)r,(unsigned int)d,(unsigned int)a);
 		setTextXY(0,i%getTextRows());
-		putText(buffer + i*LINE_LENGTH);
+//		putText(buffer + i*LINE_LENGTH);
+		*SCREEN_MEMORY_CONTROL = mode;
+		printf("%04x", *SCREEN_MEMORY_CONTROL);
 		if (i%getTextRows() == getTextRows()-1) {
 			if (getKey()==KEY_STOP)
 				reload();
