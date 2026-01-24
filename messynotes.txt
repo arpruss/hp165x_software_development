@@ -80,18 +80,52 @@ INTERRUPTS
 The Level 1 interrupt autovector is at 60Hz, so it's surely the vertical blanking interrupt.
 It can be used for a timer. 
 
+The default interrupt handlers are at: 
+ 1: 1024E (=024E) 
+ 2: 1024E (=024E)
+ 3:  B4BC (or B702 according to code)
+	 Main result seems to be to move a byte from 20d003 to 9801f0 and then another to 9801f4.
+ 4:  NONE (but maybe sometimes is B53E)
+ 5:  B904
+	 Super complicated code.
+	 
+	 9842fa
+	 b914
+ 
+
 
 SPECIAL HARDWARE ADDRESSES
 
+0x200000 ??: involved in acquisition test
+0x200001 ??: involved in acquisition test
 0x201000.w: screen memory control (see above)  
+0x202000 ??: write only
 0x203000.b: BEEP: 0xFF on, $FE off
+0x205000 ??: involved in spinner
+0x205002 ??: involved in spinner
+0x2050fe ??: involved in spinner
 0x206000.b: spinner speed
-0x207000.l (write): -1 does something spinnery
-0x20d003.l: read/write. unknown. Serial port??
+0x207000 (write): -1 does something spinnery
+0x20a000: has some connection with interrupt level 5 handler and ROM eb5c 
+0x20a002: connected with serial test 
+0x20a004: connected with serial test 
+0x20a006: connected with serial test 
+0x20a007: ditto
+0x20d001.b: used in interrupt level 3 handler
+0x20d003.b: read/write. unknown. used in interrupt level 3 handler and may be connected with disk i/o
 0x20F000.w:
-	bit 0: unknown, checked in a disc related context
+	bit 0: unknown, checked in a disk related context (returned by ec04)
 	bit 1: last spinner turn was to the right
-	bit 3: no disc in drive
+	bit 3: no disk in drive
+	bit 4: ???
+	
+	
+SERIAL
+
+Maybe eb44, ea06
+pvtest 98cdee looks like sending
+ditto 0098c68a--that looks like it may be sending and receiving and comparing
+
 
 
 ROM ROUTINES
@@ -191,15 +225,16 @@ ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done
 
 0x984166: some kind of open file info area, with entries of length 0x138?	   
 
-eb92: check if packing is needed??
-
 eb9e: pack??
 
 eb62: some kind of directory refresh
-ebb0: some sort of status check; 0=ok  
+ebb0: some sort of status check; 0=ok; afterwards, 0x00984154 has the start of the A165 label from the LIF header
 
 ROM code suggests that only one file can be open at once, as some routines check to see if fparam is <= 0
 and exit if not.
+
+2db0 is involved in 20d003 stuff, and is ROM EC16 function. In SYSTEM_, EC16 is called
+as part of the disk copying code. Other functions used in copying: ebb6, eb62, eb6e (format?!), ebaa, eb92,
 
 
 Some PVTEST_ functions:
