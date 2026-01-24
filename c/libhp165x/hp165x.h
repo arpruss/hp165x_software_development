@@ -17,30 +17,14 @@
 
 #define HARDWARE_STATUS_NO_DISC (1<<3)
 
-// useful pieces
-//#define SCREEN_SET_DATA_CLEAR_ATTR   0x806 // SET_DATA = WHITE
-//#define SCREEN_CLEAR_DATA_CLEAR_ATTR 0x906
-//#define SCREEN_SET_DATA_ONLY		 0x808 
-//#define SCREEN_CLEAR_DATA_ONLY		 0x908 
-//#define SCREEN_SET_ATTR		         0x007
-//#define SCREEN_CLEAR_ATTR			 0x907
-//#define SCREEN_NOP				     0x00F
-//#define SCREEN_READ_ATTR			 0x007
-//#define SCREEN_READ_DATA			 0x90A
-
-// components of the mode bitmap
-//#define SCREEN_NO_DATA_WRITE  0x001 // default: data write
-//#define SCREEN_NO_ATTR_WRITE  0x008 // default: attr write
-//#define SCREEN_CLEAR_DATA     0x100 // default: set data
-//#define SCREEN_READ_OR        0x006 // you can think of this as OR of all active planes
-//#define SCREEN_READ_PLANE     0x006 // and hence if only one plane is active, you read that
-//#define SCREEN_READ_AND       0x002 
-
-// simple versions
-#define WRITE_BLACK   0xF00 // clears attribute, apparently
-#define WRITE_WHITE   0xE00 // clears attribute, apparently
-#define WRITE_SET_ATTRIBUTE   0x007  // leaves data unchanged, apparently
-#define WRITE_CLEAR_ATTRIBUTE 0x907  // leaves data unchanged, apparently
+// reading won't be very useful in these modes
+#define WRITE_BLACK   0xF00 // clears all other planes than data, draws black on data
+#define WRITE_WHITE   0xE00 // clears all other planes than data, draws white on data
+// the following 4 modes allow reading
+#define WRITE_SET_ATTR   0x007  // leaves data unchanged
+#define WRITE_CLEAR_ATTR 0x807  // leaves data unchanged
+#define WRITE_SET_DATA   0x00E  // leaves data unchanged
+#define WRITE_CLEAR_DATA 0x10E  // leaves data unchanged
 
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384

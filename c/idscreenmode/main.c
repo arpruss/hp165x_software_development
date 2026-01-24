@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include <hp165x.h>
 
+//#define WRITE_BLACK 0xF00
+//#define WRITE_WHITE 0xE00
+
 /*
  a data,attr -> x function can be described as 
  a sequence of 4 bits, corresponding to the data/attr
@@ -41,12 +44,13 @@ char buffer[256 * LINE_LENGTH + 1];
  
 uint8_t getBit(char type) { // type=='d' or 'a'
 	if (type == 'd') 
-		*SCREEN_MEMORY_CONTROL = 0xF0E;
+		*SCREEN_MEMORY_CONTROL = 0xA;//0xF0E;
 	else
-		*SCREEN_MEMORY_CONTROL = 0x007;
+		*SCREEN_MEMORY_CONTROL = 0x7;//0x007;
 	return 0x1 & *SCREEN;
 }
 
+/*
 void setDataAttr(uint8_t data, uint8_t attr) {
 	*SCREEN_MEMORY_CONTROL = SCREEN_CLEAR_DATA_CLEAR_ATTR;
 	SCREEN[0] = 1;
@@ -55,6 +59,17 @@ void setDataAttr(uint8_t data, uint8_t attr) {
 	*SCREEN_MEMORY_CONTROL = SCREEN_SET_ATTR;
 	SCREEN[0] = attr;
 }
+*/
+
+void setDataAttr(uint8_t data, uint8_t attr) {
+	*SCREEN_MEMORY_CONTROL = data ? WRITE_WHITE : WRITE_BLACK;
+	*SCREEN = 1;
+	if (attr) {
+		*SCREEN_MEMORY_CONTROL = 7;
+		*SCREEN = 1;
+	}
+}
+
 
 uint8_t analyzeRead(uint16_t mode) {
 	uint8_t signature = 0;
@@ -83,8 +98,22 @@ uint8_t analyzeWrite(char type, uint16_t mode) {
 
 int main(void) {
 	setKeyWait(1);
-	*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
+	*SCREEN_MEMORY_CONTROL = 0xE06;
 	fillScreen();
+	getKey();
+	*SCREEN_MEMORY_CONTROL = 0x008;
+	fillScreen();
+	getKey();
+	/*
+	for (uint16_t i=0;i<256;i++) {
+		uint16_t mode = (i&0xF)|(i&0xF0)<<4;
+		*SCREEN_MEMORY_CONTROL = 7;
+		fillScreen();	
+		*SCREEN_MEMORY_CONTROL = 0xE00;
+		fillScreen();
+		setTextXY(0,0); printf("%x",(unsigned int)mode);
+		getKey();
+	}*/
 	setTextColors(WRITE_WHITE,WRITE_BLACK);
 	for (uint16_t i=0;i<256;i++) {
 		uint16_t mode = (i&0xF)|(i&0xF0)<<4;
@@ -92,11 +121,8 @@ int main(void) {
 		uint8_t d = analyzeWrite('d',mode);
 		uint8_t a = analyzeWrite('a',mode);
 		sprintf(buffer + i*LINE_LENGTH, "%03x %s %s %s\n", (unsigned int)mode, functions[r], functions[d], functions[a]);
-//		sprintf(buffer + i*LINE_LENGTH, "%03x %x %x %x\n", (unsigned int)mode, (unsigned int)r,(unsigned int)d,(unsigned int)a);
 		setTextXY(0,i%getTextRows());
-//		putText(buffer + i*LINE_LENGTH);
-		*SCREEN_MEMORY_CONTROL = mode;
-		printf("%04x", *SCREEN_MEMORY_CONTROL);
+		putText(buffer + i*LINE_LENGTH);
 		if (i%getTextRows() == getTextRows()-1) {
 			if (getKey()==KEY_STOP)
 				reload();

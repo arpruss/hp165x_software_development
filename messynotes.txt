@@ -30,18 +30,22 @@ VIDEO
 Screen size: 592x384
 Some of the ROM routines (e.g., DrawText) enforce an 8-pixel margin.
 
-Apparently the video memory apparently consists of two bit-planes, a data plane and 
-an attribute plane. The CRT shows the xor of the values in the two planes, with 1=white 
-and 0=black. 
+Apparently the video memory apparently consists of four bit-planes.
+  plane 0: data
+  plane 1: overlay-data (ODATA)
+  plane 2: overlay (OV)
+  plane 3: attribute (ATTR)
+  
+White=1, black=0.
+If OV=0, the display pixel is DATA xor ATTR.  
+If OV=1, the display pixel is ODATA xor ATTR.
 
-This allows one to have cursors and selection boxes without rewriting screen data, 
-by putting the cursor images and boxes in the attribute plane and thereby inverting 
-what's in the data plane.
+This allows one to have cursors, selection boxes and simple overlay windows without 
+rewriting screen data.
 
-The two planes would be multiplexed for access at 0x600000. The data is stored row by
+The four planes are multiplexed for access at 0x600000. The data is stored row by
 row, with four bits per machine word. Only the lowest four bits of each machine
-word are valid, and they are displayed left-to-right from lowest to highest bit
-(not quite what you would expect on a big-endian system).
+word are valid, and they are displayed left-to-right from highest to lowest bit.
 
 Screen address (x,y) corresponds to the word at address: 0x600000 + y*0x0128 + x/4*2,
 with the relevant bit being 3-(x&0x3). 
@@ -50,31 +54,43 @@ Only 1 bits affect anything as they are written to screen memory: 0 bits are
 completely ignored. To write a bit 1 to (x,y), you write a word to 
 0x600000 + y*0x0128 + x/4*2 with the lowest byte 8>>(x&0x3).
 
-Both planes share the same addresses. At 0x00201000 there is a one-word screen memory 
+All planes share the same addresses. At 0x00201000 there is a one-word screen memory 
 control register that controls the multiplexing mode for the memory. This allows you
 to control both which plane(s) you are writing to as well as whether writing a 1 bit
-sets a bit or clears a bit in the plane(s).
+sets a bit or clears a bit in the plane(s). 
 
 Only the lowest 4 bits of each byte of the mode register matter. 
 
-***The following information is not all correct! It consists of guesses, and I have
-recently found data tot he contrary.***
+The low byte of the memory control register controls which planes are active, with
+clear=active.
 
- f0a  = write black pixels (clear to 0) to data, leave attribute alone, read data
- e0a  = write white pixels (set to 1) to data, leave attribute alone, read data
- 007  = set attribute bits, leave data alone, read attribute
- f07  = clear attribute bits, leave data alone, read attribute
- 906  = write black pixels (clear bits) to data, clearing attribute pixels, read data|attr
- a06  = write white pixels (set bits) to data, clearing attribute pixels, read data|attr
- 009  = NOP: no writing (or reading)
+The high byte controls what value is written to the active planes when a 1 bit is
+written to screen memory, with the values reversed: clear writes 1 and set writes 0.
 
-If you don't want to use the attribute plane, you can just alternate between modes a06 (white)
-and 906 (black), and if you used one of these modes to set or clear or all pixels, then reading
-gives you the pixel data, as it will be an OR between data and attribute, but the attribute
-will always be one.
+For instance, mode = 0b010100001000 works as follows:
+  1000: planes 0,1,2 active
+  0101: when writing to a pixel, plane 0 is set to zero, plane 1 is set to 1, plane 2 is set to 0.
+
+Reading reads from the active planes in a mode. When no planes are active, you get 0.
+When only one plane is active, that's what you read. When two planes are active, you
+get 1 providing at least one has a 1. When three or four planes are active, you get 1
+providing at least two have a 1. Probably reading one plane at a time is the only useful
+thing to do.
+
+The simplest way is to restrict to using these modes:
+ F00: set DATA to 1 (=white), clear other planes to 0
+ E00: set DATA to 0 (=black), clear other planes to 0
+ 
+For more advanced use cases, you can first clear all the non-data planes with F00 or E00,
+and then use:
+ 007: set ATTR to 1 (=reverse data), leave other planes unchanged, read attr
+ 807: set ATTR to 0, leave other planes unchanged, read attr
+ 00E: set DATA to 1 (=white), leave other planes unchanged, read data
+ 10E: set DATA to 0 (=black), leave other planes unchanged, read data
 
 The ROM routines store the current mode. At 0x98077c.w, we have the low byte, set via ROM function
-eaae. At 0x98077e.w, we have the high byte, set with ROM function eaba.
+eaae. At 0x98077e.w, we have the high byte, set with ROM function eaba. It's not a terrible idea to
+restore this mode when done with your changes.
 
 A full list of the modes is in screenmodes.txt. It was based on automated data gathering via
 the c/idscreenmode program.
