@@ -139,7 +139,7 @@ SPECIAL HARDWARE ADDRESSES
 0x20d003.b: read/write. unknown. used in interrupt level 3 handler and may be connected with disk i/o
 0x20e001: ?? write
 0x20F000.w:
-	bit 0: unknown, checked in a disk related context (returned by ec04)
+	bit 0: if clear, disk has been changed and data needs refresh
 	bit 1: last spinner turn was to the right
 	bit 3: no disk in drive
 	bit 4: ???
@@ -247,7 +247,9 @@ eb98 FindDirEntry(char* filename,int16 type,char* direntry32bytes,uint32 searchS
 	return -5 if filename doesn't exist; returns index in directory otherwise.
 	These are standard LIF directory entries.
 
-ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done; else, returns data type
+ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done; else, returns data 
+	TODO: Check if direntry only needs 12 bytes, and only includes filename and filetype, or is the full
+		direntry.
 
 0x984166: some kind of open file info area, with entries of length 0x138?	   
 

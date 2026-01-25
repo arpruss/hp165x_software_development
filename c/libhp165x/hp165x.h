@@ -15,7 +15,8 @@
 #define BEEPER_OFF 0xFE
 
 
-#define HARDWARE_STATUS_NO_DISC (1<<3)
+#define HARDWARE_STATUS_NO_DISC  (1<<3)
+#define HARDWARE_STATUS_OLD_DISK 1 // disk hasn't been changed
 
 // reading won't be very useful in these modes
 #define WRITE_BLACK   0xF00 // clears all other planes than data, draws black on data
