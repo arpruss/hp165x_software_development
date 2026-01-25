@@ -82,7 +82,7 @@ void setTextY(uint16_t x) {
 void highlightText(uint16_t n, uint8_t highlightState) {
 	volatile uint16_t* pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4)) + curX*2;
 
-	*SCREEN_MEMORY_CONTROL = highlightState ? SCREEN_SET_ATTR : SCREEN_CLEAR_ATTR;
+	*SCREEN_MEMORY_CONTROL = highlightState ? WRITE_SET_ATTR : WRITE_CLEAR_ATTR;
 	while(n--) {
 		if (curX >= TEXT_COLUMNS) {
 			curY++;

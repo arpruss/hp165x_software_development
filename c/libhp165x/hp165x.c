@@ -185,9 +185,11 @@ _WRAP_1(_eb62, 0x227c);
 _WRAP_0_RET_D1(getKeyBIOS,0xeb38);
 
 void _eb62(int x);
-int _ebb0(void);
+int16_t _ebb0(void);
 
 int refreshDir(void) {
+	if (*HARDWARE_STATUS & HARDWARE_STATUS_OLD_DISK)
+		return 0;
 	_eb62(0);
 	return _ebb0();
 }

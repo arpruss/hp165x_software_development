@@ -26,6 +26,7 @@
 #define WRITE_CLEAR_ATTR 0x807  // leaves data unchanged
 #define WRITE_SET_DATA   0x00E  // leaves data unchanged
 #define WRITE_CLEAR_DATA 0x10E  // leaves data unchanged
+#define WRITE_NOP        0x00F
 
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT 384

@@ -37,12 +37,7 @@ void bubbleSort() {
 void getFiles(void) {
 	DirEntry_t entry;
 
-	printf("\nbefore: %x\n",(uint32_t)(*HARDWARE_STATUS));
-	delayTicks(30);
 	refreshDir();
-	delayTicks(30);
-	printf("\nafter: %x\n",(uint32_t)(*HARDWARE_STATUS));
-	delayTicks(30);
 	
 	int in = 0;
 	numNames = 0;
