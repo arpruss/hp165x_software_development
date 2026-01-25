@@ -163,9 +163,8 @@ def put(inFile, outFile, fileType):
         if entry.name.upper() == outFile and entry.blocks == blocksNeeded:
             entry.fileType = fileType
             entry.name = outFile
-            entry.put(i)
+            entry.put(directory[i][0])
             diskData[entry.startBlock * BLOCK_SIZE : (entry.startBlock + blocksNeeded) * BLOCK_SIZE] = data
-            print("Replaced in place")
             return True
     if delete(outFile):
         print("Deleted original")
