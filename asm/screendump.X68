@@ -2,30 +2,22 @@
 
 ;; ORG $A09710 (for insertion between end of SYSTEM_ code and beginning of SYSTEM_ data)
 
-    ORG    $984500
+    ORG    $A09710 ;; 984500
 
 buffer_size equ $200 ; divides into screen byte size
 file_type equ $C999
 START:                  ; first instruction of program
-    ;;cmp.w   D0,$3040
-    ;;bne     get_key_original
-    pea  0
-    pea  0
-    jsr ROM_SET_COORDINATES
-    add.l #8,SP
+    cmp.w   #$3040,D0
+    bne     get_key_original
 
     bsr     getFilename
     
-    pea.l   (filename)
-    jsr     ROM_DRAW_TEXT
-    add.l   #4,SP
-
     bsr     screendump
     jmp     ROM_RELOAD
 
 screendump:
     movem.l D0-D7/A0-A6, -(SP)
-;;    bsr     Beep
+    bsr     Beep
     
     pea.l   (2)
     pea.l   (file_type)
@@ -85,7 +77,7 @@ copyLoop:
     add.l   #4,SP
 
 FINISH:
-;;    bsr     Beep
+    bsr     Beep
 NO_BEEP:    
 
     move.w  $98077e,D0
@@ -181,7 +173,7 @@ formatNumber4: ; format D0.w as a 4-digit number at A0
     move.b  D0,(A0)
     rts
     
-;Beep:
+Beep:
     move.b #BUZZER_ON,BUZZER
     move.l #16,D0
     move.l #$1C,D7
@@ -189,8 +181,6 @@ formatNumber4: ; format D0.w as a 4-digit number at A0
     move.b #BUZZER_OFF,BUZZER
     rts
     
-    include utilities.x68
-
 message:
     dc.b '.'
     dc.b 00
@@ -207,6 +197,7 @@ buffer:
     END    START        ; last line of source
 
     
+
 *~Font name~Courier New~
 *~Font size~10~
 *~Tab type~1~

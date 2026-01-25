@@ -9,6 +9,7 @@ import struct
 binary = bytearray()
 BASE = 0x984500
 MINIMUM_FILE_LENGTH = 0x400
+checkedPos = False
 
 with open(sys.argv[1],"r") as s:
     while True:
@@ -18,6 +19,14 @@ with open(sys.argv[1],"r") as s:
         if line.startswith("S2"):
             count = int(line[2:4],16)-4
             pos = int(line[4:4+6],16)
+            
+            if not checkedPos:
+                if pos != BASE:
+                    print("Base should be %x but is %x" % (BASE,pos))
+                    sys.exit(1)
+                else:
+                    checkedPos = True
+                
             data = bytes.fromhex(line[10:10+2*count])
             if pos >= BASE:
                 pos -= BASE
