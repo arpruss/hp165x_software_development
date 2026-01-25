@@ -37,7 +37,8 @@ Apparently the video memory apparently consists of four bit-planes.
   plane 3: attribute (ATTR)
   
 White=1, black=0.
-If OV=0, the display pixel is DATA xor ATTR.  
+If OV=0 and ODATA=0, the display pixel is DATA xor ATTR.
+If OV=0 and ODATA=1, 
 If OV=1, the display pixel is ODATA xor ATTR.
 
 This allows one to have cursors, selection boxes and simple overlay windows without 
@@ -139,7 +140,7 @@ SPECIAL HARDWARE ADDRESSES
 0x20d003.b: read/write. unknown. used in interrupt level 3 handler and may be connected with disk i/o
 0x20e001: ?? write
 0x20F000.w:
-	bit 0: if clear, disk has been changed and data needs refresh
+	bit 0: if clear, disk has been changed and data needs refresh; set by call to ebb0
 	bit 1: last spinner turn was to the right
 	bit 3: no disk in drive
 	bit 4: ???
@@ -255,8 +256,9 @@ ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done; 
 
 eb9e: pack??
 
-eb62: some kind of directory refresh
-ebb0: some sort of status check; 0=ok; afterwards, 0x00984154 has the start of the A165 label from the LIF header
+eb62: some kind of directory refresh prep, taking one argument
+ebb0: directory refresh; 0=ok; afterwards, 0x00984154 has the start of the A165 label from the LIF header;
+	sets the old disk flag on 0x200f000
 
 ec82: some sort of string formatting
 
