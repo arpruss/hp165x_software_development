@@ -32,5 +32,7 @@ If Overlay=0 and OData=0, output is Data xor Attr (1=white, 0=black)
 If Overlay=1, output is OData xor Attr 
 If Overlay=0 and OData=1, output is 0
 
-
 If exactly one plane is active, that's the plane that is read from.
+
+Function:
+ (Attr^(OV&OData | ~OV&Data)) & ~(OData&~Overlay)
