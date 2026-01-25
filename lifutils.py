@@ -1,17 +1,39 @@
 import sys
 import struct 
-try:
-    import runhxcfe
-    hxcfe=True
-except:
-    hxcfe=False
+import subprocess 
+import os
+from tempfile import NamedTemporaryFile
+
 
 BLOCK_SIZE = 256
 DIR_ENTRY_SIZE = 32
 RESERVED_TRACK = 79
 CHUNKING = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
+DIRECTORY = os.path.split(sys.argv[0])[0]
+HXCFE = os.path.join(DIRECTORY,"hxcfe.exe")
 
+def readHFE(filename):
+    f = NamedTemporaryFile(delete=False)
+    tempname = f.name
+    f.close()
+    pipe = subprocess.Popen((HXCFE, "-finput:"+filename, "-conv:RAW_LOADER", "-foutput:"+tempname),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    code = pipe.wait()
+    with open(tempname, "rb") as f:
+        data = f.read()
+    os.unlink(tempname)
+    assert code == 0
+    return data
+
+def writeHFE(filename,data):
+    f = NamedTemporaryFile(delete=False,mode="wb")
+    tempname = f.name
+    f.write(data)
+    f.close()
+    pipe = subprocess.Popen((HXCFE, "-uselayout:"+os.path.join(DIRECTORY,"hp165x79.xml"), "-finput:"+tempname, "-conv:HXC_HFE", "-foutput:"+filename),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    code = pipe.wait()
+    os.unlink(tempname)
+    assert code == 0
 def help():
     print("python lifutils.py create lifname.lif")
     print("python lifutils.py dir lifname.lif")
@@ -242,9 +264,9 @@ if cmd == "create":
     create(sys.argv[2])
     cmd = "dir"
 
-if hxcfe and sys.argv[2].lower().endswith(".hfe"):
+if sys.argv[2].lower().endswith(".hfe"):
     print("Converting from hfe")
-    diskData = bytearray(runhxcfe.readHFE(sys.argv[2]))
+    diskData = bytearray(readHFE(sys.argv[2]))
 else:    
     with open(sys.argv[2],"rb") as inf:
         diskData = bytearray(inf.read())
@@ -270,7 +292,7 @@ if tracks > RESERVED_TRACK:
 totalBlocks = tracks * sides * blocksPerTrack
 print("Volume:",name.decode())
 print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
-print("Tracks: %u\nSides: %u\nBlocks per track: %u" % (tracks,sides,blocksPerTrack))
+print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))
 readDir(cmd != "dir")
 if cmd == "rm" or cmd == "del":
     for f in sys.argv[3:]:
@@ -319,9 +341,9 @@ elif cmd != "dir":
 if rewrite:
     print("rewriting")
     readDir()
-    if hxcfe and sys.argv[2].lower().endswith(".hfe"):
+    if sys.argv[2].lower().endswith(".hfe"):
         print("Converting to hfe")
-        runhxcfe.writeHFE(sys.argv[2], diskData)
+        writeHFE(sys.argv[2], diskData)
     else:
         with open(sys.argv[2],"wb") as outf:
             outf.write(diskData)
