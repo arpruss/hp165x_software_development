@@ -4,6 +4,7 @@
 
     ORG    $A09710 ;; 984500
 
+buffer equ $983000
 buffer_size equ $200 ; divides into screen byte size
 file_type equ $C999
 START:                  ; first instruction of program
@@ -49,11 +50,24 @@ patch:
     bne     skip ; no disk
     and.w   #1,D0
     bne     runPatch ; disk hasn't been changed
-    
-;    jsr     $ebb0
-    
+    bsr     LongBeep
     bra     skip     ; if it has changed, we need to give up because if we call the refresh routines, it crashes!
                      ; this is likely due to the state the system is in when caling the ROM get key routine
+    
+    
+;    clr.l   -(SP)    
+;    jsr     ROM_CLOSE_FILE     ; just in case
+;    add.l   #4,SP
+
+;    jsr     $ec04    ; less refresh than ebb0 
+;    move.w  D0,$980782   
+;    jsr     $ec10    ; less refresh than ebb0
+;    tst.w   $980782
+;    beq     again
+;    jsr     $2db0  ;; crash happens here
+;    jsr     $423c
+;    jsr     $327e
+    
 
 ;    bra     skip ; don't know how to refresh disk   
 ;    jsr     $ec04
@@ -279,12 +293,12 @@ filename:
     dc.b 'SCRNSH.PBM',0
 
 
-filenameBad:
-    dc.b 'NONEXIST',0
-    include utilities.x68       
+;filenameBad:
+;    dc.b 'NONEXIST',0
+;    include utilities.x68       
 
     org  (*+1)&-2
-buffer:
+;buffer:
  
     
     END    START        ; last line of source

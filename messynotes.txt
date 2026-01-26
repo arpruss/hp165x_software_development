@@ -6,6 +6,8 @@ MEMORY MAP
 		 
 Stuff happens in ROM regarding data in a60000-a6ffff, so it's probably safest to 
 end program storage at a5ffff.
+
+00983000-00983FFF appears to be unused in ROM
 		 
 
 EXECUTABLE FILE FORMAT
@@ -265,6 +267,7 @@ eb9e: pack??
 eb62: some kind of directory refresh prep, taking one argument
 ebb0: directory refresh; 0=ok; afterwards, 0x00984154 has the start of the A165 label from the LIF header;
 	sets the old disk flag on 0x200f000
+ec10: does most of the work of ebb0, but I think it doesn't close files (!)	
 ebf2: SetAutoload(int dirEntryNumber, char? status);	
 ebc8: Rename(int dirEntryNumber, struct NameAndType_t* name); 
       Can be used to delete by setting type to zero.
