@@ -49,6 +49,11 @@ patch:
     bne     skip ; no disk
     and.w   #1,D0
     bne     runPatch ; disk hasn't been changed
+    
+;    jsr     $ebb0
+    
+    bra     skip     ; if it has changed, we need to give up because if we call the refresh routines, it crashes!
+                     ; this is likely due to the state the system is in when caling the ROM get key routine
 
 ;    bra     skip ; don't know how to refresh disk   
 ;    jsr     $ec04
@@ -56,7 +61,6 @@ patch:
 ;    jsr     $ec10
 ;    tst.w   D3
 ;    beq     skip
-
 ;    pea     (0)
 ;    jsr     $eb62
 ;    add     #4,SP

@@ -49,7 +49,7 @@ void getFiles(void) {
 	int systemBlocks = 0;
 	
 	while(numNames < MAX_FILES && -1 != (i=getDirEntry(in, &entry))) {
-		if ((uint16_t)i == (uint16_t)0xC001) {
+		if ((uint16_t)i == (uint16_t)TYPE_EXE) {
 			_names[numNames][MAX_FILENAME_LENGTH] = 0;
 			memcpy(_names[numNames], entry.name, MAX_FILENAME_LENGTH);
 			names[numNames] = _names[numNames];
@@ -126,7 +126,7 @@ void menu(void) {
 	setTextXY(0,0);
 	putText("Choose program to execute:");
 	setTextXY(0,getTextRows()-1);
-	putText("STOP: reboot, RUN: refresh");
+	putText("[SELECT] execute   [STOP] reboot   [RUN] refresh   [CLEAR] delete");
 	for (int i=0; i<numNames; i++) {
 		drawEntry(i, i==selected);
 	}
@@ -169,6 +169,18 @@ void menu(void) {
 			drawEntry(selected, 0);
 			selected = (selected + numNames - 1) % numNames;
 			drawEntry(selected, 1);
+		}
+		else if (KEY_CLEAR == k) {
+			setTextColors(DRAW_BACKGROUND,DRAW_FOREGROUND);
+			setTextXY(0,0);
+			putText("Delete? (0/1)");
+			setTextColors(DRAW_FOREGROUND,DRAW_BACKGROUND);
+			putText("                                          ");
+			while ( 0 == (k=getKey()) );
+			if (k==KEY_1) {
+				deleteByNameAndType(names[selected], TYPE_EXE);
+			}
+			return;
 		}
 	}
 }

@@ -252,6 +252,7 @@ implemented at 3a5c
 eb98 FindDirEntry(char* filename,int16 type,char* direntry32bytes,uint32 searchStartIndex,uint32 filename_length)
 	return -5 if filename doesn't exist; returns index in directory otherwise.
 	These are standard LIF directory entries.
+	I've been having this hang!
 
 ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done; else, returns data 
 	TODO: Check if direntry only needs 12 bytes, and only includes filename and filetype, or is the full

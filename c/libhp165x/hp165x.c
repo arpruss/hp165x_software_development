@@ -170,38 +170,9 @@ void waitSeconds(uint16_t n) {
 	}
 }
 
-_WRAP_2(renameDirEntry,0xebc8);
 _WRAP_1(drawText,0xeaf6);
 _WRAP_1(setTextMode,0xeb08);
 _WRAP_2(setCoordinates,0xeae4);
-_WRAP_3(_openFile,0xeb74);
-_WRAP_1(closeFile,0xeb7a);
-_WRAP_3(readFile,0xeb86);
-_WRAP_3(writeFile,0xeb80);
-_WRAP_5(findDirEntry,0xeb98);
-_WRAP_2(getDirEntry,0xebce);
-_WRAP_0(_ebb0, 0xebb0);
-_WRAP_1(_eb62, 0x227c);
-_WRAP_0_RET_D1(getKeyBIOS,0xeb38);
-
-void _eb62(int x);
-int16_t _ebb0(void);
-
-int refreshDir(void) {
-	if (*HARDWARE_STATUS & HARDWARE_STATUS_OLD_DISK)
-		return 0;
-	_eb62(0);
-	return _ebb0();
-}
-
-int openFile(const char* name, uint32_t fileType, uint32_t mode) {
-	char paddedName[MAX_FILENAME_LENGTH] = "          "; // 10
-	int length = strlen(name);
-	if (length > MAX_FILENAME_LENGTH)
-		return ERROR_FILE_NOT_FOUND;
-	memcpy(paddedName, name, strlen(name));
-	return _openFile(paddedName, fileType, mode);
-}
 
 asm(".globl delayTicks\n" 
 	"delayTicks:\n\t" 

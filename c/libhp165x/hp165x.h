@@ -108,8 +108,10 @@ typedef struct {
 	uint16_t type;
 } NameAndType_t;
 
-int findDirEntry(const char*filename, uint32_t type, DirEntry_t* dirEntry,uint32_t startIndex, uint32_t nameLength);
+#define TYPE_EXE 0xC001
+//int findDirEntry(const char*filename, uint32_t type, DirEntry_t* dirEntry,uint32_t startIndex, uint32_t nameLength);//it's been hanging
 int getDirEntry(int index, DirEntry_t* dirEntry);
+int deleteByNameAndType(const char* name, uint16_t fileType);
 
 #define ERROR_FILE_NOT_FOUND (-5)
 
@@ -130,7 +132,7 @@ void setKeyClick(uint8_t _click);
 void setKeyRepeat(uint16_t delay, uint16_t rate);
 uint16_t getKey(void);
 uint16_t getKeyBIOS(void);
-void renameDirEntry(uint32_t index, NameAndType_t);
+void renameDirEntry(uint32_t index, const NameAndType_t* newEntry);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to
