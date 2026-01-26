@@ -138,8 +138,8 @@ SPECIAL HARDWARE ADDRESSES
 0x20a004: connected with serial test 
 0x20a006: connected with serial test 
 0x20a007: ditto
-0x20d001.b: used in interrupt level 3 handler
-0x20d003.b: read/write. unknown. used in interrupt level 3 handler and may be connected with disk i/o
+0x20d001.b: read. used in interrupt level 3 handler
+0x20d003.b: read/write. unknown. used in interrupt level 3 handler and connected with disk i/o
 0x20e001: ?? write
 0x20F000.w:
 	bit 0: if clear, disk has been changed and data needs refresh; set by call to ebb0
@@ -299,7 +299,7 @@ FUN_00993038: get key --> D0 ; probably -1 is none
 
 SYSTEM_ purge completed message number #14
 
-disk packing in SYSTEM_ 00987c04 case 1e
+disk packing and other file operations in SYSTEM_ 00987c04 case 1e
 pack/rename/purge/format
 
 

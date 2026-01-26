@@ -50,10 +50,41 @@ patch:
     bne     skip ; no disk
     and.w   #1,D0
     bne     runPatch ; disk hasn't been changed
-    bsr     LongBeep
+
     bra     skip     ; if it has changed, we need to give up because if we call the refresh routines, it crashes!
                      ; this is likely due to the state the system is in when caling the ROM get key routine
-    
+
+;; play with init code from SYSTEM_
+loopecfa:
+    move.w  $980786,D1
+    bsr     PrintWord
+    clr.w   $9808aa
+    pea     var_e
+    pea     var_12
+    pea     var_16
+    pea     6
+    pea     var_18
+    pea     -1
+    jsr     $ecfa
+    add     #24,SP    
+;    cmp.w   #1,var_18
+;    bne     loopecfa
+    cmp.w   #$49,$a20144
+    bne     set0
+    move.w  #1,$980786
+    bra     refresh
+set0:    
+    clr.w   $980786
+refresh:
+    move.w  $980786,D1
+    jsr     $ebb0    
+
+; maybe try
+;      uVar1 = _DAT_0020f000 & 1;
+;      _DAT_00980782 = func_0x0000ec04();
+;      func_0x0000ec10();
+;    } while (_DAT_00980782 == 0);    
+; hope uVar1 is 1
     
 ;    clr.l   -(SP)    
 ;    jsr     ROM_CLOSE_FILE     ; just in case
@@ -62,9 +93,13 @@ patch:
 ;    jsr     $ec04    ; less refresh than ebb0 
 ;    move.w  D0,$980782   
 ;    jsr     $ec10    ; less refresh than ebb0
+;
+
+
 ;    tst.w   $980782
 ;    beq     again
-;    jsr     $2db0  ;; crash happens here
+;    jsr     $2db0 = $ec16 ;; crash happens here ; maybe look at what's going on with 009808aa*a+009842a0; (9808aa=0)
+;                          ;; only crashes if system I/O menu has NOT run
 ;    jsr     $423c
 ;    jsr     $327e
     
@@ -83,8 +118,8 @@ patch:
 ;    bne     skip
     
 runPatch:    
-    bsr     getFilename
     bsr     ShortBeep
+    bsr     getFilename
     bsr     screendump
     bsr     ShortBeep
 skip:    
@@ -292,10 +327,22 @@ pbmHeaderEnd:
 filename:
     dc.b 'SCRNSH.PBM',0
 
+var_e:
+    dc.l 0
+var_12:
+    dc.l 0
+var_16:
+    dc.l 0
+    dc.l 0
+    dc.l 0
+    dc.l 0
+var_18:
+    dc.l 0
+    
 
 ;filenameBad:
 ;    dc.b 'NONEXIST',0
-;    include utilities.x68       
+    include utilities.x68       
 
     org  (*+1)&-2
 ;buffer:
@@ -307,6 +354,7 @@ filename:
 
 
     
+
 
 
 *~Font name~Courier New~
