@@ -170,7 +170,7 @@ void waitSeconds(uint16_t n) {
 	}
 }
 
-
+_WRAP_2(renameDirEntry,0xebc8);
 _WRAP_1(drawText,0xeaf6);
 _WRAP_1(setTextMode,0xeb08);
 _WRAP_2(setCoordinates,0xeae4);

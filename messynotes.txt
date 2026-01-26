@@ -123,7 +123,7 @@ SPECIAL HARDWARE ADDRESSES
 
 0x200000 ??: involved in acquisition test
 0x200001 ??: involved in acquisition test
-0x201000.w: screen memory control (see above)  
+0x201000.w: screen memory control (see below)  
 0x202000 ??: write only
 0x203000.b: BEEP: 0xFF on, $FE off
 0x205000 ??: involved in spinner
@@ -168,10 +168,15 @@ eacc: 2,coordinates,coordinates :
 ecd0: beep --> 0F70
 ece2: reload system!
 eb38: getkey --> D0w  [ actual code at 12F4 ] ; sometimes waits, sometimes doesn't ??!
+eb3e: get a character from a 64-byte circular buffer at 980048 (serial? HPIB? used by SYSTEM_ for inputs)
+eb32: put a character in this circular buffer
+	  I don't know what this circular buffer is for. One could use it to feed inputs into the system, 
+	  as SYSTEM_ is happy to take input from it in preference to the keyboard when there is data in it.
 ec58 ?? write text at coordinates: 0.w, y.w, x.w, message.l, implemented at b164
 calls 0F8E(1.l,1.l)
 ec76: strcpy(dest,src)
 ec94: strcat(dest,src)
+ebe0: compare(char*,char*,int): some kind of comparison with special casing for ?
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
 D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
@@ -259,6 +264,13 @@ eb9e: pack??
 eb62: some kind of directory refresh prep, taking one argument
 ebb0: directory refresh; 0=ok; afterwards, 0x00984154 has the start of the A165 label from the LIF header;
 	sets the old disk flag on 0x200f000
+ebf2: SetAutoload(int dirEntryNumber, char? status);	
+ebc8: Rename(int dirEntryNumber, struct NameAndType_t* name); 
+      Can be used to delete by setting type to zero.
+	  typedef struct {
+	     char name[10];
+		 uint16_t type;
+	  } NameAndType_t;
 
 ec82: some sort of string formatting
 
@@ -267,7 +279,6 @@ and exit if not.
 
 2db0 is involved in 20d003 stuff, and is ROM EC16 function. In SYSTEM_, EC16 is called
 as part of the disk copying code. Other functions used in copying: ebb6, eb62, eb6e (format?!), ebaa, eb92,
-
 
 Some PVTEST_ functions:
 FUN_00993044: args: push string, push length 
@@ -280,6 +291,12 @@ FUN_00993014: takes two coordinate pairs; line?
 0098a078: DrawKeyboard
 0098a934: TestKeys
 FUN_00993038: get key --> D0 ; probably -1 is none
+
+
+SYSTEM_ purge completed message number #14
+
+disk packing in SYSTEM_ 00987c04 case 1e
+pack/rename/purge/format
 
 
 NOTES ON SYSTEM_

@@ -103,6 +103,11 @@ typedef struct {
 	uint8_t misc[6];
 } DirEntry_t;
 
+typedef struct {
+	char name[10];
+	uint16_t type;
+} NameAndType_t;
+
 int findDirEntry(const char*filename, uint32_t type, DirEntry_t* dirEntry,uint32_t startIndex, uint32_t nameLength);
 int getDirEntry(int index, DirEntry_t* dirEntry);
 
@@ -125,6 +130,7 @@ void setKeyClick(uint8_t _click);
 void setKeyRepeat(uint16_t delay, uint16_t rate);
 uint16_t getKey(void);
 uint16_t getKeyBIOS(void);
+void renameDirEntry(uint32_t index, NameAndType_t);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to
