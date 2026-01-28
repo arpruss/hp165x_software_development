@@ -2,6 +2,11 @@
 
 ;; ORG $A09710 (for insertion between end of SYSTEM_ code and beginning of SYSTEM_ data)
 
+;; this code uses RAM in the $983000-983FFF area that appears to be unused
+;; it relocates the stack to 983FFE because the call to ebb0 seems to do 
+;; poorly with the standard stack position, probably because the ReadDiskHeader
+;; call (423c) allocates 256 bytes on the stack
+
     ORG    $A09710 ;; 984500
 
 buffer equ $983000
@@ -39,68 +44,46 @@ state2:
     cmp.w   #$110,D1 ; don't care
     bne     clearState
     bra     increment 
+
 patch:
     clr.w   statePosition
     move.w  #1,triggered
     
+    move.l  SP,savedStack
+    move.l  #$983FFE,SP
+    
     movem.l D0-D7/A0-A6, -(SP)
+
     move.w  $20F000,D0
     move.w  D0,D2
     and.w   #8,D2    
     bne     patchError ; no disk
     and.w   #1,D0
+    
     bne     runPatch   ; disk hasn't been changed
     
-    bsr     ShortBeep  ; need to refresh directory, but ebb0 and ec16 crash, so do it manually
-                       ; stack here observed to be A7F87A
-    clr.w   $980784
-    jsr     $ec10      ; clean up disk data?
-    move.w  #-1, $980200
-    move.w  #-1, $984166
-    tst.w   $980782
-;    bne     patchError
-    pea     (buffer)
-    clr.l   -(SP)
-    jsr     $ebfe ; read block
-    add     #8,SP
-    move.w  D0,D2
-    move.l  (buffer+$10),D0 ;; numDirEntries
-    lsl.l   #3,D0
-    subq.l  #1,D0 
-    cmp.w   #$90,D0
-    bcs     set9801ea
-    move.w  #$8f,D0 
-set9801ea:        ;; 9801ea = max(0x8F,numDirBlocks * 8 - 1)
-    move.w  D0,($9801ea)
-    tst.w   D2
-;    bne     patchError
-    
-;    jsr     $423c ;; hp error maybe due to 256 byte stack usage
-    jsr     $eba4 ; load directory
+    bsr     ShortBeep
+    jsr     $ebb0
     tst.w   D0
-;    bne     patchError
-
-;    jsr     $2db0 = $ec16 ;; crash happens here ; maybe look at what's going on with 009808aa*a+009842a0; (9808aa=0)
-;                          ;; only crashes if system I/O menu has NOT run
+    bmi     patchError
     
 runPatch:    
     bsr     ShortBeep
     bsr     getFilename
     bsr     screendump
     bsr     ShortBeep
-skip:    
+
+cleanupPatch:    
     clr.w   triggered
     movem.l (SP)+, D0-D7/A0-A6
     move.w  #$FFFF,D1
+
+    move.l  savedStack, SP
+
     rts    
 patchError:
     bsr     LongBeep
-    bra     skip
-    
-clearTriggered:
-    clr.w   triggered
-nopatch:
-    rts
+    bra     cleanupPatch
     
 screendump:
     pea.l   (2)
@@ -200,6 +183,7 @@ quickExit:
 quickExitError:
     bsr     LongBeep
     rts
+    
 closeWithError:
     bsr     LongBeep
     bra     closeFile
@@ -294,28 +278,16 @@ triggered:
 statePosition:
     dc.w 00
     
+savedStack:
+    dc.l 0    
+
 pbmHeader:
     dc.b 'P4',$0A,'592 384',$0A
 pbmHeaderEnd:    
 
 filename:
     dc.b 'SCRNSH.PBM',0
-
-var_e:
-    dc.l 0
-var_12:
-    dc.l 0
-var_16:
-    dc.l 0
-    dc.l 0
-    dc.l 0
-    dc.l 0
-var_18:
-    dc.l 0
     
-
-;filenameBad:
-;    dc.b 'NONEXIST',0
     include utilities.x68       
 
     org  (*+1)&-2
