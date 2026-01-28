@@ -122,31 +122,60 @@ screendump:
     
     move.l #SCREEN, A0 ; current position
     move.l #(SCREEN+(SCREEN_WIDTH/4)*2*SCREEN_HEIGHT),A1 ; end of screen
-    move.w #$e,D2 ; read data
-    move.w #$7,D3 ; read attr
+;    move.w #$e,D2 ; read data
+;    move.w #$7,D3 ; read attr
     move.l #SCREEN_MEMORY_CONTROL, A2
     
 copyToBuffer:
     move.l #buffer, A4
     move.w #buffer_size-1, D4
+
 copyLoop:
-    move.w D2,(A2) ; read data
-    move.w (A0),D0 ; get data
-    move.w D3,(A2) ; read attr
-    move.w (A0)+,D6
-    eor.w  D6,D0
-    and.w  #$f,D0
-    lsl.w  #4,D0
-    move.w D2,(A2) ; read data
-    move.w (A0),D5 ; get data
-    move.w D3,(A2) ; read attr
-    move.w (A0)+,D6
-    eor.w  D6,D5   
-    and.w  #$f,D5
-    or.w   D5,D0   ; D0 = data xor attr (ignoring the overlay planes)
-    not.w  D0
+    ;;  Display = (Attr^(OV&OData | ~OV&Data)) & ~(OData&~OV)
+READ_DATA  equ $f-$1
+READ_ODATA equ $f-$2
+READ_OV    equ $f-$4
+READ_ATTR  equ $f-$8
+
+READ MACRO ; MODE, DEST, TEMP
+    move.w \1,(A2)     
+    move.w (A0),\2
+    and.w  #$F,\2
+    lsl.w  #4,\2
+    move.w (2,A0),\3
+    and.w  #$F,\3
+    or.w   \3,\2
+    ENDM
     
-    move.b D0,(A4)+
+READ_LAST MACRO ; MODE, DEST, TEMP
+    move.w \1,(A2)     
+    move.w (A0)+,\2
+    and.w  #$F,\2
+    lsl.w  #4,\2
+    move.w (A0)+,\3
+    and.w  #$F,\3
+    or.w   \3,\2
+    ENDM
+    
+    READ   #READ_DATA,  D0, D6
+    READ   #READ_ODATA, D1, D6
+    READ   #READ_OV,    D2, D6
+    READ_LAST   #READ_ATTR,  D3, D6
+; output = (D3^(D2&D1 | ~D2&D0)) & (~D1|D2)
+; use S5 as temporary
+    move.w D2,D5
+    not.w  D5       ; current D5 = ~D2
+    and.w  D5,D0    ; current D0 = ~D2&D0
+    move.w D1,D5    
+    and.w  D2,D5    ; current D5 = D2&D1
+    or.w   D0,D5    ; current D5 = (D2&D1 | ~D2&D0)
+    eor.w  D3,D5    ; current D5 
+    not.w  D1       ; current D1 = ~D1
+    or.w   D1,D2    ; current D2 = ~D1|D2
+    and.w  D5,D2    ; D2 = output
+    
+    not.w  D2       ; for PBM purposes
+    move.b D2,(A4)+
     dbra   D4,copyLoop
     
     movem.l D0-D7/A0-A6, -(SP)

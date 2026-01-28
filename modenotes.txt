@@ -1,4 +1,4 @@
-There are four bitplanes
+There are four bitplanes access to which is controlled by $201000
 
 The low bits specify which bitplanes are active in a command (clear=active)
 The high bits specify the value written to the bitplane (clear=1)
@@ -35,4 +35,4 @@ If Overlay=0 and OData=1, output is 0
 If exactly one plane is active, that's the plane that is read from.
 
 Function:
- (Attr^(OV&OData | ~OV&Data)) & ~(OData&~Overlay)
+ (Attr^(OV&OData | ~OV&Data)) & ~(OData&~OV)
