@@ -36,3 +36,6 @@ If exactly one plane is active, that's the plane that is read from.
 
 Function:
  (Attr^(OV&OData | ~OV&Data)) & ~(OData&~OV)
+
+The display function is implemented in the screenshot code if you
+want to see an example.
