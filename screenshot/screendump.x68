@@ -50,34 +50,23 @@ patch:
     bne     skip ; no disk
     and.w   #1,D0
     bne     runPatch ; disk hasn't been changed
-
-    bra     skip     ; if it has changed, we need to give up because if we call the refresh routines, it crashes!
+    
+;    bra     skip     ; if it has changed, we need to give up because if we call the refresh routines, it crashes!
                      ; this is likely due to the state the system is in when caling the ROM get key routine
 
-;; play with init code from SYSTEM_
-loopecfa:
-    move.w  $980786,D1
-    bsr     PrintWord
-    clr.w   $9808aa
-    pea     var_e
-    pea     var_12
-    pea     var_16
-    pea     6
-    pea     var_18
-    pea     -1
-    jsr     $ecfa
-    add     #24,SP    
-;    cmp.w   #1,var_18
-;    bne     loopecfa
-    cmp.w   #$49,$a20144
-    bne     set0
-    move.w  #1,$980786
-    bra     refresh
-set0:    
-    clr.w   $980786
-refresh:
-    move.w  $980786,D1
-    jsr     $ebb0    
+    bsr     LongBeep   
+;    jsr     $ec04    ; less refresh than ebb0 
+    clr.l   $980784
+    jsr     $ec10
+    move.w  #-1, $980200
+    move.w  #-1, $984166
+;    jsr     $ec16 ;; crashes
+;    jsr     $423c ;; hp error -- but it is probably an important disk header read
+    jsr     $eba4
+    bsr     ShortBeep   
+;    bra     skip
+
+
 
 ; maybe try
 ;      uVar1 = _DAT_0020f000 & 1;
@@ -354,6 +343,7 @@ var_18:
 
 
     
+
 
 
 

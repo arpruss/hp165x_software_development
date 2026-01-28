@@ -82,10 +82,18 @@ key_loop:
      beq keyE
      cmp.w #$0802,D0
      beq keyF
+     cmp.w #$0801,D0
+     beq keyIO
 resume:
      move.b continuous,D0
      cmp.b #0,D0
      beq key_loop
+     bra TOP
+keyIO:
+     jsr $ebb0
+;     jsr $ec04
+;     jsr $ec10
+;     jsr $ec16
      bra TOP
 up:
      sub.l #(29*32),position     
@@ -194,6 +202,7 @@ continuous: dc.b $1
     
     include utilities.x68
     END    START        ; last line of source
+
 
 
 

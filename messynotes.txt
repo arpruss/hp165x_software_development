@@ -179,6 +179,7 @@ calls 0F8E(1.l,1.l)
 ec76: strcpy(dest,src)
 ec94: strcat(dest,src)
 ebe0: compare(char*,char*,int): some kind of comparison with special casing for ?
+eb44: (int,char*): likely print to printer
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
 D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
@@ -284,6 +285,13 @@ and exit if not.
 2db0 is involved in 20d003 stuff, and is ROM EC16 function. In SYSTEM_, EC16 is called
 as part of the disk copying code. Other functions used in copying: ebb6, eb62, eb6e (format?!), ebaa, eb92,
 
+432c: clear directory
+
+directory stored at 9800ca and 9808ac (sometimes?). In latter location changed with ebb0.
+9808ac is where the data is primarily stored.
+eba4 (implemented 327e) looks like it may load the whole dir
+ebfe: read block
+
 Some PVTEST_ functions:
 FUN_00993044: args: push string, push length 
 FUN_00992ff6: DrawText: push string, zero terminated
@@ -312,3 +320,12 @@ Serial programming token/command table starts:
            word: some sort of index that is non-increasing from entry to entry, sometimes staying the same
 Address of token table stored in 00a23b8a		   
 
+At FUN_00984ec6 have list of various functions with 4 character codes for them. FileOperations is
+one of them. The nth functions calls ECFA with the third argument being n.
+
+
+ FUN_009856ac: ecfa 1: CmdD
+ 
+ FUN_009b03e8: maybe print(size, char*)
+ 
+ FUN_009c174a: some sort of big complicated file operation thingy

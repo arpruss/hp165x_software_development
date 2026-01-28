@@ -258,6 +258,10 @@ def create(name):
             writeReservedSector()
             writeReservedSector()
 
+if sys.argv[1] == "--raw":
+    CHUNKING = False
+    sys.argv = sys.argv[:1] + sys.argv[2:]
+
 cmd = sys.argv[1]
 
 if cmd == "create":
