@@ -47,64 +47,41 @@ patch:
     move.w  $20F000,D0
     move.w  D0,D2
     and.w   #8,D2    
-    bne     skip ; no disk
+    bne     patchError ; no disk
     and.w   #1,D0
-    bne     runPatch ; disk hasn't been changed
+    bne     runPatch   ; disk hasn't been changed
     
-;    bra     skip     ; if it has changed, we need to give up because if we call the refresh routines, it crashes!
-                     ; this is likely due to the state the system is in when caling the ROM get key routine
-
-    bsr     LongBeep   
-;    jsr     $ec04    ; less refresh than ebb0 
-    clr.l   $980784
-    jsr     $ec10
+    bsr     ShortBeep  ; need to refresh directory, but ebb0 and ec16 crash, so do it manually
+                       ; stack here observed to be A7F87A
+    clr.w   $980784
+    jsr     $ec10      ; clean up disk data?
     move.w  #-1, $980200
     move.w  #-1, $984166
-;    jsr     $ec16 ;; crashes
-;    jsr     $423c ;; hp error -- but it is probably an important disk header read
-    jsr     $eba4
-    bsr     ShortBeep   
-;    bra     skip
-
-
-
-; maybe try
-;      uVar1 = _DAT_0020f000 & 1;
-;      _DAT_00980782 = func_0x0000ec04();
-;      func_0x0000ec10();
-;    } while (_DAT_00980782 == 0);    
-; hope uVar1 is 1
+    tst.w   $980782
+;    bne     patchError
+    pea     (buffer)
+    clr.l   -(SP)
+    jsr     $ebfe ; read block
+    add     #8,SP
+    move.w  D0,D2
+    move.l  (buffer+$10),D0 ;; numDirEntries
+    lsl.l   #3,D0
+    subq.l  #1,D0 
+    cmp.w   #$90,D0
+    bcs     set9801ea
+    move.w  #$8f,D0 
+set9801ea:        ;; 9801ea = max(0x8F,numDirBlocks * 8 - 1)
+    move.w  D0,($9801ea)
+    tst.w   D2
+;    bne     patchError
     
-;    clr.l   -(SP)    
-;    jsr     ROM_CLOSE_FILE     ; just in case
-;    add.l   #4,SP
+;    jsr     $423c ;; hp error maybe due to 256 byte stack usage
+    jsr     $eba4 ; load directory
+    tst.w   D0
+;    bne     patchError
 
-;    jsr     $ec04    ; less refresh than ebb0 
-;    move.w  D0,$980782   
-;    jsr     $ec10    ; less refresh than ebb0
-;
-
-
-;    tst.w   $980782
-;    beq     again
 ;    jsr     $2db0 = $ec16 ;; crash happens here ; maybe look at what's going on with 009808aa*a+009842a0; (9808aa=0)
 ;                          ;; only crashes if system I/O menu has NOT run
-;    jsr     $423c
-;    jsr     $327e
-    
-
-;    bra     skip ; don't know how to refresh disk   
-;    jsr     $ec04
-;    move.w  D0,D3
-;    jsr     $ec10
-;    tst.w   D3
-;    beq     skip
-;    pea     (0)
-;    jsr     $eb62
-;    add     #4,SP
-;    jsr     $ebb0
-;    tst.w   D0
-;    bne     skip
     
 runPatch:    
     bsr     ShortBeep
@@ -116,6 +93,9 @@ skip:
     movem.l (SP)+, D0-D7/A0-A6
     move.w  #$FFFF,D1
     rts    
+patchError:
+    bsr     LongBeep
+    bra     skip
     
 clearTriggered:
     clr.w   triggered
@@ -153,8 +133,9 @@ screendump:
 
     move.l  (SP)+,D7  ; restore
     
-;    cmp.l   #(pbmHeaderEnd-pbmHeader),D0
-;    beq     closeWithError
+    cmp.l   #(pbmHeaderEnd-pbmHeader),D0
+    bne     closeWithError
+
     
     move.l #SCREEN, A0 ; current position
     move.l #(SCREEN+(SCREEN_WIDTH/4)*2*SCREEN_HEIGHT),A1 ; end of screen
@@ -195,17 +176,21 @@ copyLoop:
     
     add.l   #12,SP
 
+    cmp.l   #buffer_size,D0
+
     movem.l (SP)+, D0-D7/A0-A6
     
+    bne     closeWithError    
+
     cmp.l   A1,A0
     bcs     copyToBuffer
     
+closeFile:    
     move.w  $98077e,D0
     lsl.w   #8,D0
     move.b  $98077d,D0
     move.w  D0,SCREEN_MEMORY_CONTROL
 
-closeFile:    
     move.l  D7, -(SP)    
     jsr     ROM_CLOSE_FILE    
     add.l   #4,SP
