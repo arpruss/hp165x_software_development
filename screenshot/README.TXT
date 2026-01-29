@@ -1,8 +1,11 @@
 This patch allows you to generate a screenshot by pressing the sequence:
  [Don't Care] [Clear Entry] [Don't Care] [Clear]
-Make sure you switch to a disk with sufficient space. I don't know how
-to force a refresh in the software, so if you switch disks, go to the
-I/O Disk Operations before doing a screenshot to force a refresh.
+Make sure you switch to a disk with sufficient space. 
+
+Normally there will be a short beep at the beginning of writing and a short
+beep at the end. But if the disk has been changed without being reloaded,
+there will be an extra short beep at the beginning. A long beep indicates
+an error.
 
 The screenshots take up 28683 bytes.
 
