@@ -104,14 +104,6 @@ screendump:
     
     jsr     ROM_WRITE_FILE
 
-;    movem.l D0-D7/A0-A6, -(SP)
-;    move.l  D0,D1
-;    bsr     PrintWord
-;    pea     filename
-;    jsr     ROM_DRAW_TEXT
-;    add     #4,SP
-;    movem.l (SP)+,D0-D7/A0-A6
-    
     add.l   #12,SP    
 
     move.l  (SP)+,D7  ; restore
@@ -122,8 +114,6 @@ screendump:
     
     move.l #SCREEN, A0 ; current position
     move.l #(SCREEN+(SCREEN_WIDTH/4)*2*SCREEN_HEIGHT),A1 ; end of screen
-;    move.w #$e,D2 ; read data
-;    move.w #$7,D3 ; read attr
     move.l #SCREEN_MEMORY_CONTROL, A2
     
 copyToBuffer:
@@ -161,6 +151,7 @@ READ_LAST MACRO ; MODE, DEST, TEMP
     READ   #READ_ODATA, D1, D6
     READ   #READ_OV,    D2, D6
     READ_LAST   #READ_ATTR,  D3, D6
+
 ; output = (D3^(D2&D1 | ~D2&D0)) & (~D1|D2)
 ; use S5 as temporary
     move.w D2,D5
@@ -169,10 +160,10 @@ READ_LAST MACRO ; MODE, DEST, TEMP
     move.w D1,D5    
     and.w  D2,D5    ; current D5 = D2&D1
     or.w   D0,D5    ; current D5 = (D2&D1 | ~D2&D0)
-    eor.w  D3,D5    ; current D5 
+    eor.w  D3,D5    ; current D5 = D3^(D2&D1 | ~D2&D0)
     not.w  D1       ; current D1 = ~D1
     or.w   D1,D2    ; current D2 = ~D1|D2
-    and.w  D5,D2    ; D2 = output
+    and.w  D5,D2    ; current D2 = output
     
     not.w  D2       ; for PBM purposes
     move.b D2,(A4)+
@@ -283,21 +274,25 @@ formatNumber2: ; format D0.w as a 2-digit number at A0
     lsr.l   #8,D0
     add.w   #'0',D0
     move.b  D0,(A0)
-    rts
+    rts    
     
 ShortBeep:
     move.b #BUZZER_ON,BUZZER
-    move.l #2,D0
-    move.l #$1C,D7
-    trap #0
+    move.l  #(3*8854/2),D0
+    moveq.l #1,D1
+SB:
+    sub.l   D1,D0
+    bne     SB
     move.b #BUZZER_OFF,BUZZER
     rts
-
+    
 LongBeep:
     move.b #BUZZER_ON,BUZZER
-    move.l #55,D0
-    move.l #$1C,D7
-    trap #0
+    move.l  #(40*8854),D0
+    moveq.l #1,D1
+LB:
+    sub.l   D1,D0
+    bne     LB
     move.b #BUZZER_OFF,BUZZER
     rts
 
@@ -317,7 +312,7 @@ pbmHeaderEnd:
 filename:
     dc.b 'SCRNSH.PBM',0
     
-    include utilities.x68       
+;    include utilities.x68       
 
     org  (*+1)&-2
 ;buffer:
@@ -329,6 +324,8 @@ filename:
 
 
     
+
+
 
 
 

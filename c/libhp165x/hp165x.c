@@ -156,6 +156,7 @@ void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2) {
 		// https://stackoverflow.com/questions/66586687/delay-loop-in-68k-assembly
 
 // the processor is supposed to be 10MHz, but my timing shows more like 8.5MHz
+// 8854 per tick
 static void waitSecond(void) {
 	asm volatile("  move.l #(8500000/16),%%d0\n" 
 		"  moveq.l #1,%%d1\n"

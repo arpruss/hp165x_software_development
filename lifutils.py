@@ -2,6 +2,7 @@ import sys
 import struct 
 import subprocess 
 import os
+from pathlib import PurePath
 from tempfile import NamedTemporaryFile
 
 
@@ -43,6 +44,7 @@ def help():
     print("python lifutils.py get lifname.lif FILE_TO_GET [host_filename]")
     print("python lifutils.py put lifname.lif [host_filename] FILE_TO_PUT FileType")
     print("python lifutils.py pack lifname.lif")
+    print("With del or single-filename get you can use wildcards.")
     sys.exit(1)
 
 if len(sys.argv) < 3:
@@ -140,13 +142,19 @@ def rename(name, newName):
     return False
     
 def retype(name, newType):
+    ret = False
     name = name.upper()
     for i in range(len(directory)):
-        if name == directory[i][1].name.upper():
+        if PurePath(directory[i][1].name.upper()).match(name):
+            n = directory[i][1].name
             directory[i][1].fileType = newType
             directory[i][1].put(directory[i][0])
-            return True
-    return False
+            if newType == 0:
+                print("Deleted %s" % n)
+            else:
+                print("Retyped %s" % n)
+            ret = True
+    return ret
     
 def get(inFile,outFile):
     inFile = inFile.upper()
@@ -156,6 +164,16 @@ def get(inFile,outFile):
                 outf.write(directory[i][1].unchunkedFile)
             return True
     return False 
+
+def getAll(inFile):
+    ret = False
+    inFile = inFile.upper()
+    for i in range(len(directory)):
+        if PurePath(directory[i][1].name.upper()).match(inFile):
+            ret = get(directory[i][1].name,directory[i][1].name) or ret
+            if ret:
+                print("Got %s" % directory[i][1].name)
+    return ret
 
 def pack():
     filePos = dirStart + dirBlocks
@@ -328,14 +346,13 @@ elif cmd == "put":
     else:
         print("Error putting %s -> %s" % (inFile,outFile))    
 elif cmd == "get":
+    ret = False
     if len(sys.argv) >= 5:
-        inFile = sys.argv[3]
-        outFile = sys.argv[4]
+        ret = get(sys.argv[3], sys.argv[4])
     else:
-        inFile = sys.argv[3]
-        outFile = sys.argv[3]
-    if not get(inFile,outFile):
-        print("Error getting %s -> %s" % (inFile,outFile))
+        ret = getAll(sys.argv[3])
+    if not ret:
+        print("Error getting %s" % sys.argv[3])
 elif cmd == "pack":
     pack()
     rewrite = True        
