@@ -49,22 +49,60 @@ void setup() {
   9842e4.w: length wanted?
 */
 
-char data[80]="";
+char buffer[256]="";
+
+/* receive up to specified buffer size */
+/* TODO: things fall behind if the size is exceeded */
+uint16_t receive(uint16_t size, volatile char* p) {
+	if (size == 0)
+		return 0;
+	*(volatile uint16_t*)0x9842bc = -1;
+	*(volatile uint16_t*)0x9842c0 = size-1;
+	*(volatile void**)0x9842cc = p;
+//	while(1) {
+		*(volatile uint16_t*)0x9842f4 = 0;
+		*(volatile uint16_t*)0x9842e4 = 1;
+		if (*(volatile uint16_t*)0x9842d0 == 0) 
+			*(volatile uint16_t *)(0x009842c4 + 6) &= 0x20;
+		if ((1&*(volatile uint16_t *)(0x009842c4 + 6)) == 0) 
+			*(volatile uint16_t *)(0x009842c4 + 6) |= 1;
+//		while (*(volatile uint16_t*)0x9842f4 == 0) { // optional: go until buffer full
+			serialReceive(0);
+//		}
+//		if (*(volatile uint16_t*)0x09842bc != 0xFFFF)
+			return 1+*(volatile uint16_t*)0x09842bc;
+//	}
+}
+
+/*
+void receive1() {
+		memset(data,0,sizeof(buffer));
+		*(volatile uint16_t*)0x9842bc = -1;
+		*(volatile void**)0x9842cc = buffer;
+		*(volatile uint16_t*)0x9842c0 = 0; // size-1?
+		*(volatile uint16_t*)0x9842f4 = 0;
+		*(volatile uint16_t*)0x9842e4 = 1;
+		while (*(volatile uint16_t*)0x9842f4 == 0) { // could wait for 9842e4 to be 0
+			serialReceive(0);
+		}
+		printf("[%d]",*(volatile uint16_t*)0x9842f4);
+		putText(":");
+		putText(data);
+} */
 
 int main(void) {
 	setup();
 	serialMode(0x20a000,0xf,0,1,4); // 0xf=192000
 	while(getKey() != KEY_STOP) {
-		*(volatile uint16_t*)0x9842bc = -1;
-		*(volatile void**)0x9842cc = data;
-		*(volatile uint16_t*)0x9842c0 = 0;
-		*(volatile uint16_t*)0x9842f4 = 0;
-		*(volatile uint16_t*)0x9842e4 = 16;
-		memset(data,0,sizeof(data));
-		*(volatile uint16_t*)0x9842bc = 0;
-		serialReceive(1);
-		putText(".");
-		putText(data);		
+		int n = receive(sizeof(buffer)-1,buffer);
+		if (n) {
+			printf("(%d)",n);
+			for (int i=0;i<n;i++) {
+				char b[2]="\0\0";
+				b[0] = buffer[i];
+				putText(b);
+			}
+		}
 	}
 	reload();
 }

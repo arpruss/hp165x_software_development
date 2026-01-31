@@ -164,13 +164,28 @@ channel, and after reading it, write another 1 to 00c00023. Reading can go on to
 
 SERIAL
 
-ea06 : likely receive
-Maybe eb44, ea06
+eb44: (int,char*): send to serial, but it never works for me: just hangs
+ea06: serialReceive(int ticks)
+in pvtest_:
+  9842bc.w: -1 to prepare, 0 when ready
+  9842cc.l: address to put data
+  9842c0.w: 0
+  9842f4.w: 0
+  9842e4.w: length wanted?
+  00a20d80.w some sort of mode, maybe baud and other? --> put into 20a004
+ea06: delay ticks, apparently (implemented 8002)
+  
+ea0c? maybe also some kind of serial thing
 pvtest 98cdee looks like sending
 ditto 0098c68a--that looks like it may be sending and receiving and comparing
 in SYSTEM_, baud rate option is stored at 00a286ca and protocol at 00a286c6 and bit count at 00a286c7
 
-	eb5c(0x20a000, [2,6,7,9,0xc,0xd,0xe,0xf][baudOption], parityOption, stopBitsOption, bitCountOption+3);
+	eb5c(0x20a000, baudValue, parityOption, stopBitsOption, bitCountOption+3);
+	
+baudValue: 2=110,6=300,7=600,9=1200,0xC=2400,0xD=4800,0xE=9600,0xF=19200
+parityOptions: 0=none,1=odd,2=even
+stopBitsOption: 0=1,1=1.5,2=2
+bitCountOption+3: 3=7,4=8
 	
 Promising call to eb5c to set settings in FUN_0098f450 (SYSTEM_).
 In PVTEST_: func_0x0000eb5c(0x20a000,0xe,0,1,4);
@@ -201,25 +216,6 @@ calls 0F8E(1.l,1.l)
 ec76: strcpy(dest,src)
 ec94: strcat(dest,src)
 ebe0: compare(char*,char*,int): some kind of comparison with special casing for ?
-eb44: (int,char*): likely send to serial
-ea06: (int) likely receive from serial: argument unknown
-in pvtest_:
-  9842bc.w: -1 to prepare, 0 when ready
-  9842cc.l: address to put data
-  9842c0.w: 0
-  9842f4.w: 0
-  9842e4.w: length wanted?
-  00a20d80.w some sort of mode, maybe baud and other? --> put into 20a004
-ea06: delay ticks, apparently (implemented 8002)
-ecf4(8,1,(0 or 0x32)|0x3c0000,0,0): set serial params?? [called in PVTEST_ FUN_00985698]
-  other options: (1,5,...)
-  (2,1,0x70063,0,0)
-  (2,1,0,0,0)
-  (8,1,0x390000,?,0)
-  
-  
-  
-ea0c? maybe also some kind of serial thing
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
 D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
