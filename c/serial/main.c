@@ -35,7 +35,7 @@ void setup() {
   *(volatile uint16_t*)0x009842d6 = 0;
   *(volatile uint16_t*)0x009842d4 = 1;
   *(volatile uint16_t*)0x009842d8 = 0xe;
-  *(volatile uint16_t*)0x009842d0 = 0; // no protocol
+  *(volatile uint16_t*)0x009842d0 = 0; // 0 = no protocol, 1 = xon/xoff
   *(volatile uint16_t*)0x009842fa = 1;
   *(volatile uint16_t*)0x009842fc = 1;
   *(volatile uint32_t*)0x009842c4 = 0x20a000;
@@ -62,10 +62,12 @@ uint16_t receive(uint16_t size, volatile char* p) {
 //	while(1) {
 		*(volatile uint16_t*)0x9842f4 = 0;
 		*(volatile uint16_t*)0x9842e4 = 1;
-		if (*(volatile uint16_t*)0x9842d0 == 0) 
+		
+		/* if (*(volatile uint16_t*)0x9842d0 == 0) 
 			*(volatile uint16_t *)(0x009842c4 + 6) &= 0x20;
 		if ((1&*(volatile uint16_t *)(0x009842c4 + 6)) == 0) 
-			*(volatile uint16_t *)(0x009842c4 + 6) |= 1;
+			*(volatile uint16_t *)(0x009842c4 + 6) |= 1; */
+		
 //		while (*(volatile uint16_t*)0x9842f4 == 0) { // optional: go until buffer full
 			serialReceive(0);
 //		}
