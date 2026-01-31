@@ -210,6 +210,7 @@ void renameDirEntry(uint32_t index, const NameAndType_t* newEntry);
 		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
 		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
 		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
+		"move.l (44+5*4)(%sp),-(%sp)\n\t" \
 		"jsr " #address "\n\t" \
 		"add.l #20,%sp\n\t" \
 		"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \

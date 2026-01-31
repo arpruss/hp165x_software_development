@@ -135,7 +135,7 @@ SPECIAL HARDWARE ADDRESSES
 0x207000 (write): -1 does something spinnery
 0x20a000: has some connection with interrupt level 5 handler and ROM eb5c 
 0x20a002: connected with serial test 
-0x20a004: connected with serial test 
+0x20a004: connected with serial test ; mode??
 0x20a006: connected with serial test 
 0x20a007: ditto
 0x20d001.b: read. used in interrupt level 3 handler
@@ -146,15 +146,37 @@ SPECIAL HARDWARE ADDRESSES
 	bit 1: last spinner turn was to the right
 	bit 3: no disk in drive
 	bit 4: ???
+0x400001 ??: involved in acquisition test
 	
-	
+0xc00041.b: scope channel 1(?), read, 6 bits of data, plus the other two bits have individual meaning
+0xc00061.b: scope channel 2(?), read, 6 bits of data
+0xc00001.b: some kind of scope control, write	
+0xc00003.b: some kind of scope control, write	
+0xc00007.b: some kind of scope control, write	
+0xc00009.b: some kind of scope control, write	
+0xc00023.b: ditto	
+0xc00025.b: ditto	
+0xc0002b.b: ditto
+
+To read, first write a load of 1s to 00c00023, at least 0x10, and maybe 800+0x10, and then read each
+channel, and after reading it, write another 1 to 00c00023. Reading can go on to 0x800 times.
+
+
 SERIAL
 
+ea06 : likely receive
 Maybe eb44, ea06
 pvtest 98cdee looks like sending
 ditto 0098c68a--that looks like it may be sending and receiving and comparing
+in SYSTEM_, baud rate option is stored at 00a286ca and protocol at 00a286c6 and bit count at 00a286c7
 
-
+	eb5c(0x20a000, [2,6,7,9,0xc,0xd,0xe,0xf][baudOption], parityOption, stopBitsOption, bitCountOption+3);
+	
+Promising call to eb5c to set settings in FUN_0098f450 (SYSTEM_).
+In PVTEST_: func_0x0000eb5c(0x20a000,0xe,0,1,4);
+ProtocolSetting stored at: 0x9842d0.w
+Parity stored at: DAT_00a286c9
+Stop bits stored at: 00a286c8
 
 ROM ROUTINES
 
@@ -179,7 +201,25 @@ calls 0F8E(1.l,1.l)
 ec76: strcpy(dest,src)
 ec94: strcat(dest,src)
 ebe0: compare(char*,char*,int): some kind of comparison with special casing for ?
-eb44: (int,char*): likely print to printer
+eb44: (int,char*): likely send to serial
+ea06: (int) likely receive from serial: argument unknown
+in pvtest_:
+  9842bc.w: -1 to prepare, 0 when ready
+  9842cc.l: address to put data
+  9842c0.w: 0
+  9842f4.w: 0
+  9842e4.w: length wanted?
+  00a20d80.w some sort of mode, maybe baud and other? --> put into 20a004
+ea06: delay ticks, apparently (implemented 8002)
+ecf4(8,1,(0 or 0x32)|0x3c0000,0,0): set serial params?? [called in PVTEST_ FUN_00985698]
+  other options: (1,5,...)
+  (2,1,0x70063,0,0)
+  (2,1,0,0,0)
+  (8,1,0x390000,?,0)
+  
+  
+  
+ea0c? maybe also some kind of serial thing
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
 D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
@@ -303,7 +343,10 @@ FUN_00993014: takes two coordinate pairs; line?
 0098a078: DrawKeyboard
 0098a934: TestKeys
 FUN_00993038: get key --> D0 ; probably -1 is none
+FUN_00987f96: print a message, where 3 is RS232C start and 4 is RS232C end and message number is at 00a2026a
+FUN_00987a86: print a message, where 3 is RS232C start and 4 is RS232C end
 
+098b660: rs232c test
 
 SYSTEM_ purge completed message number #14
 
@@ -312,6 +355,8 @@ pack/rename/purge/format
 
 
 NOTES ON SYSTEM_
+
+0xa32a64: lookup table for oscilloscope channel data (0-0x3f)
 
 009c2482: SystemOpenFile (calls ROM's OpenFile)
 
