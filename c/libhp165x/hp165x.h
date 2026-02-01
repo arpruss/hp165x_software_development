@@ -90,6 +90,7 @@ int openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int writeFile(int32_t fd, const void* data, int32_t size);
 int readFile(int32_t fd, void* data, int32_t size);
 void closeFile(int32_t fd);
+void romDelayTicks(uint32_t ticks);
 
 typedef void (*Reload_t)(void);
 #define _reload ((Reload_t)0x0000ece2)
@@ -218,5 +219,6 @@ void renameDirEntry(uint32_t index, const NameAndType_t* newEntry);
 
 
 #include "puttext.h"
+#include "serial.h"
 
 #endif

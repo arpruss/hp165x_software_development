@@ -154,6 +154,13 @@ void putText(char* s) {
 	}
 }
 
+void putChar(char c) {
+	char s[2];
+	s[1] = 0;
+	s[0] = c;
+	putText(s);
+}
+
 void putchar_(int c) {
 	char s[2];
 	s[1] = 0;

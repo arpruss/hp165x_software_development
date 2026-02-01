@@ -112,9 +112,8 @@ The default interrupt handlers are at:
  2: 1024E (=024E)
  3:  B4BC (or B702 according to code)
 	 Main result seems to be to move a byte from 20d003 to 9801f0 and then another to 9801f4.
- 4:  NONE (but maybe sometimes is B53E)
- 5:  B904
-	 Super complicated code.
+ 4:  NONE (but maybe sometimes is B53E, which is disk related)
+ 5:  B904. interrupt 5 handler: Serial read/write
 	 
 	 9842fa
 	 b914
@@ -133,11 +132,11 @@ SPECIAL HARDWARE ADDRESSES
 0x2050fe ??: involved in spinner
 0x206000.b: spinner speed
 0x207000 (write): -1 does something spinnery
-0x20a000: has some connection with interrupt level 5 handler and ROM eb5c 
+0x20a000: direct i/o address
 0x20a002: connected with serial test 
 0x20a004: connected with serial test ; mode??
 0x20a006: connected with serial test 
-0x20a007: ditto
+0x20a007: handshake i/o address
 0x20d001.b: read. used in interrupt level 3 handler
 0x20d003.b: read/write. unknown. used in interrupt level 3 handler and connected with disk i/o
 0x20e001: ?? write
@@ -164,32 +163,54 @@ channel, and after reading it, write another 1 to 00c00023. Reading can go on to
 
 SERIAL
 
+eb50: init serial
 eb44: (int,char*): send to serial, but it never works for me: just hangs
-ea06: serialReceive(int ticks)
-in pvtest_:
-  9842bc.w: -1 to prepare, 0 when ready
+ea06: called as if it was a read function, but actually may just be a delayTicks(ticks)
+  9842bc.w: -1 to prepare, then returns numRead-1
   9842cc.l: address to put data
-  9842c0.w: 0
-  9842f4.w: 0
-  9842e4.w: length wanted?
-  00a20d80.w some sort of mode, maybe baud and other? --> put into 20a004
-ea06: delay ticks, apparently (implemented 8002)
+  9842c0.w: buffer size - 1
+  9842f4.w: 0 to prepare, non-zero when buffer full
+  9842e4.w: 1
+at SYSTEM_:009acd28 we instead call ea0c(1,1,2,uint16_t* p) [ trap #0, D7=1A ]
+
+
+
+For writing, it looks like:
+  9842c8.l: address with data
+  9842c2.w: data size
+  
+9842c4.l: input/output address base (0x20a000)
+
+20a000: data i/o address (read/write)
+20a002: SCN2661 Status Register
+    0x20: DTR
+20a004: SCN2661 Mode Register 1 MR10-17 on first write, then Mode Register 2 MR20-27 on second write
+20a006: SCN2661 command register (read/write)
+	0x20 : DCD (1=on)
+	0x02 : DSR
+20a00
+http://matthieu.benoit.free.fr/cross/data_sheets/SCN2661.pdf
+
+handshake i/o address (read/write)
+
+At 984304 we have an internal buffer and a location index at 9842ea. Probably a 0x80 long
+circular buffer.
   
 ea0c? maybe also some kind of serial thing
 pvtest 98cdee looks like sending
 ditto 0098c68a--that looks like it may be sending and receiving and comparing
 in SYSTEM_, baud rate option is stored at 00a286ca and protocol at 00a286c6 and bit count at 00a286c7
 
-	eb5c(0x20a000, baudValue, parityOption, stopBitsOption, bitCountOption+3);
+serialMode: eb5c(0x20a000, baudValue, parityOption, stopBitsOption, bitCountOption+3);
 	
-baudValue: 2=110,6=300,7=600,9=1200,0xC=2400,0xD=4800,0xE=9600,0xF=19200
-parityOptions: 0=none,1=odd,2=even
-stopBitsOption: 0=1,1=1.5,2=2
-bitCountOption+3: 3=7,4=8
+baudValue: 2=110,6=300,7=600,9=1200,0xC=2400,0xD=4800,0xE=9600,0xF=19200 : stored in 9842d8.w
+stopBitsOption: 0=1,1=1.5,2=2 : stored in 9842d4.w
+parityOptions: 0=none,1=odd,2=even : stored in 9842d6.w
+bitCountOption+3: 3=7,4=8 : stored in 9842d2.w
 	
 Promising call to eb5c to set settings in FUN_0098f450 (SYSTEM_).
 In PVTEST_: func_0x0000eb5c(0x20a000,0xe,0,1,4);
-ProtocolSetting stored at: 0x9842d0.w
+ProtocolSetting stored at: 0x9842d0.w : 0=hardware, 1=none, 2=xon/xoff
 Parity stored at: DAT_00a286c9
 Stop bits stored at: 00a286c8
 
@@ -216,6 +237,7 @@ calls 0F8E(1.l,1.l)
 ec76: strcpy(dest,src)
 ec94: strcat(dest,src)
 ebe0: compare(char*,char*,int): some kind of comparison with special casing for ?
+ea06: delay ticks, apparently (implemented 8002)  
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
 D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
