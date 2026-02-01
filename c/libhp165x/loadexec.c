@@ -13,6 +13,8 @@ int loadAndRun(const char* filename) {
 	uint32_t codeSize;
 	uint8_t relocatableCode[RELOCATABLE_SIZE + 2048]; // safety margin for stack
 	
+	_restore_original_int_handlers();
+	
 	memcpy(relocatableCode, _loadexec_relocatable_start, RELOCATABLE_SIZE);
 	
 	int fd = openFile(filename, 0xC001, OPEN_READ);
@@ -28,7 +30,6 @@ int loadAndRun(const char* filename) {
 
 	if (! strcmp(filename, "SYSTEM_") || ! strcmp(filename, "SYSTEM_   ")) {
 		closeFile(fd);
-		unpatchVBL();
 		_reload();
 		return -1;// should not happen
 	}

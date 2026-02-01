@@ -29,9 +29,6 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 
 //#include "ibm8x14.c"
 
-#define WRITE_WHITE 0x806
-#define WRITE_BLACK 0x906 
-
 #ifndef BLACK_ON_WHITE
 #define DRAW_BACKGROUND WRITE_BLACK
 #define DRAW_FOREGROUND WRITE_WHITE

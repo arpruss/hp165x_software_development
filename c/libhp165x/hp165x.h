@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define INT_VBL 	1
+
 #define CURRENT_KEY ((volatile uint16_t*)0x980700)
 #define LAST_KEY ((volatile uint16_t*)0x980704)
 #define LAST_KEY_DURATION ((volatile uint16_t*)0x98070A)
@@ -91,6 +93,8 @@ int writeFile(int32_t fd, const void* data, int32_t size);
 int readFile(int32_t fd, void* data, int32_t size);
 void closeFile(int32_t fd);
 void romDelayTicks(uint32_t ticks);
+void _restore_original_int_handlers(void);
+void _final_cleanup(void);
 
 typedef void (*Reload_t)(void);
 #define _reload ((Reload_t)0x0000ece2)

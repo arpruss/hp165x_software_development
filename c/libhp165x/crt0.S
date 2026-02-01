@@ -27,9 +27,19 @@ _start:
         clr.w   %a0@+                   /* Clear word and increment start */
 
         bra     2b
-7:      jsr     main
+
+	/* save original interrupt vectors */
+7:		move.l	#0x00980000,%a0
+		move.l	#_original_int1_handler,%a1
+		move.w  #(7*3-1),%d0		
+3:		
+		move.w  (%a0)+,%d1
+		move.w	%d1,(%a1)+
+		dbra	%d0,3b
+
+        jsr     main
 		bra		_exit
-;		jsr		0x0000ece2				/* reload OS */
+;;		jsr		0x0000ece2				/* reload OS */
 		
 		.globl atexit
 atexit:
@@ -50,10 +60,31 @@ atexit:
 3:		
 		move.l	(%sp)+,%a0
 		rts
+
+_final_cleanup:
+	/* TODO: close files */
+	/*	bra _restore_original_int_handlers */
+		
+_restore_original_int_handlers:
+		move.l	#_original_int1_handler,%a0
+		move.l	#0x00980000,%a1
+		move.w  #(7-1),%d1
+1:
+		move.l	2(%a0),%d0 /* move address, and then move opcode */
+		move.l  %d0,2(%a1)
+		move.w	(%a0),%d0
+		move.w	%d0,(%a1)
+		add.q	#6,%a0
+		add.q	#6,%a1
+		dbra	%d1,1b
+
+		rts
 		
 _atexit_functions:
 		.zero	32*4
 
+		.globl _restore_original_int_handlers
+		.globl _final_cleanup
 		.globl  _exit
 		.globl	exit
 exit:
@@ -67,20 +98,7 @@ _exit:
 		sub.l	#4,%a0
 		dbra	%d0,1b
 
-		move.l	0,%d0
-
-3:
-		move.l  %d0,-(%sp) /* save d0 */
-
-		move.l  %d0,-(%sp)
-		jsr		0x0000eb7a /* close file */
-		add.l	#4,%sp
-		
-		move.l	(%sp)+,%d0 /* restore d0 */
-		
-		add.l	#1,%d0
-		cmp.l	#16,%d0  /* very conservative: my 1653B's 1987 ROM only allows one file open! */
-		bne		3b
+		bsr		_final_cleanup
 
 hang:
 		bra 	hang
@@ -92,5 +110,29 @@ hang:
 
 		movem.l	(%sp)+,%d0/%a0
 		bra		2b
+
+		.globl _original_int1_handler
+_original_int1_handler:
+		.space 6
+		.globl _original_int2_handler
+_original_int2_handler:
+		.space 6
+		.globl _original_int3_handler
+_original_int3_handler:
+		.space 6
+		.globl _original_int4_handler
+_original_int4_handler:
+		.space 6
+		.globl _original_int5_handler
+_original_int5_handler:
+		.space 6
+		.globl _original_int6_handler
+_original_int6_handler:
+		.space 6
+		.globl _original_int7_handler
+_original_int7_handler:
+		.space 6
+		
+
 		
         .end

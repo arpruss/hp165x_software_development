@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "hp165x.h"
@@ -6,12 +7,12 @@
 asm(
 "_vbl_counter_code:\n"
 "  add.l #1,vblCounterValue\n"
-"_vbl_counter_jmp:\n"
-"  jmp 0xDEADBEEF\n");
+"  jmp _original_int1_handler\n");
 
 volatile uint32_t vblCounterValue = 0;
 extern void _vbl_counter_code(void);
 extern void _vbl_counter_jmp(void);
+extern void _original_int1_handler(void);
 
 uint32_t getVBLCounter(void) {
 	return vblCounterValue;
@@ -21,27 +22,26 @@ void setVBLCounter(uint32_t value) {
 	vblCounterValue = value;
 }
 
-void unpatchVBL() {
-	if (*(volatile uint16_t*)0x980000 == 0x4EF9 && *(volatile uint32_t*)0x980002 == (uint32_t)_vbl_counter_code) {
-		*(volatile uint32_t*)0x980002 = *(volatile uint32_t*)((volatile uint8_t*)_vbl_counter_jmp+2);
-	}
+void patchInt(uint16_t level, void (*address)()) {
+	volatile uint8_t* ptr = ((volatile uint8_t*)0x980000)+6*(level-1);
+/*	printf("%04x %08x ", *(volatile uint16_t*)(ptr), *(volatile uint32_t*)(ptr+2));
+	ptr = ((volatile uint8_t*)_original_int1_handler)+6*(level-1);
+	printf("%04x %08x", *(volatile uint16_t*)(ptr), *(volatile uint32_t*)(ptr+2));
+	waitSeconds(5);
+	return; */
+	*(volatile uint32_t*)(ptr+2) = (uint32_t)address;
+	*(volatile uint16_t*)(ptr) = 0x4EF9;
+}
+
+void unpatchInt(uint16_t level) {
+	volatile uint8_t* current = ((volatile uint8_t*)0x980000)+6*(level-1);
+	volatile uint8_t* orig = ((volatile uint8_t*)_original_int1_handler)+6*(level-1);
+	*(volatile uint32_t*)(current+2) = *(volatile uint32_t*)(orig+2);
+	*(volatile uint16_t*)(current) = *(volatile uint16_t*)(orig);
 }
 
 void patchVBL() {
-	static char registeredAtExit = 0;
-
-	if (!registeredAtExit) {
-		atexit(unpatchVBL);
-		registeredAtExit = 1;
-	}
-	
-	if (*(volatile uint16_t*)0x980000 == 0x4EF9) {
-		if (*(volatile uint32_t*)0x980002 == (uint32_t)_vbl_counter_code) // already patched
-			return;
-		*(volatile uint32_t*)((volatile uint8_t*)_vbl_counter_jmp+2) = *(volatile uint32_t*)0x980002;
-		asm("move.l #_vbl_counter_code,0x980002");
-//		*(volatile uint32_t*)0x980002 = (uint32_t)_vbl_counter_code;
-	}
+	patchInt(INT_VBL, _vbl_counter_code);
 }
 
 void drawBlack(void) {
@@ -76,7 +76,7 @@ void initialScreen() {
 }
 
 void reload(void) {
-	unpatchVBL();
+	_final_cleanup();
 	initialScreen();
 	_reload();
 }
