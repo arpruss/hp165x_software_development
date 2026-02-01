@@ -5,6 +5,15 @@
 #include <stddef.h>
 #include <hp165x.h>
 
+void _int6_counter_code(void);
+
+asm(
+"_int6_counter_code:\n"
+"  addq.l #1,int6CounterValue\n"
+"  jmp _original_int6_handler\n"); 
+
+volatile uint32_t int6CounterValue = 0;
+
 /*
   9842bc.w: -1 to prepare, 0 when ready
   9842cc.l: address to put data
@@ -72,10 +81,12 @@ void write(uint16_t size, char* data) {
 int main(void) {
 	serialSetup(BAUD_9600, PARITY_NONE, STOP_BITS_1, DATA_BITS_8, PROTOCOL_NONE);
 
+	patchInt(6,_int6_counter_code);
+
 	while(getKey() != KEY_STOP) {
 		int n = serialReceiveNoWait(sizeof(buffer)-1,buffer);
 		if (n) {
-			printf("(%d)",n);
+			printf("(%d,%d)",n,int6CounterValue);
 			for (int i=0;i<n;i++) {
 				putChar(buffer[i]);
 			}

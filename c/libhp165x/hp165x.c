@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "hp165x.h"
@@ -6,8 +5,8 @@
 
 asm(
 "_vbl_counter_code:\n"
-"  add.l #1,vblCounterValue\n"
-"  jmp _original_int1_handler\n");
+"  addq.l #1,vblCounterValue\n"
+"  jmp _original_int1_handler\n"); 
 
 volatile uint32_t vblCounterValue = 0;
 extern void _vbl_counter_code(void);
@@ -24,11 +23,6 @@ void setVBLCounter(uint32_t value) {
 
 void patchInt(uint16_t level, void (*address)()) {
 	volatile uint8_t* ptr = ((volatile uint8_t*)0x980000)+6*(level-1);
-/*	printf("%04x %08x ", *(volatile uint16_t*)(ptr), *(volatile uint32_t*)(ptr+2));
-	ptr = ((volatile uint8_t*)_original_int1_handler)+6*(level-1);
-	printf("%04x %08x", *(volatile uint16_t*)(ptr), *(volatile uint32_t*)(ptr+2));
-	waitSeconds(5);
-	return; */
 	*(volatile uint32_t*)(ptr+2) = (uint32_t)address;
 	*(volatile uint16_t*)(ptr) = 0x4EF9;
 }

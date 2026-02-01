@@ -95,6 +95,8 @@ void closeFile(int32_t fd);
 void romDelayTicks(uint32_t ticks);
 void _restore_original_int_handlers(void);
 void _final_cleanup(void);
+void patchInt(uint16_t level, void (*address)());
+void unpatchInt(uint16_t level);
 
 typedef void (*Reload_t)(void);
 #define _reload ((Reload_t)0x0000ece2)

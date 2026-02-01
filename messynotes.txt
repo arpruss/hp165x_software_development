@@ -109,11 +109,11 @@ It can be used for a timer.
 
 The default interrupt handlers are at: 
  1: 1024E (=024E) 
- 2: 1024E (=024E)
- 3:  B4BC (or B702 according to code)
+ 2?: 1024E (=024E)
+ 3?:  B4BC (or B702 according to code)
 	 Main result seems to be to move a byte from 20d003 to 9801f0 and then another to 9801f4.
- 4:  NONE (but maybe sometimes is B53E, which is disk related)
- 5:  B904. interrupt 5 handler: Serial read/write
+ 4?:  NONE (but maybe sometimes is B53E, which is disk related)
+ 6:  B904. interrupt 6 handler: Serial read/write
 	 
 	 9842fa
 	 b914
