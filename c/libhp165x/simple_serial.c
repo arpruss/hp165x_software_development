@@ -21,6 +21,19 @@ int16_t simple_serial_getchar(void) {
 	return -1;
 }
 
+uint16_t simple_serial_available(void) {
+	return inputCount;
+}
+
+int16_t simple_serial_peek(void) {
+	if (inputCount) {
+		return (uint16_t)(uint8_t)inputBuffer[inputBufferHead];
+	}
+	else {
+		return -1;
+	}
+}
+
 void _myHandleSerialInterrupt(void) {
 	if (SERIAL_STATUS_RECEIVE_READY & *SERIAL_STATUS) {
 		char c = *SERIAL_DATA;
@@ -67,13 +80,17 @@ asm("  .globl myHandleSerialInterrupt\n"
 	"  jsr _myHandleSerialInterrupt\n"
 	"  movem.l (%sp)+,%d0-%d1/%a0-%a1\n"
 	"  rte");
-
-void simple_serial_init(uint16_t baud) {
+	
+void simple_serial_close() {
 	unpatchInt(INT_SERIAL);
 	inputCount = 0;
 	inputBufferHead = 0;
 	inputBufferTail = 0;
 	outputCount = 0;
+}
+
+void simple_serial_init(uint16_t baud) {
+	simple_serial_close();
 	serialSetup(baud, PARITY_NONE, STOP_BITS_1, DATA_BITS_8, PROTOCOL_NONE);
 	patchInt(INT_SERIAL,myHandleSerialInterrupt);
 }

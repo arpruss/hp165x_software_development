@@ -52,7 +52,10 @@ static const struct {
 	{ KEY_RUN, 'R' },
 	{ KEY_TRACE, 'T' },
 	{ KEY_IO, 'I' },
-	{ KEY_CHS, '-' }
+	{ KEY_CHS, '-' },
+	{ KEY_STOP, KEYBOARD_BREAK }, // ctrl-c
+	{ KEY_TURN_CW, KEYBOARD_RIGHT },
+	{ KEY_TURN_CCW, KEYBOARD_LEFT },
 };
 
 static uint16_t lastKey = 0;
@@ -64,7 +67,6 @@ uint16_t getKey() {
 		*LAST_KEY = 0;
 		initialized = 1;
 	}
-	
 	
 	do {	
 		uint16_t k = *LAST_KEY;
@@ -122,6 +124,54 @@ uint16_t getKey() {
 		}
 	} while(wait);
 	return 0;
+}
+
+uint16_t peekKey() {
+	if (! initialized) {
+		*LAST_KEY = 0;
+		initialized = 1;
+	}
+	
+	uint16_t k = *LAST_KEY;
+	
+	if (k == 0xFFFF) {
+		lastKey = 0;
+		if (*KEY_HOLD_TIME < 10)
+			return 0;
+		uint32_t spinnerState = *(volatile uint32_t*)0x98070C;
+		if (spinnerState & 0x80000000)
+			return KEY_TURN_CCW;
+		else
+			return KEY_TURN_CW;
+	}
+	else if (k == 0) {
+		if (lastKey == 0)
+			return 0;
+		
+		k = *CURRENT_KEY;
+		
+		if (k != lastKey || repeatRate == 0) {
+			return 0;
+		}
+		else {
+			uint16_t t = *LAST_KEY_DURATION;
+			
+			if (lastKeyTime == 0) {
+				if (t >= repeatDelay) {
+					return lastKey;
+				}
+			}
+			else {
+				if (t >= lastKeyTime + repeatRate) {
+					return lastKey;
+				}
+			}
+			return 0;
+		}			
+	}
+	else {
+		return k;
+	}
 }
 
 char parseKey(uint16_t k) {
