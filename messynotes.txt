@@ -70,7 +70,7 @@ clear=active.
 The high byte controls what value is written to the active planes when a 1 bit is
 written to screen memory, with the values reversed: clear writes 1 and set writes 0.
 
-For instance, mode = 0b010100001000 works as follows:
+	For instance, mode = 0b010100001000 works as follows:
   1000: planes 0,1,2 active
   0101: when writing to a pixel, plane 0 is set to zero, plane 1 is set to 1, plane 2 is set to 0.
 

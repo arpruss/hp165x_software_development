@@ -15,7 +15,7 @@
 #
 #   SRCS=main.c user.c \
 #        driver.s
-SRCS=hp165x.c puttext.c loadexec.c key.c file.c serial.c
+SRCS=hp165x.c puttext.c loadexec.c key.c file.c serial.c scroll.S
 
 # Specify the CPU type that you are targeting your build towards.
 #

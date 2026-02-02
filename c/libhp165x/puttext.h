@@ -23,7 +23,8 @@ uint16_t getFontWidth(void);
 uint16_t getTextRows(void);
 uint16_t getTextColumns(void);
 //void setFontSystem(uint8_t bold);
-
-
+void scrollUp(uint16_t lines, uint16_t fillMode, uint8_t bitplanes);
+void scrollText(uint16_t rows);
+void setScrollMode(uint8_t active);
 
 #endif

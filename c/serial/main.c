@@ -79,6 +79,8 @@ void write(uint16_t size, char* data) {
 // serialInit() kills writing working
 // setup() does not
 int main(void) {
+	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+	fillScreen();
 	serialSetup(BAUD_9600, PARITY_NONE, STOP_BITS_1, DATA_BITS_8, PROTOCOL_NONE);
 
 	patchInt(6,_int6_counter_code);

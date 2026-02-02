@@ -15,12 +15,17 @@ typedef uint8_t byte;
 
 static uint16_t curX=0;
 static uint16_t curY=0;
+static uint8_t scrollMode=1;
 
 static uint8_t* font = font8x14;
 static uint16_t fontHeight = 14;
 static uint16_t fontLineHeight = 14;
 static uint16_t numRows = (SCREEN_HEIGHT/14);
 static uint8_t reverse = 0;
+
+void setScrollMode(uint8_t m) {
+	scrollMode = m;
+}
 
 void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight) {
 	uint16_t pixelY = curY * fontLineHeight;
@@ -119,10 +124,14 @@ void putText(char* s) {
 		uint16_t c = 0xFF & *s++;
 		
 		if (c == '\n' || curX >= TEXT_COLUMNS) {
-			curY++;
-			if (curY >= numRows)
-				curY = numRows -1;
 			curX = 0;
+			curY++;
+			if (curY >= numRows) {
+				curY = numRows -1;
+				if (scrollMode) {
+					scrollText(1);
+				}
+			}
 			pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4));
 			if (c == '\n')
 				continue;
@@ -168,6 +177,29 @@ void putchar_(int c) {
 	putText(s);
 }
 
+void scrollText(uint16_t rows) {
+	uint8_t bitplanes = 0;
+	for (uint8_t mask=1; mask != 0x10 ; mask <<= 1) {
+		if (mask & ~foreground) {
+			// bitplane active on foreground
+			if ((mask & ~background) == 0) {
+				// but not on background, so it might make a difference
+				bitplanes |= mask;
+			}
+			else {
+				if ( ( (mask<<8) & foreground) != ( (mask<<8) & background ) )
+					bitplanes |= mask;
+			}
+		}
+		else {
+			if ((mask & ~background) != 0) {
+				bitplanes |= mask;
+			}
+		}
+	}
+	scrollUp(rows*fontHeight, background, bitplanes);
+}
+
 #if 0
 static uint8_t* romFind(uint32_t value) {
 	for (uint32_t* p = (uint32_t*)65536-1 ; p > (uint32_t*)256 ; p--) {
@@ -204,4 +236,6 @@ void setFontSystem(uint8_t bold) {
 		_setFontSystem(0x9e74,0xa288,0xF884C448); // start of B
 	}
 }
+
+
 #endif
