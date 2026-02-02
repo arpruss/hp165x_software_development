@@ -63,16 +63,17 @@ void simple_serial_send(uint32_t size, const void* data) {
 void myHandleSerialInterrupt(void);
 asm("  .globl myHandleSerialInterrupt\n"
 	"myHandleSerialInterrupt:\n"
-	"  movem %d0-%d1/%a0-%a1,-(%sp)\n"
+	"  movem.l %d0-%d1/%a0-%a1,-(%sp)\n"
 	"  jsr _myHandleSerialInterrupt\n"
-	"  movem (%sp)+,%d0-%d1/%a0-%a1\n"
+	"  movem.l (%sp)+,%d0-%d1/%a0-%a1\n"
 	"  rte");
 
-void simple_serial_init(void) {
+void simple_serial_init(uint16_t baud) {
 	unpatchInt(INT_SERIAL);
 	inputCount = 0;
 	inputBufferHead = 0;
 	inputBufferTail = 0;
 	outputCount = 0;
+	serialSetup(baud, PARITY_NONE, STOP_BITS_1, DATA_BITS_8, PROTOCOL_NONE);
 	patchInt(INT_SERIAL,myHandleSerialInterrupt);
 }

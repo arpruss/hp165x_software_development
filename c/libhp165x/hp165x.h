@@ -227,5 +227,6 @@ void renameDirEntry(uint32_t index, const NameAndType_t* newEntry);
 
 #include "puttext.h"
 #include "serial.h"
+#include "simple_serial.h"
 
 #endif
