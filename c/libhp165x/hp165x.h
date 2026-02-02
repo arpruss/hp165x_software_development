@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #define INT_VBL 	1
+#define INT_SERIAL  6
 
 #define CURRENT_KEY ((volatile uint16_t*)0x980700)
 #define LAST_KEY ((volatile uint16_t*)0x980704)

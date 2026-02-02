@@ -13,7 +13,7 @@ _WRAP_2(serialWrite,0xeb44);
 void serialSetup(uint8_t baud, uint8_t parity, uint8_t stopBits, uint8_t dataBits, uint8_t protocol) {
 	_serialInit();
 	_serialMode(SERIAL_BASE,baud,parity,stopBits,dataBits);
-	*SERIAL_COMMAND = 0x26; // SERIAL_COMMAND_DTR;
+	*SERIAL_COMMAND = 0x26; // DTR and input and output
 	*(volatile uint8_t*)0x009842d1 = protocol;
 }
 
