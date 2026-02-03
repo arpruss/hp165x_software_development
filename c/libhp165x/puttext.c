@@ -63,6 +63,14 @@ void setTextColors(uint16_t f, uint16_t b) {
 	background = b;
 }
 
+uint16_t getTextForeground(void) {
+	return foreground;
+}
+
+uint16_t getTextBackground(void) {
+	return background;
+}
+
 uint16_t getTextX(void) {
 	return curX;
 }
@@ -92,14 +100,14 @@ void highlightText(uint16_t n, uint8_t highlightState) {
 		if (curX >= TEXT_COLUMNS) {
 			curY++;
 			if (curY >= numRows)
-				curY = numRows -1;
+				curY = numRows-1;
 			curX = 0;
 			pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4));
 		}
 		volatile uint16_t* pos2 = pos;
 		uint16_t row;
 		for (row = 0; row < fontLineHeight; row++) {
-			*(uint32_t*)pos2 = 0x0F0F;
+			*(uint32_t*)pos2 = 0x000F000F;
 			pos2 += SCREEN_WIDTH/4;			
 		}
 		pos += 2;
@@ -107,10 +115,13 @@ void highlightText(uint16_t n, uint8_t highlightState) {
 	}
 }
 
-void putText(char* s) {
+/* returns number of lines scrolled */
+uint16_t putText(const char* s) {
 	volatile uint16_t* pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4)) + curX*2;
 	uint16_t bg;
 	uint16_t fg;
+	uint16_t scrolled = 0;
+	
 	if (reverse) {
 		bg = foreground;
 		fg = background;
@@ -130,6 +141,7 @@ void putText(char* s) {
 				curY = numRows -1;
 				if (scrollMode) {
 					scrollText(1);
+					scrolled++;
 				}
 			}
 			pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4));
@@ -161,6 +173,8 @@ void putText(char* s) {
 		pos += 2;
 		curX++;
 	}
+	
+	return scrolled;
 }
 
 void putChar(char c) {

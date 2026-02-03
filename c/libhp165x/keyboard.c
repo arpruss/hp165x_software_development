@@ -1,0 +1,29 @@
+#include "hp165x.h"
+
+static char useSerial = 0;
+
+void initKeyboard(char s) {
+	useSerial = s;
+	if (useSerial)
+		simple_serial_init(BAUD_19200);
+	else
+		simple_serial_close();
+}
+
+char kbhit(void) {
+	return (0 <= simple_serial_peek()) || peekKey();
+}
+
+char getch(void) {
+	setKeyWait(0);
+
+	while(1) {	
+		uint16_t k = getKey();
+		
+		if (k != 0)
+			return parseKey(k);
+		
+		if (0 <= simple_serial_peek()) 
+			return simple_serial_getchar();
+	}
+}

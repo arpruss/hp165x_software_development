@@ -63,6 +63,8 @@ atexit:
 
 _final_cleanup:
 	/* TODO: close files */
+	
+		move.w 	#0xF00, 0x201000 /* restore screen writing mode */
 	/*	bra _restore_original_int_handlers */
 		
 _restore_original_int_handlers:

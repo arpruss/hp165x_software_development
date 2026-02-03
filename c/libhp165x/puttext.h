@@ -15,7 +15,7 @@ uint16_t getTextY(void);
 void setTextXY(uint16_t x, uint16_t y);
 void setTextX(uint16_t x);
 void setTextY(uint16_t x);
-void putText(char* s);
+uint16_t putText(const char* s);
 void putChar(char c);
 void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight);
 uint16_t getFontLineHeight(void);
@@ -26,5 +26,7 @@ uint16_t getTextColumns(void);
 void scrollUp(uint16_t lines, uint16_t fillMode, uint8_t bitplanes);
 void scrollText(uint16_t rows);
 void setScrollMode(uint8_t active);
+uint16_t getTextForeground(void);
+uint16_t getTextBackground(void);
 
 #endif

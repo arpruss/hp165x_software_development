@@ -53,6 +53,7 @@ static const struct {
 	{ KEY_TRACE, 'T' },
 	{ KEY_IO, 'I' },
 	{ KEY_CHS, '-' },
+	{ KEY_DECIMAL, '.' },
 	{ KEY_STOP, KEYBOARD_BREAK }, // ctrl-c
 	{ KEY_TURN_CW, KEYBOARD_RIGHT },
 	{ KEY_TURN_CCW, KEYBOARD_LEFT },
@@ -126,7 +127,7 @@ uint16_t getKey() {
 	return 0;
 }
 
-uint16_t peekKey() {
+uint16_t peekKey(void) {
 	if (! initialized) {
 		*LAST_KEY = 0;
 		initialized = 1;
