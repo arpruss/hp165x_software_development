@@ -10,6 +10,7 @@ static volatile uint16_t inputBufferTail=0;
 static volatile uint16_t inputCount=0;
 static volatile const char* outputData=NULL;
 static volatile uint32_t outputCount=0;
+static char circular = 0;
 
 int16_t simple_serial_getchar(void) {
 	if (inputCount) {
@@ -43,9 +44,12 @@ void _myHandleSerialInterrupt(void) {
 			inputCount++;
 		}
 		else {
-			inputBufferHead = (inputBufferHead+1) % INPUT_BUFFER_SIZE;
-			inputBuffer[inputBufferTail] = c;
-			inputBufferTail = (inputBufferTail+1) % INPUT_BUFFER_SIZE;
+			if (circular) {
+				inputBufferHead = (inputBufferHead+1) % INPUT_BUFFER_SIZE;
+				inputBuffer[inputBufferTail] = c;
+				inputBufferTail = (inputBufferTail+1) % INPUT_BUFFER_SIZE;
+			}
+			// if not circular, drop
 		}
 	}
 	if (SERIAL_STATUS_TRANSMIT_READY & *SERIAL_STATUS) {
@@ -62,12 +66,9 @@ void _myHandleSerialInterrupt(void) {
 	}
 }
 
-uint16_t simple_serial_is_send_done(void) {
-	return outputCount == 0;
-}
-
-void simple_serial_send(uint32_t size, const void* data) {
-	outputCount = 0;
+void simple_serial_write(const void* data, uint32_t size) {
+	while (outputCount != 0 || (*SERIAL_COMMAND & SERIAL_COMMAND_TRANSMIT)) ;
+//	outputCount = 0;
 	outputData = (const char*)data;
 	outputCount = size; 
 	*SERIAL_COMMAND |= SERIAL_COMMAND_TRANSMIT;
@@ -81,6 +82,10 @@ asm("  .globl myHandleSerialInterrupt\n"
 	"  movem.l (%sp)+,%d0-%d1/%a0-%a1\n"
 	"  rte");
 	
+void simple_serial_set_circular(char c) {
+	circular = c;
+}
+	
 void simple_serial_close() {
 	unpatchInt(INT_SERIAL);
 	inputCount = 0;
@@ -91,6 +96,8 @@ void simple_serial_close() {
 
 void simple_serial_init(uint16_t baud) {
 	simple_serial_close();
+	circular = 0;
 	serialSetup(baud, PARITY_NONE, STOP_BITS_1, DATA_BITS_8, PROTOCOL_NONE);
+	*SERIAL_COMMAND &= ~SERIAL_COMMAND_TRANSMIT;
 	patchInt(INT_SERIAL,myHandleSerialInterrupt);
 }

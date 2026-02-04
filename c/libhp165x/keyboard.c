@@ -5,7 +5,7 @@ static char useSerial = 0;
 void initKeyboard(char s) {
 	useSerial = s;
 	if (useSerial)
-		simple_serial_init(BAUD_19200);
+		simple_serial_init(BAUD_9600);
 	else
 		simple_serial_close();
 }

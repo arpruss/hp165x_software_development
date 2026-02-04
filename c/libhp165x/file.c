@@ -23,28 +23,30 @@ int refreshDir(void) {
 	return _ebb0();
 }
 
+void padFilename(char* paddedName, const char* name) {
+	memset(paddedName, ' ', MAX_FILENAME_LENGTH);
+	uint16_t l = strlen(name);
+	if (l > MAX_FILENAME_LENGTH)
+		l = MAX_FILENAME_LENGTH;
+	memcpy(paddedName, name, l);
+}
+
 int openFile(const char* name, uint32_t fileType, uint32_t mode) {
-	char paddedName[MAX_FILENAME_LENGTH] = "          "; // 10
-	int length = strlen(name);
-	if (length > MAX_FILENAME_LENGTH)
-		return ERROR_FILE_NOT_FOUND;
-	memcpy(paddedName, name, strlen(name));
+	char paddedName[MAX_FILENAME_LENGTH];
+	padFilename(paddedName, name);
 	return _openFile(paddedName, fileType, mode);
 }
 
 int deleteByNameAndType(const char* name, uint16_t fileType) {
-	char paddedName[MAX_FILENAME_LENGTH] = "          "; // 10
+	char paddedName[MAX_FILENAME_LENGTH];
+	padFilename(paddedName, name);
 	DirEntry_t d;
-	int length = strlen(name);
-	if (length > MAX_FILENAME_LENGTH)
-		return ERROR_FILE_NOT_FOUND;
-	memcpy(paddedName, name, strlen(name));
 	int i = 0;
 	while(1) {
 		if ( -1 == getDirEntry(i, &d) ) {
 			return -1;
 		}
-		if (!strncmp(d.name, paddedName, 10) && (d.type == fileType || fileType==0)) {
+		if (!strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
 			d.type = 0;
 			renameDirEntry(i, (NameAndType_t*)&d);
 			return 0;

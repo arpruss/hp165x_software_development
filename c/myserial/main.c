@@ -14,7 +14,7 @@ int main(void) {
 		int16_t c = simple_serial_getchar();
 		if (c != -1) {
 			char ch=c;
-			simple_serial_send(1,&ch);
+			simple_serial_write(&ch, 1); 
 			putChar(ch);
 		}
 	}

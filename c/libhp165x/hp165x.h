@@ -2,6 +2,7 @@
 #define _UTILS_H
 
 #include <stdint.h>
+#include <printf.h>
 
 #define INT_VBL 	1
 #define INT_SERIAL  6
@@ -118,7 +119,7 @@ typedef struct {
 
 #define TYPE_EXE 0xC001
 //int findDirEntry(const char*filename, uint32_t type, DirEntry_t* dirEntry,uint32_t startIndex, uint32_t nameLength);//it's been hanging
-int getDirEntry(int index, DirEntry_t* dirEntry);
+int getDirEntry(int index, DirEntry_t* dirEntry); 
 int deleteByNameAndType(const char* name, uint16_t fileType);
 
 #define ERROR_FILE_NOT_FOUND (-5)
@@ -143,6 +144,7 @@ uint16_t getKeyBIOS(void);
 uint16_t peekKey(void);
 void renameDirEntry(uint32_t index, const NameAndType_t* newEntry);
 int getText(char* _buffer, uint16_t maxSize);
+void padFilename(char* paddedName, const char* name);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to
