@@ -97,6 +97,7 @@ uint8_t analyzeWrite(char type, uint16_t mode) {
 }
 
 int main(void) {
+	setKeyWait(1);
 	*SCREEN_MEMORY_CONTROL = 0xE06;
 	fillScreen();
 	getKey(1);

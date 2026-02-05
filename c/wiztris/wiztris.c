@@ -325,7 +325,7 @@ void drop()
 		   setVBLCounter(0);
            dopiece(row,col,piece,rot,1);
            while(getVBLCounter() < curdelay) {
-			  c = getKey();
+			  c = getKey(0);
               if(c) {
 				 //*LAST_KEY = 0;
 				 switch(c)
@@ -393,7 +393,7 @@ void drop()
 					  dopiece(row,col,piece,rot,0);
 					  doshownext(nextpiece,nextrot,0);
 				      drawTextAt(34,10,"PAUSED");
-                      while(!getKey());
+                      getKey(1);
 				      drawTextAt(34,10,"      ");
 					  drawgrid(0);
 					  dopiece(row,col,piece,rot,1);
@@ -474,8 +474,7 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 			putChar(out[i]);
 		}
 		setTextReverse(0);
-		uint16_t k;
-		while (! (k = getKey())) ;
+		uint16_t k = getKey(1);
 		switch(k) {
 			case KEY_TURN_CW:
 				if (c < 'A' || c > 'Z') {
@@ -651,7 +650,7 @@ int main()
 		   drawTextAt(x+4,2+i,outBuffer);
         }
       }	  
-	  while (! (k = getKey()) );
+	  k = getKey(1);
 	  *SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
 	  
 	  if (!randomized) {
@@ -702,7 +701,7 @@ int main()
       if(thescore<=highscores[MAXHIGH-1].score) {
 		 drawTextAt(0,7,"Game over!");
 		 drawTextAt(0,8,"Again? (0/1)");
-		 while (!(k = getKey()));
+		 k = getKey(1);
 	  }
       else
       {

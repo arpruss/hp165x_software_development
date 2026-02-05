@@ -73,7 +73,7 @@
 #define ADJUST_WIDTH(x) ((x)*57/50) // measured at 1.14
 #define TEXT_MODE_NORMAL 0
 
-uint16_t getKey(void);
+uint16_t getKey(char wait);
 void drawPixel(uint16_t x, uint16_t y);
 void fillScreen(void);
 void drawBlack(void);
@@ -149,7 +149,6 @@ int refreshDir(void);
 void delayTicks(uint32_t ticks);
 void setKeyClick(uint8_t _click);
 void setKeyRepeat(uint16_t delay, uint16_t rate);
-uint16_t getKey(void);
 uint16_t getKeyBIOS(void);
 uint16_t peekKey(void);
 void renameDirEntry(uint32_t index, const ROMNameAndType_t* newEntry);

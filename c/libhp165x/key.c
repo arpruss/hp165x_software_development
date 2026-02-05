@@ -2,14 +2,9 @@
 #include <string.h>
 #include "hp165x.h"
 
-static uint8_t wait = 0;
 static uint8_t click = 1;
 static uint16_t repeatDelay = 20;
 static uint16_t repeatRate = 8;
-
-void setKeyWait(uint8_t _wait) {
-	wait = _wait;
-}
 
 void setKeyClick(uint8_t _click) {
 	click = _click;
@@ -63,7 +58,7 @@ static uint16_t lastKey = 0;
 static uint16_t lastKeyTime = 0;
 static uint8_t initialized = 0;
 
-uint16_t getKey() {
+uint16_t getKey(char wait) {
 	if (! initialized) {
 		*LAST_KEY = 0;
 		initialized = 1;

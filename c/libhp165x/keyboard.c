@@ -15,10 +15,8 @@ char kbhit(void) {
 }
 
 char getch(void) {
-	setKeyWait(0);
-
 	while(1) {	
-		uint16_t k = getKey();
+		uint16_t k = getKey(0);
 		
 		if (k != 0)
 			return parseKey(k);

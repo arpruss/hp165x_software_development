@@ -85,7 +85,7 @@ int main(void) {
 
 	patchInt(6,_int6_counter_code);
 
-	while(getKey() != KEY_STOP) {
+	while(getKey(0) != KEY_STOP) {
 		int n = serialReceiveNoWait(sizeof(buffer)-1,buffer);
 		if (n) {
 			printf("(%d,%d)",n,int6CounterValue);

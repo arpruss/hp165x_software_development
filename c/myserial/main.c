@@ -10,7 +10,7 @@ int main(void) {
 	setTextColors(WRITE_WHITE,WRITE_BLACK);
 	fillScreen();
 	simple_serial_init(BAUD_9600);
-	while (getKey() != KEY_STOP) {
+	while (getKey(0) != KEY_STOP) {
 		int16_t c = simple_serial_getchar();
 		if (c != -1) {
 			char ch=c;

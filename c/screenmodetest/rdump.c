@@ -65,7 +65,7 @@ int main(void) {
 	printf("DONE");
 		
 	while(1) {
-		uint16_t k = getKey();
+		uint16_t k = getKey(1);
 		
 		if (k==KEY_STOP)
 			reload();

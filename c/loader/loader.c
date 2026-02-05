@@ -81,7 +81,7 @@ void scan(void) {
 			setTextXY(0,0);
 			putText("No disc in drive...");
 			while ( (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS ) ) {
-				uint16_t k = getKey(); 
+				uint16_t k = getKey(0); 
 				if (k != 0) {
 					if (k == KEY_STOP)
 						reload();
@@ -130,7 +130,7 @@ void menu(void) {
 		drawEntry(i, i==selected);
 	}
 	while (1) {
-		uint16_t k = getKey(); 
+		uint16_t k = getKey(0); 
 		if (k == KEY_STOP)
 			reload();
 		else if (k == KEY_RUN)
@@ -175,7 +175,7 @@ void menu(void) {
 			putText("Delete? (0/1)");
 			setTextColors(DRAW_FOREGROUND,DRAW_BACKGROUND);
 			putText("                                          ");
-			while ( 0 == (k=getKey()) );
+			k = getKey(1);
 			if (k==KEY_1) {
 				deleteByNameAndType(names[selected], TYPE_EXE);
 			}
@@ -186,42 +186,6 @@ void menu(void) {
 
 
 int main(void) {
-#if 0
-	setKeyWait(1);
-	for (uint16_t i=0;i<16;i++) {
-		*SCREEN_MEMORY_CONTROL = i<<8;
-		fillScreen();
-		printf("%x", (uint16_t)i);
-		getKey();
-	}
-	setKeyWait(1);
-	getKey();
-	*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
-	fillScreen();
-	setTextColors(0x80D,WRITE_WHITE);
-	printf("FONT SET TO 80D/WHITE");
-	getKey();
-	*SCREEN_MEMORY_CONTROL = 0x7;
-	fillScreen();
-	getKey();
-//	*SCREEN_MEMORY_CONTROL = 0x80D;
-	uint32_t sum = 0;
-	for (uint32_t i=0; i<SCREEN_WIDTH/4*SCREEN_HEIGHT;i++)
-		sum |= SCREEN[i] & 0xF;
-//	fillScreen();
-//	printf("Sum: %x\n", sum);
-//	getKey();
-	*SCREEN_MEMORY_CONTROL = 0x806;
-	fillScreen();
-	getKey();
-	*SCREEN_MEMORY_CONTROL = 7;
-	fillScreen();
-	getKey();
-	*SCREEN_MEMORY_CONTROL = 0x806;
-	fillScreen();
-	getKey();
-	setKeyWait(0);
-#endif	
 	setTextReverse(0);
 	setTextColors(DRAW_FOREGROUND, DRAW_BACKGROUND);
 	
