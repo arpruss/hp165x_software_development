@@ -132,10 +132,8 @@ def delete(name):
     return retype(name, 0)
     
 def rename(name, newName):
-    name = name.upper()
-    newName = newName.upper()
     for i in range(len(directory)):
-        if name == directory[i][1].name.upper():
+        if name == directory[i][1].name:
             directory[i][1].name = newName
             directory[i][1].put(directory[i][0])
             return True
@@ -143,9 +141,8 @@ def rename(name, newName):
     
 def retype(name, newType):
     ret = False
-    name = name.upper()
     for i in range(len(directory)):
-        if PurePath(directory[i][1].name.upper()).match(name):
+        if PurePath(directory[i][1].name).match(name):
             n = directory[i][1].name
             directory[i][1].fileType = newType
             directory[i][1].put(directory[i][0])
@@ -157,9 +154,8 @@ def retype(name, newType):
     return ret
     
 def get(inFile,outFile):
-    inFile = inFile.upper()
     for i in range(len(directory)):
-        if inFile == directory[i][1].name.upper():
+        if inFile == directory[i][1].name:
             with open(outFile, "wb") as outf:
                 outf.write(directory[i][1].unchunkedFile)
             return True
@@ -167,9 +163,8 @@ def get(inFile,outFile):
 
 def getAll(inFile):
     ret = False
-    inFile = inFile.upper()
     for i in range(len(directory)):
-        if PurePath(directory[i][1].name.upper()).match(inFile):
+        if PurePath(directory[i][1].name).match(inFile):
             ret = get(directory[i][1].name,directory[i][1].name) or ret
             if ret:
                 print("Got %s" % directory[i][1].name)
@@ -183,7 +178,7 @@ def pack():
     
     for _,entry in directory:
         diskData[filePos*BLOCK_SIZE:filePos*BLOCK_SIZE + len(entry.chunkedFile)] = entry.chunkedFile
-        entry.name = entry.name.upper()
+        entry.name = entry.name
         entry.startBlock = filePos
         newDirectory += entry.toBinary()
         filePos += entry.blocks
@@ -193,14 +188,14 @@ def pack():
     fillFF( dirStart * BLOCK_SIZE + len(newDirectory), dirEntries * DIR_ENTRY_SIZE - len(newDirectory))
     
 def put(inFile, outFile, fileType):
-    outFile = outFile.upper()[:10]
+    outFile = outFile[:10]
     with open(inFile, "rb") as inf:
         data = chunkFile(inf.read())
     blocksNeeded = (len(data) + BLOCK_SIZE - 1) // BLOCK_SIZE
     data += (blocksNeeded * BLOCK_SIZE - len(data)) * b'\xFF'
     for i in range(len(directory)):
         entry = directory[i][1]
-        if entry.name.upper() == outFile and entry.blocks == blocksNeeded:
+        if entry.name == outFile and entry.blocks == blocksNeeded:
             entry.fileType = fileType
             entry.name = outFile
             entry.put(directory[i][0])

@@ -24,8 +24,6 @@ LIF file type 0xC001
 
 Observed initial stack pointer : 00A7FFDE 
 
-Strings are null terminated.
-
 
 VIDEO
 
@@ -291,6 +289,8 @@ at 0x9a070E.w: some kind of current spinner position, not corresponding to angle
 
 
 DISK I/O
+
+Filenames are up to 10 characters long, padded with spaces, and case-sensitive.
 
 eb74 int OpenFile(char *filename,int filetype,int mode)
  Modes are either 1 (read) or 2 (write)

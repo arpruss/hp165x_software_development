@@ -14,8 +14,8 @@ char _names[MAX_FILES][MAX_FILENAME_LENGTH+1];
 char* names[MAX_FILES];
 int numNames = 0;
 
-char SYSTEM[] = "SYSTEM_   ";
-char PVTEST[] = "PVTEST_   ";
+char SYSTEM[] = "SYSTEM_";
+char PVTEST[] = "PVTEST_";
 
 void bubbleSort() {
 	uint16_t swapped;
@@ -50,8 +50,7 @@ void getFiles(void) {
 	
 	while(numNames < MAX_FILES && -1 != (i=getDirEntry(in, &entry))) {
 		if ((uint16_t)i == (uint16_t)TYPE_EXE) {
-			_names[numNames][MAX_FILENAME_LENGTH] = 0;
-			memcpy(_names[numNames], entry.name, MAX_FILENAME_LENGTH);
+			memcpy(_names[numNames], entry.name, MAX_FILENAME_LENGTH+1);
 			names[numNames] = _names[numNames];
 			if (!strcmp(names[numNames],SYSTEM)) {
 				system = numNames;
@@ -110,7 +109,7 @@ void drawEntry(int16_t pos,char inv) {
 	setTextReverse(inv);
 	setTextXY((pos/16)*16,2+(pos%16));
 	if (pos < 16)
-		printf(" [%X] %s ", pos, names[pos]);
+		printf(" [%X] %-10s ", pos, names[pos]);
 	else {
 		putText("   ");
 		putText(names[pos]);
