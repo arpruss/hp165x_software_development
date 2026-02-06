@@ -1,0 +1,1 @@
+./hxcfe -finput:$1.hfe -conv:GENERIC_XML -foutput:$1.xml

@@ -50,7 +50,19 @@ static void drawCursor(void) {
 	setScrollMode(1);
 }
 
-int getText(char* _buffer, uint16_t maxSize) {	
+int getText(char* _buffer, uint16_t maxSize) {
+	return getTextWithTimeout(_buffer, maxSize, 0);
+}
+
+int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {	
+	uint32_t endTime;
+	
+	if (0<timeoutTicks) {
+		if (getVBLCounter()==(uint32_t)(-1))
+			patchVBL();
+		endTime = getVBLCounter() + timeoutTicks;
+	}
+	
 	if (maxSize == 0)
 		return -1;
 	else if (maxSize == 1) {
@@ -78,6 +90,10 @@ int getText(char* _buffer, uint16_t maxSize) {
 	drawCursor();
 	
 	while(1) {
+		while(!kbhit()) {
+			if (timeoutTicks > 0 && endTime <= getVBLCounter())
+				return ERROR_TIMEOUT;
+		}
 		char c = getch();
 		switch(c) {
 			case '\n':

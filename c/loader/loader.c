@@ -77,10 +77,10 @@ void getFiles(void) {
 
 void scan(void) {
 	while(1) {
-		if ( (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS ) ) {
+		if ( (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS ) ) {
 			setTextXY(0,0);
 			putText("No disc in drive...");
-			while ( (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS ) ) {
+			while ( (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS ) ) {
 				uint16_t k = getKey(0); 
 				if (k != 0) {
 					if (k == KEY_STOP)
@@ -135,7 +135,7 @@ void menu(void) {
 			reload();
 		else if (k == KEY_RUN)
 			return;
-		if (HARDWARE_STATUS_NO_DISC & *HARDWARE_STATUS )
+		if (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS )
 			return;
 		int c = parseKey(k);
 		if ('0' <= c && c <= '9') {

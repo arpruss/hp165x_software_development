@@ -8,7 +8,7 @@ asm(
 "  addq.l #1,vblCounterValue\n"
 "  jmp _original_int1_handler\n"); 
 
-volatile uint32_t vblCounterValue = 0;
+volatile uint32_t vblCounterValue = -1;
 extern void _vbl_counter_code(void);
 extern void _vbl_counter_jmp(void);
 extern void _original_int1_handler(void);
@@ -35,6 +35,7 @@ void unpatchInt(uint16_t level) {
 }
 
 void patchVBL() {
+	vblCounterValue = 0;
 	patchInt(INT_VBL, _vbl_counter_code);
 }
 
@@ -179,3 +180,23 @@ asm(".globl delayTicks\n"
 	"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
 	"rts");
 		
+int strncasecmp(const char* s1, const char* s2, int n) {
+	while (*s1 && *s2 && n>0) {
+		int c1 = *s1;
+		int c2 = *s2;
+		if (c1 != c2) {
+			if ('a' <= c1 && c1 <= 'z') 
+				c1 += 'A'-'a';
+			if ('a' <= c2 && c2 <= 'z') 
+				c2 += 'A'-'a';
+			if (c1 != c2)
+				return c1-c2;
+		}
+		s1++;
+		s2++;
+		n--;
+	}
+	if (n > 0)
+		return *s1 - *s2; 
+	return 0;
+}

@@ -8,7 +8,7 @@ from tempfile import NamedTemporaryFile
 
 BLOCK_SIZE = 256
 DIR_ENTRY_SIZE = 32
-RESERVED_TRACK = 79
+RESERVED_TRACK = None # 79
 CHUNKING = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
 DIRECTORY = os.path.split(sys.argv[0])[0]
@@ -264,12 +264,13 @@ def create(name):
         outf.write(header)
         outf.write((BLOCK_SIZE-len(header)) * b'\x00')
         outf.write((BLOCK_SIZE*(totalBlocks-1)) * b'\xFF')
-        for side in range(2):
-            writeReservedSector(bytes.fromhex("E60000"))
-            writeReservedSector(bytes.fromhex("5002880503010201A301A3E6321632"))
-            writeReservedSector()
-            writeReservedSector()
-            writeReservedSector()
+        if RESERVED_TRACK is not None:
+            for side in range(2):
+                writeReservedSector(bytes.fromhex("E60000"))
+                writeReservedSector(bytes.fromhex("5002880503010201A301A3E6321632"))
+                writeReservedSector()
+                writeReservedSector()
+                writeReservedSector()
 
 if sys.argv[1] == "--raw":
     CHUNKING = False
@@ -302,7 +303,7 @@ if lifHeader != 0x8000:
 if lifId != 0x1000:
     print("Invalid lif ID %04x" % lifId)
     sys.exit(3)
-if tracks > RESERVED_TRACK:
+if RESERVED_TRACK is not None and tracks > RESERVED_TRACK:
     print("fixing track info to take into account reserved track")
     tracks = RESERVED_TRACK
     diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)    

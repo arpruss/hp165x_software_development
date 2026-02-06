@@ -19,7 +19,7 @@
 #define BEEPER_OFF 0xFE
 
 
-#define HARDWARE_STATUS_NO_DISC  (1<<3)
+#define HARDWARE_STATUS_NO_DISK  (1<<3)
 #define HARDWARE_STATUS_OLD_DISK 1 // disk hasn't been changed
 
 // reading won't be very useful in these modes
@@ -146,14 +146,18 @@ void initialScreen();
 char parseKey(uint16_t key);
 int loadAndRun(const char* filename);
 int refreshDir(void);
+int _refreshDir(void);
 void delayTicks(uint32_t ticks);
 void setKeyClick(uint8_t _click);
 void setKeyRepeat(uint16_t delay, uint16_t rate);
 uint16_t getKeyBIOS(void);
 uint16_t peekKey(void);
 void renameDirEntry(uint32_t index, const ROMNameAndType_t* newEntry);
+#define ERROR_TIMEOUT (-2)
+int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks);
 int getText(char* _buffer, uint16_t maxSize);
 void padFilename(char* paddedName, const char* name);
+int strncasecmp(const char* s1, const char* s2, int n);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to
