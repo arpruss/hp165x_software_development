@@ -93,7 +93,6 @@ int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {
 		while(!kbhit()) {
 			if (timeoutTicks > 0 && endTime <= getVBLCounter()) {
 				clearCursor();
-				printf("%d %d %d\n", timeoutTicks, getVBLCounter(), endTime);
 				return ERROR_TIMEOUT;
 			}
 		}
