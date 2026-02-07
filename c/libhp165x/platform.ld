@@ -18,7 +18,7 @@
  */
 _program_base = 0x984500;
 _program_end = 0xA5FFFA;
-_stack_start = 0x00A7FFFC;
+_stack_start = 0x00983FFE; /* there will be up to 4094 bytes */ /* used to set to 0x00A7FFFE; */
 _program_sz = _program_end - _program_base;
 
 /*

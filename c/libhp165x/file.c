@@ -9,25 +9,11 @@ _WRAP_3(readFile,0xeb86);
 _WRAP_3(writeFile,0xeb80);
 //_WRAP_5(findDirEntry,0xeb98); // it's been hanging
 _WRAP_2(_getDirEntry,0xebce);
-//_WRAP_0(_refreshDir, 0xebb0);
+_WRAP_0(_refreshDir, 0xebb0);
 _WRAP_1(_eb62, 0x227c);
 _WRAP_0_RET_D1(getKeyBIOS,0xeb38);
 
 void _eb62(int x);
-int16_t _ebb0(void);
-
-uint32_t _refreshDir_savedStack;
-
-/* for unknown reasons, the stack runs into something important when calling 0xebb0 */
-asm(".globl _refreshDir\n"
-	"_refreshDir:\n"
-	"  move.l  %SP,_refreshDir_savedStack\n"
-    "  move.l  #0x983FFE,%SP\n"
-    "  movem.l %d1-%d7/%a0-%a6, -(%sp)\n"
-	"  jsr 0xebb0\n"
-    "  movem.l (%SP)+,%d1-%d7/%a0-%a6\n"
-	"  move.l _refreshDir_savedStack,%sp\n"
-	"  rts\n");
 
 int refreshDir(void) {
 	if (*HARDWARE_STATUS & HARDWARE_STATUS_NO_DISK)

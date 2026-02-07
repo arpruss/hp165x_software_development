@@ -7,7 +7,17 @@ MEMORY MAP
 Stuff happens in ROM regarding data in a60000-a6ffff, and maybe even A5FFFA=a60000-6, so it's probably 
 safest to end program storage at a5fffa.
 
-00983000-00983FFF appears to be unused in ROM
+00983000-00983FFF appears to be unused in ROM. I'm putting the user stack for my code at 983ffe.
+
+Stuff on a stack going down to a7fc6a plus some calls --> crash.
+
+There seems to be some non-stack stuff going on at around 00a7fb00, with pinters to data at 00a7fc47.
+I can't figure out what is accessing that data.
+
+The supervisor stack was observed to be at 00a708b0 from the point of view of the vertical blanking interrupt
+handler.
+
+The user stack appears to be set to be 00a7fffe.
 		 
 
 EXECUTABLE FILE FORMAT

@@ -73,6 +73,7 @@ void initialScreen() {
 void reload(void) {
 	_final_cleanup();
 	initialScreen();
+	asm("move.l 0x00A7FFFE, %sp"); /* switch to original stack location */
 	_reload();
 }
 
