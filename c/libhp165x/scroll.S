@@ -8,25 +8,49 @@
 #define SCREEN_MEMORY_CONTROL 0x00201000
 	
     .type scrollUp, @function 
-scrollUp:  /* void scrollUp(uint16_t lines, uint16_t fillMode, uint8_t bitplanes) */
-	movem.l %d2-%d3/%a2, -(%sp)
-	move.l (12+4)(%sp),%d0     /* lines */
+scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint16_t rightX, uint16_t bottomY, 
+					uint16_t fillMode, uint8_t bitplanes) */
+		   /* leftX and rightX must be divisible by 4 and their difference by 8 */
+	movem.l %d2-%d7/%a2, -(%sp)
+	move.l (28+4)(%sp),%d0     /* lines */
 	ext.l  %d0
-	move.l (12+8)(%sp),%d1     /* fillMode */
-	move.l (12+12)(%sp),%d2    /* bitplanes */
-	mulu.w #(LINE_BYTES),%d0  /* bytes to move */
-	move.l #0x600000,%a0
-
-0:	
+	move.l (28+8)(%sp),%d4     /* leftX */
+	ext.l  %d4
+	move.l (28+12)(%sp),%d5     /* topY */
+	ext.l  %d5
+	move.l (28+16)(%sp),%d6     /* rightX */
+	ext.l  %d6
+	move.l (28+20)(%sp),%d7     /* bottomY */
+	ext.l  %d7
+	move.l (28+28)(%sp),%d2    /* bitplanes */
+	mulu.w #(LINE_BYTES),%d0  /* distance to move */
+	mulu.w #(LINE_BYTES),%d5  /* offset of top line of window */
+	mulu.w #(LINE_BYTES),%d7  /* offset of bottom line of window */
+	lsr.w  #1,%d4			  /* byte offset of leftX */
+	add.w  %d4,%d5			  /* %d5: offset of start of window */
+	lsr.w  #1,%d6			  /* byte offset for top */
+	sub.w  %d4,%d6			  /* byte count per line */
+	lsr.w  #2,%d6			  /* dword count per line */
+	sub.w  #1,%d6			  /* %d6: rep count per line */
+	move.l #(SCREEN),%a0      
+	add.l  %d5,%a0            /* destination pointer */
 	move.l %a0,%a1
-	add.l  %d0,%a1 
-	move.l %a1,%a2
-	add.l  %d0,%a2
-	cmp.l  #(SCREEN_END), %a2
-	bgt	   1f		
-/* move (a1)-(a2) to (a0)-(a1) */
+	add.l  %d0,%a1			  /* source pointer */
+	move.l #(SCREEN),%a2
+	add.l  %d7,%a2			  /* bottom */
+	
+/*	move.l #(SCREEN),%a0
+	move.l #(SCREEN+LINE_BYTES*14),%a1
+	move.l #(SCREEN+LINE_BYTES*384),%a2  
+	move.l #(LINE_BYTES/4-1),%d6 */
+
+0:
+	cmp.l  %a2,%a1
+	bge	   1f 
+	
+/* move d6+1 words from a0 to a1 */
 	btst #0,%d2
-	beq notBit0
+	beq notBit0 
 	/* copy 1s */
 	move.w #(~(0x001)),SCREEN_MEMORY_CONTROL
 	bsr copyLineNeg
@@ -57,50 +81,68 @@ notBit2:
 	move.w #(~(0x008)),SCREEN_MEMORY_CONTROL
 	bsr copyLineNeg
 notBit3:
-	move.l %a1,%a0
+	add.l  #(LINE_BYTES),%a0
+	add.l  #(LINE_BYTES),%a1
 	bra 0b
 1:
-	move.w %d1,SCREEN_MEMORY_CONTROL
-	move.l #(SCREEN_END),%a1
-	move.l #0x000F000F, %d0
-	move.l %d0,%d1
-2:	
-	movem.l %d0-%d1,-(%a1)
-	cmp.l %a0,%a1
-	bgt 2b
 
-	movem.l (%sp)+, %d2-%d3/%a2
+/* clear bottom */
+	move.l (28+24)(%sp),%d1     /* fillMode */
+	move.w %d1,SCREEN_MEMORY_CONTROL
+
+	move.l %a0,%a1
+	add.l  %d0,%a1
+
+	move.w #(LINE_BYTES),%d7
+	move.w %d6,%d4
+	add.w  #1,%d6
+	add.w  %d6,%d6
+	add.w  %d6,%d6 /* number of bytes to clear per line */
+	sub.w  %d6,%d7 /* offset between end of one line and beginning of next */
+	ext.l  %d7	
+	
+	move.l #0x000F000F, %d0
+2:
+	move.w %d4,%d6
+3:	
+	move.l %d0,(%a0)+
+	dbra   %d4,3b
+	move.w %d7,%d4
+	cmp.l  %a1,%a0
+	bge 4f
+	add.w  %d7,%a0
+	move.w %d6,%d4
+	bra 2b
+4:
+	movem.l (%sp)+, %d2-%d7/%a2
 	rts
 
-copyLine: /* copy interval [a1,a2) to a0 using d3 and d4 as scrap, assuming length multiple of 8 */
-	move.l %a0,-(%sp)
-	move.l %a1,-(%sp)
+copyLine: /* copy %d6 dwords from a1 to a0 clobbering d3, d4, d5, d7 */
+	move.l %a0,%d3
+	move.l %a1,%d5
+	move.w %d6,%d7
 1:
-	move.l (%a1)+,%d3
-	move.l %d3,(%a0)+
-	move.l (%a1)+,%d3
-	move.l %d3,(%a0)+
-	cmp.l	%a2,%a1
-	blt		1b
+	move.l (%a1)+,%d4
+	move.l %d4,(%a0)+
+	dbra   %d6,1b
 
-	move.l (%sp)+,%a1
-	move.l (%sp)+,%a0
+	move.l %d3,%a0
+	move.l %d5,%a1
+	move.w %d7,%d6
 	rts
 	
-copyLineNeg: /* copy interval [a1,a2) to a0 using d3 and d4 as scrap, assuming length multiple of 8, and negating */
-	move.l %a0,-(%sp)
-	move.l %a1,-(%sp)
+copyLineNeg: /* same, but negating */
+	move.l %a0,%d3
+	move.l %a1,%d5
+	move.w %d6,%d7
 1:
-	move.l (%a1)+,%d3
-	not.l  %d3
-	move.l %d3,(%a0)+
-	move.l (%a1)+,%d3
-	not.l  %d3
-	move.l %d3,(%a0)+
-	cmp.l  %a2,%a1
-	blt		1b
+	move.l (%a1)+,%d4
+	not.l  %d4
+	move.l %d4,(%a0)+
+	dbra   %d6,1b
 
-	move.l (%sp)+,%a1
-	move.l (%sp)+,%a0
+	move.l %d3,%a0
+	move.l %d5,%a1
+	move.w %d7,%d6
 	rts
 	

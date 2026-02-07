@@ -11,8 +11,10 @@ typedef uint8_t byte;
 
 #include "ibm8x14.c"
 
-
-
+static uint16_t winX=0;
+static uint16_t winY=0;
+static uint16_t winRightX=MAX_TEXT_COLUMNS;
+static uint16_t winBottomY=SCREEN_HEIGHT/14;
 static uint16_t curX=0;
 static uint16_t curY=0;
 static uint8_t scrollMode=1;
@@ -20,11 +22,49 @@ static uint8_t scrollMode=1;
 static uint8_t* font = font8x14;
 static uint16_t fontHeight = 14;
 static uint16_t fontLineHeight = 14;
-static uint16_t numRows = (SCREEN_HEIGHT/14);
+static uint16_t maxRows = SCREEN_HEIGHT/14;
 static uint8_t reverse = 0;
 
 void setScrollMode(uint8_t m) {
 	scrollMode = m;
+}
+
+void getTextWindow(uint16_t* xP,uint16_t *yP,uint16_t *widthP,uint16_t *heightP) {
+	*xP = winX;
+	*yP = winX;
+	*widthP = winRightX-winX;
+	*heightP = winBottomY-winY;
+}
+
+/* if width==0 or height==0, set to maximum possible;
+   if width height is negative, use as margin */
+void setTextWindow(uint16_t x,uint16_t y,int16_t width,int16_t height) {
+	winX = x;
+	winY = y;
+	if (width > 0) {
+		winRightX = x + width;
+		if (winRightX > MAX_TEXT_COLUMNS)
+			winRightX = MAX_TEXT_COLUMNS;
+	}
+	else {
+		winRightX = MAX_TEXT_COLUMNS - 1 + width;
+	}
+	if (height > 0) {
+		winBottomY = y + height;
+		if (winBottomY > maxRows)
+			winBottomY = maxRows;
+	}
+	else {
+		winBottomY = maxRows - 1 + width;
+	}
+	if (curX < winX)
+		curX = winX;
+	else if (curX >= winRightX)
+		curX = winRightX-1;
+	if (curY < winY)
+		curY = winY;
+	else if (curY >= winBottomY)
+		curY = winBottomY-1;
 }
 
 void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight) {
@@ -32,10 +72,10 @@ void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight) {
 	font = data;
 	fontHeight = height;
 	fontLineHeight = lineHeight;
-	numRows = SCREEN_HEIGHT / lineHeight;
+	maxRows = SCREEN_HEIGHT / lineHeight;
 	curY = pixelY / lineHeight;
-	if (curY >= numRows)
-		curY = numRows;
+	if (curY >= maxRows)
+		curY = maxRows;
 }
 
 uint16_t getFontLineHeight(void) {
@@ -47,11 +87,19 @@ uint16_t getFontWidth(void) {
 }
 
 uint16_t getTextRows(void) {
-	return numRows;
+	return winBottomY-winY;
 }
 
 uint16_t getTextColumns(void) {
-	return TEXT_COLUMNS;
+	return winRightX-winX;
+}
+
+uint16_t getTextMaxRows(void) {
+	return maxRows;
+}
+
+uint16_t getTextMaxColumns(void) {
+	return MAX_TEXT_COLUMNS;
 }
 
 void setTextReverse(char _reverse) {
@@ -72,24 +120,24 @@ uint16_t getTextBackground(void) {
 }
 
 uint16_t getTextX(void) {
-	return curX;
+	return curX-winX;
 }
 
 uint16_t getTextY(void) {
-	return curY;
+	return curY-winY;
 }
 
 void setTextXY(uint16_t x, uint16_t y) {
-	curX = x;
-	curY = y;
+	curX = winX+x;
+	curY = winY+y;
 }
 
 void setTextX(uint16_t x) {
-	curX = x;
+	curX = winX+x;
 }
 
-void setTextY(uint16_t x) {
-	curX = x;
+void setTextY(uint16_t y) {
+	curY = winY+y;
 }
 
 void highlightText(uint16_t n, uint8_t highlightState) {
@@ -97,11 +145,11 @@ void highlightText(uint16_t n, uint8_t highlightState) {
 
 	*SCREEN_MEMORY_CONTROL = highlightState ? WRITE_SET_ATTR : WRITE_CLEAR_ATTR;
 	while(n--) {
-		if (curX >= TEXT_COLUMNS) {
+		if (curX >= winRightX) {
 			curY++;
-			if (curY >= numRows)
-				curY = numRows-1;
-			curX = 0;
+			if (curY >= winBottomY)
+				curY = winBottomY-1;
+			curX = winX;
 			pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4));
 		}
 		volatile uint16_t* pos2 = pos;
@@ -134,11 +182,11 @@ uint16_t putText(const char* s) {
 	while(*s) {
 		uint16_t c = 0xFF & *s++;
 		
-		if (c == '\n' || curX >= TEXT_COLUMNS) {
-			curX = 0;
+		if (c == '\n' || curX >= winRightX) {
+			curX = winX;
 			curY++;
-			if (curY >= numRows) {
-				curY = numRows -1;
+			if (curY >= winBottomY) {
+				curY = winBottomY-1;
 				if (scrollMode) {
 					scrollText(1);
 					scrolled++;
@@ -211,7 +259,8 @@ void scrollText(uint16_t rows) {
 			}
 		}
 	}
-	scrollUp(rows*fontHeight, background, bitplanes);
+	scrollUp(rows*fontLineHeight, winX*FONT_WIDTH, winY*fontLineHeight, winRightX*FONT_WIDTH, winBottomY*fontLineHeight, 
+		background, bitplanes);
 }
 
 #if 0
@@ -223,6 +272,7 @@ static uint8_t* romFind(uint32_t value) {
 	return NULL;
 }
 
+/* TODO: adjust window */
 static void _setFontSystem(uint32_t defaultLocation, uint32_t testLocation, uint32_t testValue) {
 	uint8_t* location = 0;
 	if (*(uint32_t*)testLocation == testValue) {
