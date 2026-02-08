@@ -9,16 +9,23 @@ static uint16_t rows;
 static char* buffer;
 static uint16_t cursor;
 static uint16_t length;
+static char singleLine;
 
 static void setXYFromOffset(uint16_t offset) {
 	uint16_t p = startX + offset;
 	uint16_t row = startY + p / cols;
 	uint16_t col = p % cols;
 	if (row >= rows) {
-		uint16_t delta = row - rows + 1;
-		scrollText(delta);
-		row = rows-1;
-		startY -= delta;
+		if (singleLine) {
+			row = rows-1;
+			col = cols-1;
+		}
+		else {
+			uint16_t delta = row - rows + 1;
+			scrollText(delta);
+			row = rows-1;
+			startY -= delta;
+		}
 	}
 	setTextXY(col,row);
 }
@@ -76,6 +83,7 @@ int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {
 	startY = getTextY();
 	rows = getTextRows();
 	cols = getTextColumns();
+	singleLine = startX + maxSize - 1 <= cols;
 	buffer = _buffer;
 	cursor = length = strlen(_buffer);
 
