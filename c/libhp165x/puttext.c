@@ -11,6 +11,7 @@ typedef uint8_t byte;
 
 #include "ibm8x14.c"
 
+static char romFont=0;
 static uint16_t winX=0;
 static uint16_t winY=0;
 static uint16_t winRightX=MAX_TEXT_COLUMNS;
@@ -25,6 +26,8 @@ static uint16_t fontLineHeight = 14;
 static uint16_t maxRows = SCREEN_HEIGHT/14;
 static uint8_t reverse = 0;
 
+#define ROR4(x) ((x) << 28 | (x) >> 4)
+
 void setScrollMode(uint8_t m) {
 	scrollMode = m;
 }
@@ -37,7 +40,7 @@ void getTextWindow(uint16_t* xP,uint16_t *yP,uint16_t *widthP,uint16_t *heightP)
 }
 
 /* if width==0 or height==0, set to maximum possible;
-   if width height is negative, use as margin */
+   if width or height is negative, use as margin */
 void setTextWindow(uint16_t x,uint16_t y,int16_t width,int16_t height) {
 	winX = x;
 	winY = y;
@@ -67,15 +70,20 @@ void setTextWindow(uint16_t x,uint16_t y,int16_t width,int16_t height) {
 		curY = winBottomY-1;
 }
 
-void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight) {
+void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight, char _romFont) {
 	uint16_t pixelY = curY * fontLineHeight;
+	maxRows = SCREEN_HEIGHT / lineHeight;
+	if (lineHeight != fontLineHeight) {
+		winY = 0;
+		winBottomY = maxRows-1;
+	}
 	font = data;
 	fontHeight = height;
 	fontLineHeight = lineHeight;
-	maxRows = SCREEN_HEIGHT / lineHeight;
+	romFont = _romFont;
 	curY = pixelY / lineHeight;
 	if (curY >= maxRows)
-		curY = maxRows;
+		curY = maxRows-1;
 }
 
 uint16_t getFontLineHeight(void) {
@@ -197,25 +205,113 @@ uint16_t putText(const char* s) {
 				continue;
 		}
 		
-		uint8_t* glyph = font + c*fontHeight;
-		volatile uint16_t* pos2 = pos;
-		uint16_t row;
-		for (row = 0; row < fontHeight; row++) {
-			uint8_t g = *glyph;
-			*SCREEN_MEMORY_CONTROL = bg;
-			*pos2 = (~g)>>4;
-			pos2[1] = (~g)&0xF;
+		if (romFont) {
+			if (c & 0x80)
+				c = '?';
+			uint32_t* glyph = (uint32_t*)(font + c*16);
+			volatile uint32_t* pos2 = (uint32_t*)pos;
+			uint32_t x = *glyph++; 
+			uint32_t y = x;
+			
+			/* The ROM fonts are very cleverly stored and display fast, 59% of the 8x14 font display time. */
+
 			*SCREEN_MEMORY_CONTROL = fg;
-			*pos2 = g>>4;
-			pos2[1] = g&0xF;
-			glyph++;
-			pos2 += SCREEN_WIDTH/4;			
-		}
-		for (; row < fontLineHeight; row++) {
+			*pos2 = x;
+			x = ROR4(x);
+			pos2[SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[2*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[3*SCREEN_WIDTH/8] = x;
+
 			*SCREEN_MEMORY_CONTROL = bg;
-			*pos2 = 0xF;
-			pos2[1] = 0xF;
-			pos2 += SCREEN_WIDTH/4;			
+			x = ~y;
+			*pos2 = x;
+			x = ROR4(x);
+			pos2[SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[2*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[3*SCREEN_WIDTH/8] = x; 
+
+			*SCREEN_MEMORY_CONTROL = fg;
+			y = x = *glyph++;
+			pos2[4*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[5*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[6*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[7*SCREEN_WIDTH/8] = x;
+
+			*SCREEN_MEMORY_CONTROL = bg;
+			x = ~y;
+			pos2[4*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[5*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[6*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[7*SCREEN_WIDTH/8] = x; 
+
+			*SCREEN_MEMORY_CONTROL = fg;
+			y = x = *glyph++;
+			pos2[8*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[9*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[10*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[11*SCREEN_WIDTH/8] = x;
+
+			*SCREEN_MEMORY_CONTROL = bg;
+			x = ~y;
+			pos2[8*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[9*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[10*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[11*SCREEN_WIDTH/8] = x; 
+
+			*SCREEN_MEMORY_CONTROL = fg;
+			y = x = *glyph++;
+			pos2[12*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[13*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[14*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[15*SCREEN_WIDTH/8] = x;
+
+			*SCREEN_MEMORY_CONTROL = bg;
+			x = ~y;
+			pos2[12*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[13*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[14*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[15*SCREEN_WIDTH/8] = x; 
+		}
+		else {
+			uint8_t* glyph = font + c*fontHeight;
+			volatile uint32_t* pos2 = (volatile uint32_t*)pos;
+			uint16_t row;
+			for (row = 0; row < fontHeight; row++) {
+				uint8_t g = *(uint8_t*)glyph++;
+				*SCREEN_MEMORY_CONTROL = bg;
+				uint32_t v = (uint32_t)g << 12 | g;
+				*pos2 = ~v;
+				*SCREEN_MEMORY_CONTROL = fg;
+				*pos2 = v;
+				pos2 += SCREEN_WIDTH/8;			
+			}
+			for (; row < fontLineHeight; row++) {
+				*SCREEN_MEMORY_CONTROL = bg; // this loop rarely happens, so keep this in loop
+				*pos2 = 0xF000F;
+				pos2 += SCREEN_WIDTH/8;			
+			}
 		}
 		
 		pos += 2;
@@ -263,9 +359,8 @@ void scrollText(uint16_t rows) {
 		background, bitplanes);
 }
 
-#if 0
 static uint8_t* romFind(uint32_t value) {
-	for (uint32_t* p = (uint32_t*)65536-1 ; p > (uint32_t*)256 ; p--) {
+	for (uint32_t* p = (uint32_t*)65536-1 ; p > (uint32_t*)256 ; p = (uint32_t*)((uint8_t*)p - 2)) {
 		if (*p == value)
 			return (uint8_t*)p;
 	}
@@ -274,19 +369,18 @@ static uint8_t* romFind(uint32_t value) {
 
 /* TODO: adjust window */
 static void _setFontSystem(uint32_t defaultLocation, uint32_t testLocation, uint32_t testValue) {
-	uint8_t* location = 0;
 	if (*(uint32_t*)testLocation == testValue) {
-		location = (uint8_t*)defaultLocation;
-		setFont(location, 16, 16);
+		printf("%x\n", defaultLocation);
+		setFont((uint8_t*)defaultLocation, 16, 16, 1);
 	}
 	else {
-		location = romFind(testValue);
+		uint8_t* location = romFind(testValue);
 		if (location == 0) {
-			setFont(font8x14, 14, 16); 
+			setFont(font8x14, 14, 16, 0); 
 			return;
 		}
 		location -= (testLocation-defaultLocation);
-		setFont(location, 16, 16);
+		setFont(location, 16, 16, 1);
 	}
 }
 
@@ -301,5 +395,3 @@ void setFontSystem(uint8_t bold) {
 	}
 }
 
-
-#endif
