@@ -9,9 +9,8 @@ static uint16_t background = WRITE_WHITE;
 
 typedef uint8_t byte;
 
-#include "ibm8x14.c"
+#include "ibm8x14hp.c"
 
-static char romFont=0;
 static uint16_t winX=0;
 static uint16_t winY=0;
 static uint16_t winRightX=MAX_TEXT_COLUMNS;
@@ -20,9 +19,8 @@ static uint16_t curX=0;
 static uint16_t curY=0;
 static uint8_t scrollMode=1;
 
-static uint8_t* font = font8x14;
+static uint8_t* font = (uint8_t*)font8x14;
 static uint16_t fontHeight = 14;
-static uint16_t fontLineHeight = 14;
 static uint16_t maxRows = SCREEN_HEIGHT/14;
 static uint8_t reverse = 0;
 
@@ -70,24 +68,22 @@ void setTextWindow(uint16_t x,uint16_t y,int16_t width,int16_t height) {
 		curY = winBottomY-1;
 }
 
-void setFont(uint8_t* data, uint16_t height, uint16_t lineHeight, char _romFont) {
-	uint16_t pixelY = curY * fontLineHeight;
-	maxRows = SCREEN_HEIGHT / lineHeight;
-	if (lineHeight != fontLineHeight) {
+void setFont(uint8_t* data, uint16_t height) {
+	uint16_t pixelY = curY * fontHeight;
+	maxRows = SCREEN_HEIGHT / height;
+	if (height != fontHeight) {
 		winY = 0;
 		winBottomY = maxRows-1;
 	}
 	font = data;
 	fontHeight = height;
-	fontLineHeight = lineHeight;
-	romFont = _romFont;
-	curY = pixelY / lineHeight;
+	curY = pixelY / height;
 	if (curY >= maxRows)
 		curY = maxRows-1;
 }
 
-uint16_t getFontLineHeight(void) {
-	return fontLineHeight;
+uint16_t getFontHeight(void) {
+	return fontHeight;
 }
 
 uint16_t getFontWidth(void) {
@@ -149,7 +145,7 @@ void setTextY(uint16_t y) {
 }
 
 void highlightText(uint16_t n, uint8_t highlightState) {
-	volatile uint16_t* pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4)) + curX*2;
+	volatile uint16_t* pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4)) + curX*2;
 
 	*SCREEN_MEMORY_CONTROL = highlightState ? WRITE_SET_ATTR : WRITE_CLEAR_ATTR;
 	while(n--) {
@@ -158,11 +154,11 @@ void highlightText(uint16_t n, uint8_t highlightState) {
 			if (curY >= winBottomY)
 				curY = winBottomY-1;
 			curX = winX;
-			pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4));
+			pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4));
 		}
 		volatile uint16_t* pos2 = pos;
 		uint16_t row;
-		for (row = 0; row < fontLineHeight; row++) {
+		for (row = 0; row < fontHeight; row++) {
 			*(uint32_t*)pos2 = 0x000F000F;
 			pos2 += SCREEN_WIDTH/4;			
 		}
@@ -173,7 +169,7 @@ void highlightText(uint16_t n, uint8_t highlightState) {
 
 /* returns number of lines scrolled */
 uint16_t putText(const char* s) {
-	volatile uint16_t* pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4)) + curX*2;
+	volatile uint16_t* pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4)) + curX*2;
 	uint16_t bg;
 	uint16_t fg;
 	uint16_t scrolled = 0;
@@ -200,12 +196,12 @@ uint16_t putText(const char* s) {
 					scrolled++;
 				}
 			}
-			pos = SCREEN + curY * (fontLineHeight*(SCREEN_WIDTH/4));
+			pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4));
 			if (c == '\n')
 				continue;
 		}
 		
-		if (romFont) {
+		if ((uint32_t)font < 0x10000) {
 			if (c & 0x80)
 				c = '?';
 			uint32_t* glyph = (uint32_t*)(font + c*16);
@@ -213,8 +209,6 @@ uint16_t putText(const char* s) {
 			uint32_t x = *glyph++; 
 			uint32_t y = x;
 			
-			/* The ROM fonts are very cleverly stored and display fast, 59% of the 8x14 font display time. */
-
 			*SCREEN_MEMORY_CONTROL = fg;
 			*pos2 = x;
 			x = ROR4(x);
@@ -294,6 +288,83 @@ uint16_t putText(const char* s) {
 			x = ROR4(x);
 			pos2[15*SCREEN_WIDTH/8] = x; 
 		}
+		else if (font == (uint8_t*)font8x14) {
+			uint32_t* glyph = (uint32_t*)(font + c*16);
+			volatile uint32_t* pos2 = (uint32_t*)pos;
+			uint32_t x = *glyph++; 
+			uint32_t y = x;
+			
+			*SCREEN_MEMORY_CONTROL = fg;
+			*pos2 = x;
+			x = ROR4(x);
+			pos2[SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[2*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[3*SCREEN_WIDTH/8] = x;
+
+			*SCREEN_MEMORY_CONTROL = bg;
+			x = ~y;
+			*pos2 = x;
+			x = ROR4(x);
+			pos2[SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[2*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[3*SCREEN_WIDTH/8] = x; 
+
+			*SCREEN_MEMORY_CONTROL = fg;
+			y = x = *glyph++;
+			pos2[4*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[5*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[6*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[7*SCREEN_WIDTH/8] = x;
+
+			*SCREEN_MEMORY_CONTROL = bg;
+			x = ~y;
+			pos2[4*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[5*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[6*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[7*SCREEN_WIDTH/8] = x; 
+
+			*SCREEN_MEMORY_CONTROL = fg;
+			y = x = *glyph++;
+			pos2[8*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[9*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[10*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[11*SCREEN_WIDTH/8] = x;
+
+			*SCREEN_MEMORY_CONTROL = bg;
+			x = ~y;
+			pos2[8*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[9*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[10*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[11*SCREEN_WIDTH/8] = x; 
+
+			*SCREEN_MEMORY_CONTROL = fg;
+			y = x = *glyph++;
+			pos2[12*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[13*SCREEN_WIDTH/8] = x;
+
+			*SCREEN_MEMORY_CONTROL = bg;
+			x = ~y;
+			pos2[12*SCREEN_WIDTH/8] = x;
+			x = ROR4(x);
+			pos2[13*SCREEN_WIDTH/8] = x;
+		}
 		else {
 			uint8_t* glyph = font + c*fontHeight;
 			volatile uint32_t* pos2 = (volatile uint32_t*)pos;
@@ -305,11 +376,6 @@ uint16_t putText(const char* s) {
 				*pos2 = ~v;
 				*SCREEN_MEMORY_CONTROL = fg;
 				*pos2 = v;
-				pos2 += SCREEN_WIDTH/8;			
-			}
-			for (; row < fontLineHeight; row++) {
-				*SCREEN_MEMORY_CONTROL = bg; // this loop rarely happens, so keep this in loop
-				*pos2 = 0xF000F;
 				pos2 += SCREEN_WIDTH/8;			
 			}
 		}
@@ -355,7 +421,7 @@ void scrollText(uint16_t rows) {
 			}
 		}
 	}
-	scrollUp(rows*fontLineHeight, winX*FONT_WIDTH, winY*fontLineHeight, winRightX*FONT_WIDTH, winBottomY*fontLineHeight, 
+	scrollUp(rows*fontHeight, winX*FONT_WIDTH, winY*fontHeight, winRightX*FONT_WIDTH, winBottomY*fontHeight, 
 		background, bitplanes);
 }
 
@@ -370,17 +436,16 @@ static uint8_t* romFind(uint32_t value) {
 /* TODO: adjust window */
 static void _setFontSystem(uint32_t defaultLocation, uint32_t testLocation, uint32_t testValue) {
 	if (*(uint32_t*)testLocation == testValue) {
-		printf("%x\n", defaultLocation);
-		setFont((uint8_t*)defaultLocation, 16, 16, 1);
+		setFont((uint8_t*)defaultLocation, 16);
 	}
 	else {
 		uint8_t* location = romFind(testValue);
 		if (location == 0) {
-			setFont(font8x14, 14, 16, 0); 
+			setFont(font8x14, 14); 
 			return;
 		}
 		location -= (testLocation-defaultLocation);
-		setFont(location, 16, 16, 1);
+		setFont(location, 16);
 	}
 }
 
