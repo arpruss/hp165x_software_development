@@ -100,8 +100,8 @@ The ROM routines store the current mode. At 0x98077c.w, we have the low byte, se
 eaae. At 0x98077e.w, we have the high byte, set with ROM function eaba. It's not a terrible idea to
 restore this mode when done with your changes.
 
-A full list of the modes is in screenmodes.txt. It was based on automated data gathering via
-the c/idscreenmode program.
+WAIT! I just realized that there is a grayscale. I never noticed because I had the screen set to
+too low brightness. 0xC
 
 
 Font bitmap locations: a674 (bold), 9e74; 16 bytes per char 

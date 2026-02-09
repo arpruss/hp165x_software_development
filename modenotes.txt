@@ -23,8 +23,8 @@ AOXD
 0110: 1
 0101: 0
 0100: 0
-0011: 0
-0010: 0
+0011: 0.5 (gray)
+0010: 0.5 (gray)
 0001: 1
 0000: 0
 
@@ -35,7 +35,9 @@ If Overlay=0 and OData=1, output is 0
 If exactly one plane is active, that's the plane that is read from.
 
 Function:
- (Attr^(OV&OData | ~OV&Data)) & ~(OData&~OV)
+ If AOXD=001x (where x is anything): gray
+ Otherwise, black or white according to:
+	(Attr^(OV&OData | ~OV&Data)) & ~(OData&~OV)
 
 The display function is implemented in the screenshot code if you
 want to see an example.

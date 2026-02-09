@@ -110,6 +110,7 @@ int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {
 			case '\r':
 				clearCursor();
 				return length;
+			case 27:
 			case KEYBOARD_BREAK:
 				clearCursor();
 				return -1;
@@ -124,6 +125,16 @@ int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {
 				if (cursor < length) {
 					clearCursor();
 					cursor++;
+					drawCursor();
+				}
+				break;
+			case '\x07': // ctrl-g
+				if (cursor < length) {
+					clearCursor();
+					memmove(buffer+cursor, buffer+cursor+1, length-cursor);
+					length--;
+					drawFrom(cursor);
+					putChar(' ');
 					drawCursor();
 				}
 				break;
