@@ -292,6 +292,7 @@ uint16_t putText(const char* s) {
 		else if (font == (uint8_t*)font8x14) {
 			uint32_t* glyph = (uint32_t*)(font + c*16);
 			volatile uint32_t* pos2 = (uint32_t*)pos;
+			
 			uint32_t x = *glyph++; 
 			uint32_t y = x;
 			
@@ -314,8 +315,8 @@ uint16_t putText(const char* s) {
 			x = ROR4(x);
 			pos2[3*SCREEN_WIDTH/8] = x; 
 
-			*SCREEN_MEMORY_CONTROL = fg;
-			y = x = *glyph++;
+			y = *glyph++;
+			x = ~y;
 			pos2[4*SCREEN_WIDTH/8] = x;
 			x = ROR4(x);
 			pos2[5*SCREEN_WIDTH/8] = x;
@@ -324,8 +325,8 @@ uint16_t putText(const char* s) {
 			x = ROR4(x);
 			pos2[7*SCREEN_WIDTH/8] = x;
 
-			*SCREEN_MEMORY_CONTROL = bg;
-			x = ~y;
+			*SCREEN_MEMORY_CONTROL = fg;
+			x = y;
 			pos2[4*SCREEN_WIDTH/8] = x;
 			x = ROR4(x);
 			pos2[5*SCREEN_WIDTH/8] = x;
@@ -334,7 +335,6 @@ uint16_t putText(const char* s) {
 			x = ROR4(x);
 			pos2[7*SCREEN_WIDTH/8] = x; 
 
-			*SCREEN_MEMORY_CONTROL = fg;
 			y = x = *glyph++;
 			pos2[8*SCREEN_WIDTH/8] = x;
 			x = ROR4(x);
@@ -354,14 +354,14 @@ uint16_t putText(const char* s) {
 			x = ROR4(x);
 			pos2[11*SCREEN_WIDTH/8] = x; 
 
-			*SCREEN_MEMORY_CONTROL = fg;
-			y = x = *glyph++;
+			y = *glyph++;
+			x = ~y;
 			pos2[12*SCREEN_WIDTH/8] = x;
 			x = ROR4(x);
 			pos2[13*SCREEN_WIDTH/8] = x;
 
-			*SCREEN_MEMORY_CONTROL = bg;
-			x = ~y;
+			*SCREEN_MEMORY_CONTROL = fg;
+			x = y;
 			pos2[12*SCREEN_WIDTH/8] = x;
 			x = ROR4(x);
 			pos2[13*SCREEN_WIDTH/8] = x;

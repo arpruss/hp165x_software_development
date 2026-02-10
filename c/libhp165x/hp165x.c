@@ -227,3 +227,10 @@ int strncasecmp(const char* s1, const char* s2, int n) {
 		return *s1 - *s2; 
 	return 0;
 }
+
+void setScreenLookupTable(uint8_t* table) {
+/*  Write 1 to bit 7 of 202000.w
+ Write the 16 entries to 204001.b, 204003.b, etc.
+ Write 0 to bit 7 of 202000.w
+*/	
+}
