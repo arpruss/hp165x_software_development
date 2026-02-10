@@ -107,6 +107,22 @@ too low brightness. 0xC
 Font bitmap locations: a674 (bold), 9e74; 16 bytes per char 
 
 
+There seems to be a palette.
+
+At 8d3e there seems to be a function to load an rgb palette, with initial table at 8dc4, probably a leftover from a color screen model.
+
+At 8da6 there is a more promising palette loader, which loads a palette at 8e9a. The entries correspond precisely to what is 
+observed if 00=black, 01=gray, 02=black. 
+
+The writing procedure is:
+ Write 1 to bit 7 of 202000.w
+ Write the 16 entries to 204001.b, 204003.b, etc.
+ Write 0 to bit 7 of 202000.w
+
+This has not been tested. A cool thing would be to implement
+night mode by a simple reversal. 
+
+
 INTERRUPTS
 
 The Level 1 interrupt autovector is at 60Hz, so it's surely the vertical blanking interrupt.
@@ -130,8 +146,9 @@ SPECIAL HARDWARE ADDRESSES
 0x200000 ??: involved in acquisition test
 0x200001 ??: involved in acquisition test
 0x201000.w: screen memory control (see below)  
-0x202000 ??: write only
+0x202001.b: set bit 7 to set display lookup table, clear when done
 0x203000.b: BEEP: 0xFF on, $FE off
+0x204001.b-0x204020: put display look table entries here: 00=black, 01=gray, 02=black
 0x205000 ??: involved in spinner
 0x205002 ??: involved in spinner
 0x2050fe ??: involved in spinner
