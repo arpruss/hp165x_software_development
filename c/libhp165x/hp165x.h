@@ -17,6 +17,9 @@
 #define BEEPER ((volatile uint8_t*)0x203000)
 #define BEEPER_ON 0xFF
 #define BEEPER_OFF 0xFE
+#define MC6845_REGISTER_ADDRESS ((volatile uint8_t*)0x0020c001)
+#define MC6845_REGISTER_VALUE ((volatile uint8_t*)0x0020c003)
+
 
 
 #define HARDWARE_STATUS_NO_DISK  (1<<3)
@@ -33,8 +36,12 @@
 #define WRITE_CLEAR_DATA 0x10E  // leaves data unchanged
 #define WRITE_NOP        0x00F
 
+extern uint16_t screenHeight;
+
 #define SCREEN ((volatile uint16_t*)0x600000)
-#define SCREEN_HEIGHT 384
+#define SCREEN_HEIGHT screenHeight
+#define DEFAULT_SCREEN_HEIGHT 384
+#define MAX_SCREEN_HEIGHT 392
 #define SCREEN_WIDTH 592
 #define WRITE_FILE 2
 #define READ_FILE  1
@@ -87,6 +94,7 @@ void exit(int status);
 #define OPEN_WRITE 2
 #define MAX_FILENAME_LENGTH 10
 
+void setScreenHeight(uint16_t height);
 void setTextMode(uint32_t mode);
 void drawText(const char* p);
 void setCoordinates(int32_t x, int32_t y);

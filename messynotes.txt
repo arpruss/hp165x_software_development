@@ -146,7 +146,7 @@ SPECIAL HARDWARE ADDRESSES
 0x200000 ??: involved in acquisition test
 0x200001 ??: involved in acquisition test
 0x201000.w: screen memory control (see below)  
-0x202001.b: set bit 7 to set display lookup table, clear when done
+0x202001.b: set bit 7 to set display lookup table, clear when done; bit 6 is set after writing some stuff to MC6845 ; https://bitsavers.trailing-edge.com/components/motorola/_dataSheets/6845.pdf
 0x203000.b: BEEP: 0xFF on, $FE off
 0x204001.b-0x204020: put display look table entries here: 00=black, 01=gray, 02=black
 0x205000 ??: involved in spinner
@@ -159,6 +159,8 @@ SPECIAL HARDWARE ADDRESSES
 0x20a004: connected with serial test ; mode??
 0x20a006: connected with serial test 
 0x20a007: handshake i/o address
+0x20c001.b: MC6845. Write to set register address. 
+0x20c003.b: Write to set register value. Table of defaults is set at 8376.
 0x20d001.b: read. used in interrupt level 3 handler
 0x20d003.b: read/write. unknown. used in interrupt level 3 handler and connected with disk i/o
 0x20e001: ?? write

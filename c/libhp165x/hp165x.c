@@ -13,12 +13,35 @@ extern void _vbl_counter_code(void);
 extern void _vbl_counter_jmp(void);
 extern void _original_int1_handler(void);
 
+uint16_t screenHeight = 384;
+
 uint32_t getVBLCounter(void) {
 	return vblCounterValue;
 }
 
 void setVBLCounter(uint32_t value) {
 	vblCounterValue = value;
+}
+
+void setScreenHeight(uint16_t height) {
+	if (height == 0)
+		height = DEFAULT_SCREEN_HEIGHT;
+	if (height > MAX_SCREEN_HEIGHT)
+		height = MAX_SCREEN_HEIGHT;
+	
+	if (screenHeight == height)
+		return;
+	
+	height /= 8;
+	
+	*MC6845_REGISTER_ADDRESS = 6;
+	*MC6845_REGISTER_VALUE = height;
+	*MC6845_REGISTER_ADDRESS = 7;
+	*MC6845_REGISTER_VALUE = height;	
+	
+	screenHeight = height * 8;
+	
+	setTextWindow(0,0,0,0);
 }
 
 void patchInt(uint16_t level, void (*address)()) {
@@ -72,6 +95,7 @@ void initialScreen() {
 
 void reload(void) {
 	_final_cleanup();
+	setScreenHeight(0);
 	initialScreen();
 	asm("move.l 0x00A7FFFE, %sp"); /* switch to original stack location */
 	_reload();
@@ -83,7 +107,9 @@ void drawPixel(uint16_t x, uint16_t y) {
 	*pos = 8>>(x%4);
 }
 
-// TODO: assembly
+// fills screen, up to 392 lines as needed
+// todo: only do the number of lines that are actually
+// needed
 void fillScreen(void) {
 asm(
 	"  move.l #0x000F000F, %%d0\n"
@@ -94,7 +120,7 @@ asm(
     "  move.l %%d0,%%d5\n"
     "  move.l %%d0,%%d6\n"
     "  move.l %%d0,%%d7\n"
-    "  move.l #(0x600000+(592*384/2)), %%a0\n" // ; 592*384/2 is divisible by 64
+    "  move.l #(0x600000+(592*392/2)), %%a0\n" // ; 592*392/2 is divisible by 64
     "  move.l #0x600000, %%a1\n"
 	"1:\n"
 	"  movem.l %%d0-%%d7,-(%%a0)\n" // ; clear 16 display words at once, decrementing A0 by 32

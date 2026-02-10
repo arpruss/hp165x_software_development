@@ -14,14 +14,14 @@ typedef uint8_t byte;
 static uint16_t winX=0;
 static uint16_t winY=0;
 static uint16_t winRightX=MAX_TEXT_COLUMNS;
-static uint16_t winBottomY=SCREEN_HEIGHT/14;
+static uint16_t winBottomY=DEFAULT_SCREEN_HEIGHT/14;
 static uint16_t curX=0;
 static uint16_t curY=0;
 static uint8_t scrollMode=1;
 
 static uint8_t* font = (uint8_t*)font8x14;
 static uint16_t fontHeight = 14;
-static uint16_t maxRows = SCREEN_HEIGHT/14;
+static uint16_t maxRows = DEFAULT_SCREEN_HEIGHT/14;
 static uint8_t reverse = 0;
 
 #define ROR4(x) ((x) << 28 | (x) >> 4)
@@ -40,6 +40,7 @@ void getTextWindow(uint16_t* xP,uint16_t *yP,uint16_t *widthP,uint16_t *heightP)
 /* if width==0 or height==0, set to maximum possible;
    if width or height is negative, use as margin */
 void setTextWindow(uint16_t x,uint16_t y,int16_t width,int16_t height) {
+	maxRows = screenHeight / fontHeight;
 	winX = x;
 	winY = y;
 	if (width > 0) {
