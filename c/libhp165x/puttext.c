@@ -202,173 +202,194 @@ uint16_t putText(const char* s) {
 				continue;
 		}
 		
+		volatile uint32_t* pos2 = (volatile uint32_t*)pos;
+		
 		if ((uint32_t)font < 0x10000) {
 			if (c & 0x80)
 				c = '?';
 			uint32_t* glyph = (uint32_t*)(font + c*16);
-			volatile uint32_t* pos2 = (uint32_t*)pos;
-			uint32_t x = *glyph++; 
-			uint32_t y = x;
+	
+			uint32_t x;
+			uint32_t y;
 			
-			*SCREEN_MEMORY_CONTROL = fg;
-			*pos2 = x;
-			x = ROR4(x);
-			pos2[SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[2*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[3*SCREEN_WIDTH/8] = x;
+			asm volatile(
+			"  move.w %[fg], 0x201000\n"
+			"  move.l (%[glyph])+, %[x]\n"
+			"  move.l %[x], %[y]\n"
+			"  move.l %[x], (%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (2*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (3*592/2)(%[pos2])\n"
+			
+			"  move.w %[bg], 0x201000\n"
+			"  not.l  %[y]\n"
+			"  move.l %[y], (%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (2*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (3*592/2)(%[pos2])\n"
+			
+			"  move.l (%[glyph])+, %[x]\n"
+			"  move.l %[x], %[y]\n"
+			"  not.l  %[y]\n"
+			"  move.l %[y], (4*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (5*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (6*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (7*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = bg;
-			x = ~y;
-			*pos2 = x;
-			x = ROR4(x);
-			pos2[SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[2*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[3*SCREEN_WIDTH/8] = x; 
+			"  move.w %[fg], 0x201000\n"
+			"  move.l %[x], (4*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (5*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (6*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (7*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = fg;
-			y = x = *glyph++;
-			pos2[4*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[5*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[6*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[7*SCREEN_WIDTH/8] = x;
+			"  move.l (%[glyph])+, %[x]\n"
+			"  move.l %[x], %[y]\n"
+			"  move.l %[x], (8*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (9*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (10*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (11*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = bg;
-			x = ~y;
-			pos2[4*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[5*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[6*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[7*SCREEN_WIDTH/8] = x; 
+			"  move.w %[bg], 0x201000\n"
+			"  not.l  %[y]\n"
+			"  move.l %[y], (8*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (9*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (10*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (11*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = fg;
-			y = x = *glyph++;
-			pos2[8*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[9*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[10*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[11*SCREEN_WIDTH/8] = x;
+			"  move.l (%[glyph]), %[x]\n"
+			"  move.l %[x], %[y]\n"
+			"  not.l  %[y]\n"
+			"  move.l %[y], (12*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (13*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (14*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (15*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = bg;
-			x = ~y;
-			pos2[8*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[9*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[10*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[11*SCREEN_WIDTH/8] = x; 
+			"  move.w %[fg], 0x201000\n"
+			"  move.l %[x], (12*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (13*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (14*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (15*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = fg;
-			y = x = *glyph++;
-			pos2[12*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[13*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[14*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[15*SCREEN_WIDTH/8] = x;
-
-			*SCREEN_MEMORY_CONTROL = bg;
-			x = ~y;
-			pos2[12*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[13*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[14*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[15*SCREEN_WIDTH/8] = x; 
+			: [x] "=&r" (x),
+			  [y] "=&r" (y)
+			: [fg] "r" (fg), 
+			  [bg] "r" (bg),
+			  [pos2] "a" (pos2),
+			  [glyph] "a" (glyph));
 		}
 		else if (font == (uint8_t*)font8x14) {
 			uint32_t* glyph = (uint32_t*)(font + c*16);
-			volatile uint32_t* pos2 = (uint32_t*)pos;
+	
+			uint32_t x;
+			uint32_t y;
 			
-			uint32_t x = *glyph++; 
-			uint32_t y = x;
+			asm volatile(
+			"  move.w %[fg], 0x201000\n"
+			"  move.l (%[glyph])+, %[x]\n"
+			"  move.l %[x], %[y]\n"
+			"  move.l %[x], (%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (2*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (3*592/2)(%[pos2])\n"
 			
-			*SCREEN_MEMORY_CONTROL = fg;
-			*pos2 = x;
-			x = ROR4(x);
-			pos2[SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[2*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[3*SCREEN_WIDTH/8] = x;
+			"  move.w %[bg], 0x201000\n"
+			"  not.l  %[y]\n"
+			"  move.l %[y], (%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (2*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (3*592/2)(%[pos2])\n"
+			
+			"  move.l (%[glyph])+, %[x]\n"
+			"  move.l %[x], %[y]\n"
+			"  not.l  %[y]\n"
+			"  move.l %[y], (4*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (5*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (6*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (7*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = bg;
-			x = ~y;
-			*pos2 = x;
-			x = ROR4(x);
-			pos2[SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[2*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[3*SCREEN_WIDTH/8] = x; 
+			"  move.w %[fg], 0x201000\n"
+			"  move.l %[x], (4*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (5*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (6*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (7*592/2)(%[pos2])\n"
 
-			y = *glyph++;
-			x = ~y;
-			pos2[4*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[5*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[6*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[7*SCREEN_WIDTH/8] = x;
+			"  move.l (%[glyph])+, %[x]\n"
+			"  move.l %[x], %[y]\n"
+			"  move.l %[x], (8*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (9*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (10*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (11*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = fg;
-			x = y;
-			pos2[4*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[5*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[6*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[7*SCREEN_WIDTH/8] = x; 
+			"  move.w %[bg], 0x201000\n"
+			"  not.l  %[y]\n"
+			"  move.l %[y], (8*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (9*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (10*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (11*592/2)(%[pos2])\n"
 
-			y = x = *glyph++;
-			pos2[8*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[9*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[10*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[11*SCREEN_WIDTH/8] = x;
+			"  move.l (%[glyph]), %[x]\n"
+			"  move.l %[x], %[y]\n"
+			"  not.l  %[y]\n"
+			"  move.l %[y], (12*592/2)(%[pos2])\n"
+			"  ror.l #4, %[y]\n"
+			"  move.l %[y], (13*592/2)(%[pos2])\n"
 
-			*SCREEN_MEMORY_CONTROL = bg;
-			x = ~y;
-			pos2[8*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[9*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[10*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[11*SCREEN_WIDTH/8] = x; 
+			"  move.w %[fg], 0x201000\n"
+			"  move.l %[x], (12*592/2)(%[pos2])\n"
+			"  ror.l #4, %[x]\n"
+			"  move.l %[x], (13*592/2)(%[pos2])\n"
 
-			y = *glyph++;
-			x = ~y;
-			pos2[12*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[13*SCREEN_WIDTH/8] = x;
-
-			*SCREEN_MEMORY_CONTROL = fg;
-			x = y;
-			pos2[12*SCREEN_WIDTH/8] = x;
-			x = ROR4(x);
-			pos2[13*SCREEN_WIDTH/8] = x;
+			: [x] "=&r" (x),
+			  [y] "=&r" (y)
+			: [fg] "r" (fg), 
+			  [bg] "r" (bg),
+			  [pos2] "a" (pos2),
+			  [glyph] "a" (glyph));
 		}
 		else {
 			uint8_t* glyph = font + c*fontHeight;
-			volatile uint32_t* pos2 = (volatile uint32_t*)pos;
 			uint16_t row;
 			for (row = 0; row < fontHeight; row++) {
 				uint8_t g = *(uint8_t*)glyph++;

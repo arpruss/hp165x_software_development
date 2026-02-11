@@ -94,9 +94,9 @@ void initialScreen() {
 }
 
 void reload(void) {
-	_final_cleanup();
 	setScreenHeight(0);
 	initialScreen();
+	_final_cleanup();
 	asm("move.l 0x00A7FFFE, %sp"); /* switch to original stack location */
 	_reload();
 }
@@ -228,9 +228,33 @@ int strncasecmp(const char* s1, const char* s2, int n) {
 	return 0;
 }
 
+static uint8_t defaultLookupTable[16] = 
+{
+	0,2,1,1,0,
+	0,2,2,2,0,
+	0,0,2,2,0,0 
+};
+
+/* 
+If you use this, be careful not to damage the
+screen, as it can also change the mapping outside
+the visible area and cause distortion. Also reset
+on exit. 
+*/
+
 void setScreenLookupTable(uint8_t* table) {
-/*  Write 1 to bit 7 of 202000.w
+/*  Write 1 to bit 7 of 202001.w
  Write the 16 entries to 204001.b, 204003.b, etc.
  Write 0 to bit 7 of 202000.w
+ Keep 1 in bit 6.
 */	
+	if (table == NULL)
+		table = defaultLookupTable;
+	*(volatile uint8_t*)0x202001 = 0x80;
+	volatile uint8_t* p = (volatile uint8_t*)0x204001;
+	for (uint16_t i=0; i<16; i++) {
+		*p = table[i];
+		p += 2;
+	}
+	*(volatile uint8_t*)0x202001 = 0x40;		
 }
