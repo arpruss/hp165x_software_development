@@ -38,9 +38,21 @@ extern uint16_t screenHeight;
 
 #define SCREEN ((volatile uint16_t*)0x600000)
 #define SCREEN_HEIGHT screenHeight
-#define DEFAULT_SCREEN_HEIGHT 384
+
+#define ROM_SCREEN_WIDTH  592
+#define ROM_SCREEN_HEIGHT 384
+
+#ifndef DEFAULT_SCREEN_HEIGHT
+#define DEFAULT_SCREEN_HEIGHT ROM_SCREEN_HEIGHT
+#endif
 #define MAX_SCREEN_HEIGHT 392
-#define SCREEN_WIDTH 592
+#ifndef SCREEN_WIDTH
+#define SCREEN_WIDTH ROM_SCREEN_WIDTH
+#endif
+
+#define __QUOTE(x) #x
+#define _QUOTE(x) __QUOTE(x)
+
 #define WRITE_FILE 2
 #define READ_FILE  1
 
@@ -92,6 +104,8 @@ void exit(int status);
 #define OPEN_WRITE 2
 #define MAX_FILENAME_LENGTH 10
 
+uint16_t getScreenWidth(void);
+uint16_t getScreenHeight(void);
 void setScreenHeight(uint16_t height);
 void setTextMode(uint32_t mode);
 void drawText(const char* p);

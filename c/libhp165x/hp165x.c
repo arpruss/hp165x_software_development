@@ -15,6 +15,14 @@ extern void _original_int1_handler(void);
 
 uint16_t screenHeight = 384;
 
+uint16_t getScreenHeight() {
+	return screenHeight;
+}
+
+uint16_t getScreenWidth() {
+	return SCREEN_WIDTH;
+}
+
 uint32_t getVBLCounter(void) {
 	return vblCounterValue;
 }
@@ -50,32 +58,32 @@ void drawWhite(void) {
 }
 
 void initialScreen() {
-	volatile uint32_t* pos;
-	volatile uint32_t* pos2;
-
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	fillScreen();
 
+	volatile uint32_t* pos;
+	volatile uint32_t* pos2;
+
 	*SCREEN_MEMORY_CONTROL = WRITE_GRAY;
 	pos = (uint32_t*)SCREEN;
-	pos2 = pos + (SCREEN_HEIGHT-INITIAL_MARGIN) * (SCREEN_WIDTH/8);
-	for (int16_t i = (SCREEN_WIDTH/8) * INITIAL_MARGIN ; i >= 0 ; i--) {
+	pos2 = pos + (ROM_SCREEN_HEIGHT-INITIAL_MARGIN) * (ROM_SCREEN_WIDTH/8);
+	for (int16_t i = (ROM_SCREEN_WIDTH/8) * INITIAL_MARGIN ; i >= 0 ; i--) {
 		*pos2++ = *pos++ = 0x000F000F;
 	}
-	pos = (uint32_t*)SCREEN + INITIAL_MARGIN * (SCREEN_WIDTH/8);
-	pos2 = pos + (SCREEN_WIDTH/8) - 1;
-	for (int16_t y = SCREEN_HEIGHT - 2 * INITIAL_MARGIN ; y >= 0 ; y--) {
+	pos = (uint32_t*)SCREEN + INITIAL_MARGIN * (ROM_SCREEN_WIDTH/8);
+	pos2 = pos + (592/8) - 1;
+	for (int16_t y = ROM_SCREEN_HEIGHT - 2 * INITIAL_MARGIN ; y >= 0 ; y--) {
 		*pos = 0x000F000F;
 		*pos2 = 0x000F000F;
-		pos += SCREEN_WIDTH/8;
-		pos2 += SCREEN_WIDTH/8;
+		pos += ROM_SCREEN_WIDTH/8;
+		pos2 += ROM_SCREEN_WIDTH/8;
 	}
 }
 
 void reload(void) {
-	setScreenHeight(0);
-	initialScreen();
+//	setScreenHeight(0);
 	_final_cleanup();
+	initialScreen();
 	asm("move.l 0x00A7FFFE, %sp"); /* switch to original stack location */
 	_reload();
 }
@@ -99,7 +107,7 @@ asm(
     "  move.l %%d0,%%d5\n"
     "  move.l %%d0,%%d6\n"
     "  move.l %%d0,%%d7\n"
-    "  move.l #(0x600000+(592*392/2)), %%a0\n" // ; 592*392/2 is divisible by 64
+    "  move.l #(0x600000+(" _QUOTE(SCREEN_WIDTH*MAX_SCREEN_HEIGHT/2) ")), %%a0\n" // ; 592*392/2 is divisible by 64
     "  move.l #0x600000, %%a1\n"
 	"1:\n"
 	"  movem.l %%d0-%%d7,-(%%a0)\n" // ; clear 16 display words at once, decrementing A0 by 32

@@ -26,7 +26,8 @@ _program_sz = _program_end - _program_base;
  * except to add user interrupt vectors.
  */
 
-STARTUP(crt0.o)
+EXTERN(_start)
+ENTRY(_start)
 OUTPUT_ARCH(m68k)
 
 __text_org = _program_base;
@@ -43,6 +44,7 @@ MEMORY {
 SECTIONS {
     .text : {
         _text_start = .;
+		*(.text.init)
         *(.text .text.*)
         . = ALIGN(0x10);
         _text_end = .;

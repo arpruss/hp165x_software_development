@@ -1,8 +1,12 @@
     .text
     .align 2
     .globl scrollUp
+
+#ifndef SCREEN_WIDTH
+# define SCREEN_WIDTH 592
+#endif
 	
-#define LINE_BYTES (592/4*2)
+#define LINE_BYTES (SCREEN_WIDTH/4*2)
 #define SCREEN 0x600000	
 #define SCREEN_END (0x600000 + LINE_BYTES*384)
 #define SCREEN_MEMORY_CONTROL 0x00201000

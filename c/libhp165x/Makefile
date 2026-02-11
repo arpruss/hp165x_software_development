@@ -16,7 +16,7 @@
 #   SRCS=main.c user.c \
 #        driver.s
 SRCS=hp165x.c puttext.c loadexec.c key.c file.c serial.c scroll.S simple_serial.c \
-	keyboard.c input.c mc6845.c
+	keyboard.c input.c mc6845.c crt0.S 
 
 # Specify the CPU type that you are targeting your build towards.
 #
@@ -36,6 +36,8 @@ PREFIX=m68k-elf
 # Dont modify below this line (unless you know what youre doing).
 BUILDDIR=build
 
+BUILDDIR640x392=build640x392
+
 CC=$(PREFIX)-gcc
 LD=$(PREFIX)-ld
 OBJCOPY=$(PREFIX)-objcopy
@@ -43,6 +45,9 @@ OBJDUMP=$(PREFIX)-objdump
 AR = $(PREFIX)-ar
 
 CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
+
+CFLAGS640x392=$(CFLAGS) -DDEFAULT_SCREEN_HEIGHT=392 -DSCREEN_WIDTH=640
+
 LFLAGS=--script=platform.ld -L../../m68k_bare_metal/libmetal -lmetal-$(CPU)
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
@@ -50,8 +55,12 @@ OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))
 OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))
 DEPS=$(OBJS:.o=.d)
 
+OBJS640x392=$(patsubst %.c,$(BUILDDIR640x392)/%.c.o,$(SRCS))
+OBJS640x392:=$(patsubst %.S,$(BUILDDIR640x392)/%.S.o,$(OBJS640x392))
+OBJS640x392:=$(patsubst %.s,$(BUILDDIR640x392)/%.s.o,$(OBJS640x392))
+DEPS640x392=$(OBJS640x392:.o=.d)
 
-all: libhp165x.a
+all: libhp165x.a libhp165x640x392.a 
 
 
 .PHONY: crt clean
@@ -62,41 +71,40 @@ release: all
 $(BUILDDIR):
 	mkdir -p $@
 
-libhp165x.a: $(OBJS) platform.ld crt0.o
-	$(AR) rcs libhp165x.a $(OBJS) crt0.o
+$(BUILDDIR640x392):
+	mkdir -p $@
+
+libhp165x.a: $(OBJS) platform.ld 
+	cd $(BUILDDIR) && $(AR) rcs ../libhp165x.a *.o
+
+libhp165x640x392.a: $(OBJS640x392) platform.ld 
+	cd $(BUILDDIR640x392) && $(AR) rcs ../libhp165x640x392.a *.o
 
 $(BUILDDIR)/%.c.o: %.c
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(BUILDDIR640x392)/%.c.o: %.c
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS640x392) -c -o $@ $<
+
 $(BUILDDIR)/%.S.o: %.S
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BUILDDIR)/%.s.o: %.s
+$(BUILDDIR640x392)/%.S.o: %.S
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS640x392) -c -o $@ $<
+
+$(BUILDDIR640x392)/%.s.o: %.s
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS640x392) -c -o $@ $<
 
 -include $(DEPS)
-crt: crt0.o
 
-crt0.o: crt0.S
-	$(CC) $(CFLAGS) -c -o crt0.o crt0.S
-	rm -f crt0.d
+-include $(DEPS640x392)
 
 clean:
 	rm -rf $(BUILDDIR)/*
-	rm -f bmbinary*
+	rm -rf $(BUILDDIR640x392)/*
 
-dump:
-	#$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
-	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -dt -j.text bmbinary
-	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.rodata -j.data -j.bss -j.heap -j.stack bmbinary
-
-dumps:
-	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
-	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -St -j.text bmbinary
-	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.rodata -j.data -j.bss -j.heap -j.stack bmbinary
-
-hexdump:
-	hexdump -C bmbinary.rom

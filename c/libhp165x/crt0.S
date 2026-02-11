@@ -9,7 +9,7 @@
         .extern _data_end
         .extern main
 
-        .section .text
+        .section .text.init
         .align 2
 
         .type _start, @function
@@ -36,6 +36,10 @@ _start:
 		move.w  (%a0)+,%d1
 		move.w	%d1,(%a1)+
 		dbra	%d0,3b
+
+#if defined(DEFAULT_SCREEN_HEIGHT) || defined(SCREEN_WIDTH)
+		jsr		setDefaultScreenSize
+#endif		
 
         jsr     main
 		bra		_exit
@@ -65,6 +69,14 @@ _final_cleanup:
 	/* TODO: close files */
 	
 		move.w 	#0xF00, 0x201000 /* restore screen writing mode */
+#if defined(DEFAULT_SCREEN_HEIGHT) || defined(SCREEN_WIDTH)
+		jsr	resetMC6845
+#else
+		cmp.w   #384, screenHeight
+		beq		1f
+		jsr		resetMC6845
+1:		
+#endif
 	/*	bra _restore_original_int_handlers */
 		
 _restore_original_int_handlers:
