@@ -17,8 +17,6 @@
 #define BEEPER ((volatile uint8_t*)0x203000)
 #define BEEPER_ON 0xFF
 #define BEEPER_OFF 0xFE
-#define MC6845_REGISTER_ADDRESS ((volatile uint8_t*)0x0020c001)
-#define MC6845_REGISTER_VALUE ((volatile uint8_t*)0x0020c003)
 
 
 
@@ -255,5 +253,6 @@ int strncasecmp(const char* s1, const char* s2, int n);
 #include "serial.h"
 #include "simple_serial.h"
 #include "keyboard.h"
+#include "mc6845.h"
 
 #endif

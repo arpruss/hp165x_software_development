@@ -23,27 +23,6 @@ void setVBLCounter(uint32_t value) {
 	vblCounterValue = value;
 }
 
-void setScreenHeight(uint16_t height) {
-	if (height == 0)
-		height = DEFAULT_SCREEN_HEIGHT;
-	if (height > MAX_SCREEN_HEIGHT)
-		height = MAX_SCREEN_HEIGHT;
-	
-	if (screenHeight == height)
-		return;
-	
-	height /= 8;
-	
-	*MC6845_REGISTER_ADDRESS = 6;
-	*MC6845_REGISTER_VALUE = height;
-	*MC6845_REGISTER_ADDRESS = 7;
-	*MC6845_REGISTER_VALUE = height;	
-	
-	screenHeight = height * 8;
-	
-	setTextWindow(0,0,0,0);
-}
-
 void patchInt(uint16_t level, void (*address)()) {
 	volatile uint8_t* ptr = ((volatile uint8_t*)0x980000)+6*(level-1);
 	*(volatile uint32_t*)(ptr+2) = (uint32_t)address;
