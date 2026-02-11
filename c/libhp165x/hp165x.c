@@ -77,7 +77,7 @@ void initialScreen() {
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	fillScreen();
 
-	*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
+	*SCREEN_MEMORY_CONTROL = WRITE_GRAY;
 	pos = (uint32_t*)SCREEN;
 	pos2 = pos + (SCREEN_HEIGHT-INITIAL_MARGIN) * (SCREEN_WIDTH/8);
 	for (int16_t i = (SCREEN_WIDTH/8) * INITIAL_MARGIN ; i >= 0 ; i--) {
