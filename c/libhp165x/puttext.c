@@ -282,8 +282,6 @@ uint16_t putText(const char* s) {
 			"  move.l %[y], (13*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
 			"  ror.l #4, %[y]\n"
 			"  move.l %[y], (14*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
-			"  ror.l #4, %[y]\n"
-			"  move.l %[y], (15*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
 
 			"  move.w %[fg], 0x201000\n"
 			"  move.l %[x], (12*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
@@ -291,8 +289,6 @@ uint16_t putText(const char* s) {
 			"  move.l %[x], (13*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
 			"  ror.l #4, %[x]\n"
 			"  move.l %[x], (14*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
-			"  ror.l #4, %[x]\n"
-			"  move.l %[x], (15*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
 
 			: [x] "=&r" (x),
 			  [y] "=&r" (y)
@@ -458,16 +454,16 @@ static uint8_t* romFind(uint32_t value) {
 /* TODO: adjust window */
 static void _setFontSystem(uint32_t defaultLocation, uint32_t testLocation, uint32_t testValue) {
 	if (*(uint32_t*)testLocation == testValue) {
-		setFont((uint8_t*)defaultLocation, 16);
+		setFont((uint8_t*)defaultLocation, 15);
 	}
 	else {
 		uint8_t* location = romFind(testValue);
 		if (location == 0) {
-			setFont(font8x14, 14); 
+			setFont(font8x14, 15); 
 			return;
 		}
 		location -= (testLocation-defaultLocation);
-		setFont(location, 16);
+		setFont(location, 15);
 	}
 }
 

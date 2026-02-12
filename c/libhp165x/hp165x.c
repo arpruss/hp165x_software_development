@@ -245,3 +245,5 @@ void setScreenLookupTable(uint8_t* table) {
 	}
 	*(volatile uint8_t*)0x202001 = 0x40;		
 }
+
+_WRAP_0_RET_D1(getKeyBIOS,0xeb38);

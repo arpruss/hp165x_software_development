@@ -18,7 +18,7 @@
 #define BEEPER_ON 0xFF
 #define BEEPER_OFF 0xFE
 
-
+#define SCREEN_WRITE_VALUE(active,value) = ((0xF^(uint8_t)(active)) | (uint16_t)(0xF^(uint8_t)(value))<<8)
 
 #define HARDWARE_STATUS_NO_DISK  (1<<3)
 #define HARDWARE_STATUS_OLD_DISK 1 // disk hasn't been changed
@@ -110,7 +110,6 @@ void setScreenHeight(uint16_t height);
 void setTextMode(uint32_t mode);
 void drawText(const char* p);
 void setCoordinates(int32_t x, int32_t y);
-int _openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int writeFile(int32_t fd, const void* data, int32_t size);
 int readFile(int32_t fd, void* data, int32_t size);
@@ -173,7 +172,6 @@ void setKeyClick(uint8_t _click);
 void setKeyRepeat(uint16_t delay, uint16_t rate);
 uint16_t getKeyBIOS(void);
 uint16_t peekKey(void);
-void renameDirEntry(uint32_t index, const ROMNameAndType_t* newEntry);
 #define ERROR_TIMEOUT (-2)
 int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks);
 int getText(char* _buffer, uint16_t maxSize);
