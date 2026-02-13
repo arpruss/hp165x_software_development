@@ -41,7 +41,7 @@ OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 
 CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
-LFLAGS=-L../libhp165x -L../../m68k_bare_metal/libmetal --script=platform.ld -lhp165x -lmetal-$(CPU) 
+LFLAGS=-gc-sections -L../libhp165x -L../../m68k_bare_metal/libmetal --script=platform.ld -lhp165x -lmetal-$(CPU) 
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
 OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))

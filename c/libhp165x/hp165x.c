@@ -162,7 +162,77 @@ void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2) {
 		*pos = value;
 }
 
-		// https://stackoverflow.com/questions/66586687/delay-loop-in-68k-assembly
+
+/* does not include bottomRight coordinate in rectangle ; UNTESTED!!! */
+void fillRectangle(uint16_t topLeftX, uint16_t topLeftY, uint16_t bottomRightX, uint16_t bottomRightY) {
+	uint16_t height = bottomRightY - topLeftY;
+	if (height == 0)
+		return;
+	uint16_t width = bottomRightX - topLeftX;
+	if (width == 0)
+		return;
+
+	uint16_t start_4 = topLeftX / 4;
+	volatile uint16_t* pos = SCREEN + topLeftY * SCREEN_WIDTH_WORDS + start_4;	
+	uint16_t end_4 = (bottomRightX - 1) / 4 - start_4;
+	uint8_t startMod4 = topLeftX % 4;
+	uint8_t endMod4 = (bottomRightX-1) % 4;
+	
+	if (end_4 == 0) {
+		/* case 1: single 4 bit column */
+		uint16_t writeMask = ((16>>startMod4)-1)-((8>>endMod4)-1);
+		for (uint16_t i = 0 ; i < height ; i++) {
+			*pos = writeMask;
+			pos += SCREEN_WIDTH_WORDS;
+		}
+	}
+	else if (end_4 == 1) {
+		/* case 2: two 4 bit columns */
+		uint32_t writeMask = (uint32_t)((16>>startMod4)-1) << 16 | (15-((8>>endMod4)-1));
+		volatile uint32_t* pos2 = (volatile uint32_t*)pos;
+		for (uint16_t i = 0 ; i < height ; i++) {
+			*pos2 = writeMask;
+			pos2 += SCREEN_WIDTH_DWORDS;
+		}
+	}
+	else {
+		/* case 3: more than two 4 bit columns */
+		uint32_t writeMask = (uint32_t)((16>>startMod4)-1) << 16 | 0xF;
+		volatile uint32_t* pos2 = (volatile uint32_t*)pos;
+		for (uint16_t i = 0 ; i < height ; i++) {
+			*pos2 = writeMask;
+			pos2 += SCREEN_WIDTH_DWORDS;
+		}
+		pos += 2;
+		width -= (4-startMod4)+4;
+		while (width >= 8) {
+			volatile uint32_t* pos2 = (volatile uint32_t*)pos;
+			for (uint16_t i = 0 ; i < height ; i++) {
+				*pos2 = 0xF000F;
+				pos2 += SCREEN_WIDTH_DWORDS;
+			}
+			pos += 2;
+			width -= 8;
+		}
+		uint16_t endMask = (15-((8>>endMod4)-1));
+		if (width > 4) {
+			volatile uint32_t* pos2 = (volatile uint32_t*)pos;			
+			writeMask = 0xF0000 | endMask;
+			for (uint16_t i = 0 ; i < height ; i++) {
+				*pos2 = writeMask;
+				pos2 += SCREEN_WIDTH_DWORDS;
+			}
+		}
+		else {
+			for (uint16_t i = 0 ; i < height ; i++) {
+				*pos = endMask;
+				pos += SCREEN_WIDTH_WORDS;
+			}
+		}
+	}	
+}
+
+// https://stackoverflow.com/questions/66586687/delay-loop-in-68k-assembly
 
 // the processor is supposed to be 10MHz, but my timing shows more like 8.5MHz
 // 8854 per tick

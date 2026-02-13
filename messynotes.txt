@@ -336,14 +336,14 @@ implemented at 3f96
 eb7a CloseFile(int fparam)
 implemented at 3a5c
 
+eb92: Remove deleted entries from directory.
+
 eb98 FindDirEntry(char* filename,int16 type,char* direntry32bytes,uint32 searchStartIndex,uint32 filename_length)
 	return -5 if filename doesn't exist; returns index in directory otherwise.
 	These are standard LIF directory entries.
 	I've been having this hang!
 
 ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done; else, returns data 
-	TODO: Check if direntry only needs 12 bytes, and only includes filename and filetype, or is the full
-		direntry.
 
 0x984166: some kind of open file info area, with entries of length 0x138?	   
 
@@ -376,6 +376,12 @@ directory stored at 9800ca and 9808ac (sometimes?). In latter location changed w
 eba4 (implemented 327e) looks like it may load the whole dir
 ebfe: read block
 
+0x9842a6.w: total size in blocks (3079)
+0x98415a.l: directory start block number
+0x984162.l: directory size in blocks
+
+e.g., free 2344 largest 2344 total 3059
+
 Some PVTEST_ functions:
 FUN_00993044: args: push string, push length 
 FUN_00992ff6: DrawText: push string, zero terminated
@@ -397,6 +403,7 @@ SYSTEM_ purge completed message number #14
 disk packing and other file operations in SYSTEM_ 00987c04 case 1e
 pack/rename/purge/format
 
+In SYSTEM_, free space calculations are done at 009c1c90.
 
 NOTES ON SYSTEM_
 

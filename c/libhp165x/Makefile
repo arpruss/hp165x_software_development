@@ -15,7 +15,7 @@
 #
 #   SRCS=main.c user.c \
 #        driver.s
-SRCS=hp165x.c puttext.c loadexec.c key.c file.c serial.c scroll.S simple_serial.c \
+SRCS=hp165x.c puttext.c loadexec.c key.c hpfile.c serial.c scroll.S simple_serial.c \
 	keyboard.c input.c mc6845.c crt0.S 
 
 # Specify the CPU type that you are targeting your build towards.
@@ -44,7 +44,7 @@ OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 AR = $(PREFIX)-ar
 
-CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
+CFLAGS=-m$(CPU) -ffunction-sections --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
 
 CFLAGS640x392=$(CFLAGS) -DDEFAULT_SCREEN_HEIGHT=392 -DSCREEN_WIDTH=640
 

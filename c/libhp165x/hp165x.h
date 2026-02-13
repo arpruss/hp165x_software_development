@@ -49,6 +49,9 @@ extern uint16_t screenHeight;
 #ifndef SCREEN_WIDTH
 #define SCREEN_WIDTH ROM_SCREEN_WIDTH
 #endif
+#define SCREEN_WIDTH_BYTES  (SCREEN_WIDTH/2)
+#define SCREEN_WIDTH_WORDS  (SCREEN_WIDTH/4)
+#define SCREEN_WIDTH_DWORDS (SCREEN_WIDTH/8)
 
 #define __QUOTE(x) #x
 #define _QUOTE(x) __QUOTE(x)
@@ -110,10 +113,6 @@ void setScreenHeight(uint16_t height);
 void setTextMode(uint32_t mode);
 void drawText(const char* p);
 void setCoordinates(int32_t x, int32_t y);
-int openFile(const char* filename, uint32_t fileType, uint32_t mode);
-int writeFile(int32_t fd, const void* data, int32_t size);
-int readFile(int32_t fd, void* data, int32_t size);
-void closeFile(int32_t fd);
 void romDelayTicks(uint32_t ticks);
 void _restore_original_int_handlers(void);
 void _final_cleanup(void);
@@ -123,36 +122,6 @@ void unpatchInt(uint16_t level);
 typedef void (*Reload_t)(void);
 #define _reload ((Reload_t)0x0000ece2)
 
-typedef struct {
-	char name[MAX_FILENAME_LENGTH]; // space padded
-	uint16_t type;
-	uint32_t startBlock;
-	uint32_t numBlocks;
-	uint8_t dateAndTime[6];
-	uint8_t misc[6];
-} ROMDirEntry_t;
-
-typedef struct {
-	char name[MAX_FILENAME_LENGTH+1]; // no padding
-	uint16_t type;
-	uint32_t startBlock;
-	uint32_t numBlocks;
-	uint8_t dateAndTime[6];
-	uint8_t misc[6];
-} DirEntry_t;
-
-typedef struct {
-	char name[10];
-	uint16_t type;
-} ROMNameAndType_t;
-
-#define TYPE_EXE 0xC001
-//int findDirEntry(const char*filename, uint32_t type, DirEntry_t* dirEntry,uint32_t startIndex, uint32_t nameLength);//it's been hanging
-int getDirEntry(int index, DirEntry_t* dirEntry); 
-int _getDirEntry(int index, ROMDirEntry_t* dirEntry); 
-int deleteByNameAndType(const char* name, uint16_t fileType);
-
-#define ERROR_FILE_NOT_FOUND (-5)
 
 void setKeyWait(uint8_t w);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
@@ -266,5 +235,6 @@ int strncasecmp(const char* s1, const char* s2, int n);
 #include "simple_serial.h"
 #include "keyboard.h"
 #include "mc6845.h"
+#include "hpfile.h"
 
 #endif

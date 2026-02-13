@@ -2,12 +2,15 @@
 #include <string.h>
 #include "hp165x.h"
 
+#define TOTAL_BLOCKS ((volatile uint32_t*)0x009842a6)
+
 void _renameDirEntry(uint32_t index, const ROMNameAndType_t* newEntry);
 int _openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int _writeFile(int32_t fd, const void* data, int32_t size);
 int _readFile(int32_t fd, void* data, int32_t size);
 void _closeFile(int32_t fd);
 int _getDirEntry(int index, ROMDirEntry_t* dirEntry);
+void _diskPack(void);
 
 _WRAP_2(_renameDirEntry,0xebc8);
 _WRAP_3(_openFile,0xeb74);
@@ -18,12 +21,13 @@ _WRAP_3(_writeFile,0xeb80);
 _WRAP_2(_getDirEntry,0xebce);
 _WRAP_0(_refreshDir, 0xebb0);
 _WRAP_1(_eb62, 0x227c);
+_WRAP_0(_packDir, 0xeb92);
 
 void _eb62(int x);
 
 static uint8_t _savedAsteriskAreaData[4][15];
 
-void _saveAsteriskArea(void) {
+void  __attribute__ ((noinline)) _saveAsteriskArea(void) {
 	uint8_t mask;
 	mask = 1;
 	volatile uint16_t* pos = SCREEN+592/4*14+71*8/4; 
@@ -36,7 +40,7 @@ void _saveAsteriskArea(void) {
 	}
 }
 
-void _restoreAsteriskArea(void) {
+void __attribute__ ((noinline)) _restoreAsteriskArea(void) {
 	volatile uint16_t* pos = SCREEN+592/4*14+71*8/4; 
 	*SCREEN_MEMORY_CONTROL = 0xF00; // clear all
 	volatile uint16_t* pos2 = pos;
