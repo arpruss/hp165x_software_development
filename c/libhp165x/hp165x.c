@@ -95,7 +95,7 @@ void drawPixel(uint16_t x, uint16_t y) {
 }
 
 // fills screen, up to 392 lines as needed
-// todo: only do the number of lines that are actually
+// todo: maybe only do the number of lines that are actually
 // needed
 void fillScreen(void) {
 asm(
@@ -133,6 +133,7 @@ void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2) {
 	}
 }
 
+/* TODO: very inefficient */
 void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2) {
 	uint16_t xCount;
 	volatile uint16_t* pos = SCREEN + (SCREEN_WIDTH/4) * y;
@@ -168,9 +169,29 @@ void fillRectangle(uint16_t topLeftX, uint16_t topLeftY, uint16_t bottomRightX, 
 	uint16_t height = bottomRightY - topLeftY;
 	if (height == 0)
 		return;
+
+	if (topLeftX == 0 && bottomRightX == SCREEN_WIDTH) {
+		/* case 0: full rows */
+
+		/* case 0a: full screen */
+		if (topLeftX == 0 && bottomRightY == screenHeight) {
+			/* use optimized assembly code */
+			fillScreen();
+			return;
+		}
+
+		/* case 0b: partial screen */
+		volatile uint32_t* pos = (volatile uint32_t*)(SCREEN + topLeftY * SCREEN_WIDTH_WORDS);
+		uint16_t n = SCREEN_WIDTH_DWORDS * height;
+		while (n--)
+			*pos++ = 0xF000F;
+		return;
+	}
+
 	uint16_t width = bottomRightX - topLeftX;
 	if (width == 0)
 		return;
+
 
 	uint16_t start_4 = topLeftX / 4;
 	volatile uint16_t* pos = SCREEN + topLeftY * SCREEN_WIDTH_WORDS + start_4;	
