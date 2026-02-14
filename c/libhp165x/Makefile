@@ -16,7 +16,7 @@
 #   SRCS=main.c user.c \
 #        driver.s
 SRCS=hp165x.c puttext.c loadexec.c key.c hpfile.c serial.c scroll.S simple_serial.c \
-	keyboard.c input.c mc6845.c crt0.S 
+	keyboard.c input.c mc6845.c screen.c crt0.S 
 
 # Specify the CPU type that you are targeting your build towards.
 #

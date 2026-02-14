@@ -31,35 +31,26 @@ void setScrollMode(uint8_t m) {
 	scrollMode = m;
 }
 
-void getTextWindow(uint16_t* xP,uint16_t *yP,uint16_t *widthP,uint16_t *heightP) {
+void getTextWindow(uint16_t* xP,uint16_t *yP,uint16_t *x2P,uint16_t *y2P) {
 	*xP = winX;
 	*yP = winX;
-	*widthP = winRightX-winX;
-	*heightP = winBottomY-winY;
+	*x2P = winRightX;
+	*y2P = winBottomY;
 }
 
-/* if width==0 or height==0, set to maximum possible;
-   if width or height is negative, use as margin */
-void setTextWindow(uint16_t x,uint16_t y,int16_t width,int16_t height) {
+/* if bottomRightX==0 or bottomRightY==0, set to maximum possible; if negative,
+   add to maximum (i.e., specify margin) */
+void setTextWindow(uint16_t topLeftX,uint16_t topLeftY,int16_t bottomRightX,int16_t bottomRightY) {
 	maxRows = screenHeight / fontHeight;
-	winX = x;
-	winY = y;
-	if (width > 0) {
-		winRightX = x + width;
-		if (winRightX > MAX_TEXT_COLUMNS)
-			winRightX = MAX_TEXT_COLUMNS;
-	}
-	else {
-		winRightX = MAX_TEXT_COLUMNS - 1 + width;
-	}
-	if (height > 0) {
-		winBottomY = y + height;
-		if (winBottomY > maxRows)
-			winBottomY = maxRows;
-	}
-	else {
-		winBottomY = maxRows - 1 + width;
-	}
+	winX = topLeftX;
+	winY = topLeftY;
+	if (bottomRightX <= 0)
+		bottomRightX += MAX_TEXT_COLUMNS;
+	if (bottomRightY <= 0)
+		bottomRightY += maxRows;
+	winRightX = bottomRightX;
+	winBottomY = bottomRightY;
+
 	if (curX < winX)
 		curX = winX;
 	else if (curX >= winRightX)

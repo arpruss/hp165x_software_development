@@ -18,40 +18,9 @@
 #define BEEPER_ON 0xFF
 #define BEEPER_OFF 0xFE
 
-#define SCREEN_WRITE_VALUE(active,value) = ((0xF^(uint8_t)(active)) | (uint16_t)(0xF^(uint8_t)(value))<<8)
-
 #define HARDWARE_STATUS_NO_DISK  (1<<3)
 #define HARDWARE_STATUS_OLD_DISK 1 // disk hasn't been changed
 
-// reading won't be very useful in these modes
-#define WRITE_BLACK   0xF00 // clears all other planes than data, draws black on data
-#define WRITE_WHITE   0xE00 // clears all other planes than data, draws white on data
-#define WRITE_GRAY    0xC00 // clears attr & overlay planes, then draws gray using data and overlay-data
-// the following 4 modes allow reading
-#define WRITE_SET_ATTR   0x007  // leaves data unchanged
-#define WRITE_CLEAR_ATTR 0x807  // leaves data unchanged
-#define WRITE_SET_DATA   0x00E  // leaves data unchanged
-#define WRITE_CLEAR_DATA 0x10E  // leaves data unchanged
-#define WRITE_NOP        0x00F
-
-extern uint16_t screenHeight;
-
-#define SCREEN ((volatile uint16_t*)0x600000)
-#define SCREEN_HEIGHT screenHeight
-
-#define ROM_SCREEN_WIDTH  592
-#define ROM_SCREEN_HEIGHT 384
-
-#ifndef DEFAULT_SCREEN_HEIGHT
-#define DEFAULT_SCREEN_HEIGHT ROM_SCREEN_HEIGHT
-#endif
-#define MAX_SCREEN_HEIGHT 392
-#ifndef SCREEN_WIDTH
-#define SCREEN_WIDTH ROM_SCREEN_WIDTH
-#endif
-#define SCREEN_WIDTH_BYTES  (SCREEN_WIDTH/2)
-#define SCREEN_WIDTH_WORDS  (SCREEN_WIDTH/4)
-#define SCREEN_WIDTH_DWORDS (SCREEN_WIDTH/8)
 
 #define __QUOTE(x) #x
 #define _QUOTE(x) __QUOTE(x)
@@ -95,10 +64,6 @@ extern uint16_t screenHeight;
 #define TEXT_MODE_NORMAL 0
 
 uint16_t getKey(char wait);
-void drawPixel(uint16_t x, uint16_t y);
-void fillScreen(void);
-void drawBlack(void);
-void drawWhite(void);
 void reload(void);
 void _exit(int status);
 void exit(int status);
@@ -107,12 +72,6 @@ void exit(int status);
 #define OPEN_WRITE 2
 #define MAX_FILENAME_LENGTH 10
 
-uint16_t getScreenWidth(void);
-uint16_t getScreenHeight(void);
-void setScreenHeight(uint16_t height);
-void setTextMode(uint32_t mode);
-void drawText(const char* p);
-void setCoordinates(int32_t x, int32_t y);
 void romDelayTicks(uint32_t ticks);
 void _restore_original_int_handlers(void);
 void _final_cleanup(void);
@@ -123,10 +82,7 @@ typedef void (*Reload_t)(void);
 #define _reload ((Reload_t)0x0000ece2)
 
 /* does not include bottomRight coordinate in rectangle */
-void fillRectangle(uint16_t topLeftX, uint16_t topLeftY, uint16_t bottomRightX, uint16_t bottomRightY);
 void setKeyWait(uint8_t w);
-void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
-void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);
 void waitSeconds(uint16_t n); 
 uint32_t getVBLCounter(void);
 void patchVBL(void);
@@ -237,5 +193,6 @@ int strncasecmp(const char* s1, const char* s2, int n);
 #include "keyboard.h"
 #include "mc6845.h"
 #include "hpfile.h"
+#include "screen.h"
 
 #endif
