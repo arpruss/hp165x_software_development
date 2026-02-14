@@ -122,7 +122,8 @@ void unpatchInt(uint16_t level);
 typedef void (*Reload_t)(void);
 #define _reload ((Reload_t)0x0000ece2)
 
-
+/* does not include bottomRight coordinate in rectangle */
+void fillRectangle(uint16_t topLeftX, uint16_t topLeftY, uint16_t bottomRightX, uint16_t bottomRightY);
 void setKeyWait(uint8_t w);
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2);
 void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);

@@ -164,7 +164,7 @@ void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2) {
 }
 
 
-/* does not include bottomRight coordinate in rectangle ; UNTESTED!!! */
+/* does not include bottomRight coordinate in rectangle */
 void fillRectangle(uint16_t topLeftX, uint16_t topLeftY, uint16_t bottomRightX, uint16_t bottomRightY) {
 	uint16_t height = bottomRightY - topLeftY;
 	if (height == 0)
@@ -235,16 +235,16 @@ void fillRectangle(uint16_t topLeftX, uint16_t topLeftY, uint16_t bottomRightX, 
 			pos += 2;
 			width -= 8;
 		}
-		uint16_t endMask = (15-((8>>endMod4)-1));
 		if (width > 4) {
 			volatile uint32_t* pos2 = (volatile uint32_t*)pos;			
-			writeMask = 0xF0000 | endMask;
+			writeMask = 0xF0000 | (15-((8>>endMod4)-1));
 			for (uint16_t i = 0 ; i < height ; i++) {
 				*pos2 = writeMask;
 				pos2 += SCREEN_WIDTH_DWORDS;
 			}
 		}
-		else {
+		else if (width > 0) {
+			uint16_t endMask = 15-((8>>endMod4)-1);
 			for (uint16_t i = 0 ; i < height ; i++) {
 				*pos = endMask;
 				pos += SCREEN_WIDTH_WORDS;
