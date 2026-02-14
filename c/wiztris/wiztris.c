@@ -32,9 +32,11 @@ char grid[GHEIGHT][GWIDTH]={{0}};
 #ifndef BLACK_ON_WHITE
 #define DRAW_BACKGROUND WRITE_BLACK
 #define DRAW_FOREGROUND WRITE_WHITE
+#define DRAW_BOARD		WRITE_GRAY
 #else
 #define DRAW_BACKGROUND WRITE_WHITE
 #define DRAW_FOREGROUND WRITE_BLACK
+#define DRAW_BOARD		WRITE_WHITE
 #endif
 
 #define MAXHIGH 10
@@ -110,7 +112,7 @@ void init()
 }
 
 // TODO: assembly
-void dosquare(int i,int j,int c)  /* row,column,color */
+void dosquare(uint16_t i,uint16_t j,uint16_t c,uint16_t currentBackground)  /* row,column,color */
 {
 	uint16_t x = BOARD_X + j*SQUARE_WIDTH;
 	uint16_t y = (GHEIGHT_1-i)*SQUARE_HEIGHT;
@@ -118,17 +120,17 @@ void dosquare(int i,int j,int c)  /* row,column,color */
 	if (c) 
 		*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
 	else
-		*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
+		*SCREEN_MEMORY_CONTROL = currentBackground;
 	
 	SQUARE(x,y);
 }
 
-void dopiece(int row0,int col0,int n,int r,int c)
+void dopiece(uint16_t row0,uint16_t col0,uint16_t n,uint16_t r,uint16_t c,uint16_t currentBackground)
 {
-    int row;
-    int col;
-    int colmask;
-    int st;
+    uint16_t row;
+    uint16_t col;
+    uint16_t colmask;
+    uint16_t st;
     for(row=0; row<4; row++)
     {
         st=shapetbl(n,row,r);
@@ -138,7 +140,7 @@ void dopiece(int row0,int col0,int n,int r,int c)
             for(col=0; col<4; col++)
             {
                 if((colmask&st) && col+col0>=0 && col+col0<maxwidth)
-                    dosquare(row0-row,col+col0,c);
+                    dosquare(row0-row,col+col0,c,currentBackground);
                 colmask=colmask<<1;
             }
         }
@@ -152,13 +154,13 @@ void drawgrid(char erase)
 	if (erase) {
 		for(row=0; row<GHEIGHT; row++) for(col=0; col<GWIDTH; col++) {
 			char g = grid[row][col];
-			if (g) dosquare(row,col,0);
+			if (g) dosquare(row,col,0,DRAW_BOARD);
 		}
 	}
 	else {
 		for(row=0; row<GHEIGHT; row++) for(col=0; col<GWIDTH; col++) {
 			char g = grid[row][col];
-			dosquare(row,col,g);
+			dosquare(row,col,g,DRAW_BOARD);
 		}
 	}
 }
@@ -207,7 +209,7 @@ int addtogrid(int row0,int col0,int piece,int rot)
 void killrow(int i)
 {
     int i2,j;
-    for(j=0;j<GWIDTH;j++) dosquare(i,j,0);
+    for(j=0;j<GWIDTH;j++) dosquare(i,j,0,DRAW_BOARD);
     for(i2=i;i2<GHEIGHT-1;i2++) for(j=0;j<GWIDTH;j++)
       grid[i2][j] = grid[i2+1][j];
     for(j=0;j<GWIDTH;j++) grid[GHEIGHT-1][j]=0;
@@ -265,7 +267,7 @@ int gethighestrow(int row,int piece,int rot)
 void doshownext(int piece,int rot,int c)
 {
     maxwidth=GWIDTH+8;
-    dopiece(GHEIGHT-4,GWIDTH+4,piece,rot,c);
+    dopiece(GHEIGHT-4,GWIDTH+4,piece,rot,c,DRAW_BACKGROUND);
     maxwidth=GWIDTH;
 }
 
@@ -280,6 +282,11 @@ void help()
 	drawTextAt(0,0,"HELP");
 }
 
+void fr(short x1,short y1,short x2,short y2) {
+	for (; y1<y2 ; y1++)
+		drawHorizontalLine(x1,y1,x2-1);
+}
+
 void drawbox() {
 	*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
 	for (int i=0;i<2;i++) {
@@ -287,6 +294,8 @@ void drawbox() {
 		drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH+i,0,GHEIGHT*SQUARE_HEIGHT);
 		drawHorizontalLine(BOARD_X-3,GHEIGHT*SQUARE_HEIGHT+i,BOARD_X+GWIDTH*SQUARE_WIDTH+1);
 	}
+	*SCREEN_MEMORY_CONTROL = DRAW_BOARD;
+	fillRectangle(BOARD_X-1,0,BOARD_X+GWIDTH*SQUARE_WIDTH,GHEIGHT*SQUARE_HEIGHT);
 }
 
 void drop()
@@ -323,7 +332,7 @@ void drop()
         for(row=curheight; row>=0; row--)
         {
 		   setVBLCounter(0);
-           dopiece(row,col,piece,rot,1);
+           dopiece(row,col,piece,rot,1,DRAW_BOARD);
            while(getVBLCounter() < curdelay) {
 			  c = getKey(0);
               if(c) {
@@ -339,9 +348,9 @@ void drop()
                             rot2=(rot+NROTS-1)%NROTS;
                             if(fitq(row,col,piece,rot2))
                             {
-                               dopiece(row,col,piece,rot,0);
+                               dopiece(row,col,piece,rot,0,DRAW_BOARD);
                                rot=rot2;
-                               dopiece(row,col,piece,rot,1);
+                               dopiece(row,col,piece,rot,1,DRAW_BOARD);
                             }
                             break;
                    case KEY_1:
@@ -349,9 +358,9 @@ void drop()
                             rot2=(rot+1)%NROTS;
                             if(fitq(row,col,piece,rot2))
                             {
-                               dopiece(row,col,piece,rot,0);
+                               dopiece(row,col,piece,rot,0,DRAW_BOARD);
                                rot=rot2;
-                               dopiece(row,col,piece,rot,1);
+                               dopiece(row,col,piece,rot,1,DRAW_BOARD);
                             }
                             break;
                    case KEY_RUN:
@@ -366,18 +375,18 @@ void drop()
                           col2=col+1;
                           if(fitq(row,col2,piece,rot))
                           {
-                            dopiece(row,col,piece,rot,0);
+                            dopiece(row,col,piece,rot,0,DRAW_BOARD);
                             col=col2;
-                            dopiece(row,col,piece,rot,1);
+                            dopiece(row,col,piece,rot,1,DRAW_BOARD);
                           }
                           break;
                    case KEY_0:
                       col2=col-1;
                       if(fitq(row,col2,piece,rot))
                       {
-                        dopiece(row,col,piece,rot,0);
+                        dopiece(row,col,piece,rot,0,DRAW_BOARD);
                         col=col2;
-                        dopiece(row,col,piece,rot,1);
+                        dopiece(row,col,piece,rot,1,DRAW_BOARD);
                       }
                       break;
                    case KEY_CHS:
@@ -390,13 +399,13 @@ void drop()
                    case KEY_SELECT: {
 					  uint32_t tick = getVBLCounter();
 					  drawgrid(1);
-					  dopiece(row,col,piece,rot,0);
+					  dopiece(row,col,piece,rot,0,DRAW_BOARD);
 					  doshownext(nextpiece,nextrot,0);
 				      drawTextAt(34,10,"PAUSED");
                       getKey(1);
 				      drawTextAt(34,10,"      ");
 					  drawgrid(0);
-					  dopiece(row,col,piece,rot,1);
+					  dopiece(row,col,piece,rot,1,DRAW_BOARD);
 					  doshownext(nextpiece,nextrot,shownext);
 					  setVBLCounter(tick);
                       break;
@@ -407,7 +416,7 @@ void drop()
 		   }
 		   
            if(fitq(row-1,col,piece,rot))
-             dopiece(row,col,piece,rot,0);
+             dopiece(row,col,piece,rot,0,DRAW_BOARD);
            else
            {
              if(gethighestrow(row,piece,rot)>=GHEIGHT)
@@ -430,7 +439,7 @@ void drop()
         col=3;
         curheight=GHEIGHT_1-getlowestrow(0,piece,rot);
     }
-    dopiece(curheight,col,piece,rot,1);
+    dopiece(curheight,col,piece,rot,1,DRAW_BOARD);
 }
 
 void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
@@ -499,6 +508,7 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 				out[cursorPosition] = c;
 				break;
 			case KEY_RUN:
+			case KEY_STOP:
 				drawTextAt(col,row,out);
 				for (int i=strlen(out);i<length;i++) putText(" ");
 				return;

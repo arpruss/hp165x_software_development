@@ -44,7 +44,7 @@ OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 AR = $(PREFIX)-ar
 
-CFLAGS=-m$(CPU) -ffunction-sections --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
+CFLAGS=-m$(CPU) -ffunction-sections -fdata-sections --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
 
 CFLAGS640x392=$(CFLAGS) -DDEFAULT_SCREEN_HEIGHT=392 -DSCREEN_WIDTH=640
 
