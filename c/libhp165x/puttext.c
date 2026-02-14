@@ -6,6 +6,7 @@
 
 static uint16_t foreground = WRITE_BLACK;
 static uint16_t background = WRITE_WHITE;
+static uint8_t scrollBitplanes = 1;
 
 typedef uint8_t byte;
 
@@ -111,9 +112,33 @@ void setTextReverse(char _reverse) {
 	reverse = _reverse;
 }
 
+void setTextScrollBitplanes(uint8_t b) {
+	scrollBitplanes = b;
+}
+
 void setTextColors(uint16_t f, uint16_t b) {
 	foreground = f;
 	background = b;
+
+	scrollBitplanes = 0;
+	for (uint8_t mask=1; mask != 0x10 ; mask <<= 1) {
+		if (mask & ~foreground) {
+			// bitplane active on foreground
+			if ((mask & ~background) == 0) {
+				// but not on background, so it might make a difference
+				scrollBitplanes |= mask;
+			}
+			else {
+				if ( ( (mask<<8) & foreground) != ( (mask<<8) & background ) )
+					scrollBitplanes |= mask;
+			}
+		}
+		else {
+			if ((mask & ~background) != 0) {
+				scrollBitplanes |= mask;
+			}
+		}
+	}
 }
 
 uint16_t getTextForeground(void) {
@@ -420,27 +445,8 @@ void putchar_(int c) {
 }
 
 void scrollText(uint16_t rows) {
-	uint8_t bitplanes = 0;
-	for (uint8_t mask=1; mask != 0x10 ; mask <<= 1) {
-		if (mask & ~foreground) {
-			// bitplane active on foreground
-			if ((mask & ~background) == 0) {
-				// but not on background, so it might make a difference
-				bitplanes |= mask;
-			}
-			else {
-				if ( ( (mask<<8) & foreground) != ( (mask<<8) & background ) )
-					bitplanes |= mask;
-			}
-		}
-		else {
-			if ((mask & ~background) != 0) {
-				bitplanes |= mask;
-			}
-		}
-	}
 	scrollUp(rows*fontHeight, winX*FONT_WIDTH, winY*fontHeight, winRightX*FONT_WIDTH, winBottomY*fontHeight, 
-		background, bitplanes);
+		background, scrollBitplanes);
 }
 
 static uint8_t* romFind(uint32_t value) {

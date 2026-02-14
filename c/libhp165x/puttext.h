@@ -8,6 +8,7 @@
 #define MAX_TEXT_COLUMNS (SCREEN_WIDTH/FONT_WIDTH)
 
 void highlightText(uint16_t n, uint8_t highlightState);
+void setScrollBitplanes(uint8_t b);
 void setTextColors(uint16_t f, uint16_t b);
 void setTextReverse(char reverse);
 uint16_t getTextX(void);
