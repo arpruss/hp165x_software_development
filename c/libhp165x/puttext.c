@@ -222,7 +222,7 @@ uint16_t putText(const char* s) {
 					scrolled++;
 				}
 			}
-			pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4));
+			pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4)) + curX * 2;
 			if (c == '\n')
 				continue;
 		}

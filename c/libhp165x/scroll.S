@@ -105,10 +105,9 @@ notBit3Down:
 3:	
 	move.l %d0,(%a0)+
 	dbra   %d4,3b
-	move.w %d7,%d4
+	sub.w  %d7,%a0
 	cmp.l  %a2,%a0
 	ble 4f
-	sub.w  %d7,%a0
 	move.w %d6,%d4
 	bra 2b
 4:
@@ -146,7 +145,7 @@ scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint1
 	move.l %a0,%a1
 	add.l  %d0,%a1			  /* source pointer */
 	move.l #(SCREEN),%a2
-	add.l  %d5,%a2			  /* bottom */
+	add.l  %d7,%a2			  /* bottom */
 	
 0:
 	cmp.l  %a2,%a1
@@ -191,8 +190,6 @@ notBit3:
 1:
 
 /* clear bottom */
-	bra 4f 
-
 	move.l (28+24)(%sp),%d1     /* fillMode */
 	move.w %d1,SCREEN_MEMORY_CONTROL
 
@@ -213,10 +210,9 @@ notBit3:
 3:	
 	move.l %d0,(%a0)+
 	dbra   %d4,3b
-	move.w %d7,%d4
+	add.w  %d7,%a0
 	cmp.l  %a1,%a0
 	bge 4f
-	add.w  %d7,%a0
 	move.w %d6,%d4
 	bra 2b
 4:
