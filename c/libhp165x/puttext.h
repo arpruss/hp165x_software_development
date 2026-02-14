@@ -25,6 +25,7 @@ uint16_t getTextColumns(void);
 void setFontSystem(uint8_t bold);
 /* leftX and rightX must be divisible by 4 and their difference by 8 */
 void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint16_t rightX, uint16_t bottomY, uint16_t fillMode, uint8_t bitplanes);
+void scrollDown(uint16_t lines, uint16_t leftX, uint16_t topY, uint16_t rightX, uint16_t bottomY, uint16_t fillMode, uint8_t bitplanes);
 void getTextWindow(uint16_t* xP,uint16_t *yP,uint16_t *widthP,uint16_t *heightP);
 void setTextWindow(uint16_t x,uint16_t y,int16_t width,int16_t height);
 void scrollText(uint16_t rows);

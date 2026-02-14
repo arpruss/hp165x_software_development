@@ -1,6 +1,5 @@
-    .text
-    .align 2
-    .globl scrollUp
+    .globl scrollDown
+	.globl scrollUp
 
 #ifndef SCREEN_WIDTH
 # define SCREEN_WIDTH 592
@@ -8,9 +7,115 @@
 	
 #define LINE_BYTES (SCREEN_WIDTH/4*2)
 #define SCREEN 0x600000	
-#define SCREEN_END (0x600000 + LINE_BYTES*384)
 #define SCREEN_MEMORY_CONTROL 0x00201000
 	
+    .text
+    .align 2
+    .type scrollDown, @function 
+	.section	.text.scrollUp,"ax",@progbits
+scrollDown:  /* void scrollDown(uint16_t lines, uint16_t leftX, uint16_t topY, uint16_t rightX, uint16_t bottomY, 
+					uint16_t fillMode, uint8_t bitplanes) */
+		   /* leftX and rightX must be divisible by 4 and their difference by 8 */
+	movem.l %d2-%d7/%a2, -(%sp)
+	move.l (28+4)(%sp),%d0     /* lines */
+	ext.l  %d0
+	move.l (28+8)(%sp),%d4     /* leftX */
+	ext.l  %d4
+	move.l (28+12)(%sp),%d5     /* topY */
+	ext.l  %d5
+	move.l (28+16)(%sp),%d6     /* rightX */
+	ext.l  %d6
+	move.l (28+20)(%sp),%d7     /* bottomY */
+	ext.l  %d7
+	subq.l #1,%d7
+	move.l (28+28)(%sp),%d2    /* bitplanes */
+	mulu.w #(LINE_BYTES),%d0  /* distance to move */
+	mulu.w #(LINE_BYTES),%d5  /* offset of top line of window */
+	mulu.w #(LINE_BYTES),%d7  /* offset of bottom line of window */
+	lsr.w  #1,%d4			  /* byte offset of leftX */
+	add.w  %d4,%d7			  /* %d5: offset of start of scroll area (on bottom) */
+	lsr.w  #1,%d6			  /* byte offset for start */
+	sub.w  %d4,%d6			  /* byte count per line */
+	lsr.w  #2,%d6			  /* dword count per line */
+	sub.w  #1,%d6			  /* %d6: rep count per line */
+	move.l #(SCREEN),%a0      
+	add.l  %d7,%a0            /* destination pointer */
+	move.l %a0,%a1
+	sub.l  %d0,%a1			  /* source pointer */
+	move.l #(SCREEN),%a2
+	add.l  %d5,%a2			  /* top */
+	
+0:
+	cmp.l  %a2,%a1 /* ensure source does not go too high */
+	ble	   1f 
+	
+/* move d6+1 words from a0 to a1 */
+	btst #0,%d2
+	beq notBit0 
+	/* copy 1s */
+	move.w #(~(0x001)),SCREEN_MEMORY_CONTROL
+	bsr copyLineNeg
+	move.w #(~(0x101)),SCREEN_MEMORY_CONTROL
+	bsr copyLine
+notBit0Down:
+	btst #1,%d2
+	beq notBit1Down
+	/* copy 1s */
+	move.w #(~(0x202)),SCREEN_MEMORY_CONTROL
+	bsr copyLine
+	move.w #(~(0x002)),SCREEN_MEMORY_CONTROL
+	bsr copyLineNeg
+notBit1Down:
+	btst #2,%d2
+	beq notBit2Down
+	/* copy 1s */
+	move.w #(~(0x404)),SCREEN_MEMORY_CONTROL
+	bsr copyLine
+	move.w #(~(0x004)),SCREEN_MEMORY_CONTROL
+	bsr copyLineNeg
+notBit2Down:
+	btst #3,%d2
+	beq notBit3Down
+	/* copy 1s */
+	move.w #(~(0x808)),SCREEN_MEMORY_CONTROL
+	bsr copyLine
+	move.w #(~(0x008)),SCREEN_MEMORY_CONTROL
+	bsr copyLineNeg
+notBit3Down:
+	sub.l  #(LINE_BYTES),%a0
+	sub.l  #(LINE_BYTES),%a1
+	bra 0b
+1:
+
+/* clear top */
+	move.l (28+24)(%sp),%d1     /* fillMode */
+	move.w %d1,SCREEN_MEMORY_CONTROL
+
+	move.w #(LINE_BYTES),%d7
+	move.w %d6,%d4
+	add.w  #1,%d6 
+	add.w  %d6,%d6 
+	add.w  %d6,%d6 /* number of bytes to clear per line */
+	add.w  %d6,%d7 /* offset between end of one line and beginning of previous */
+	ext.l  %d7	
+	
+	move.l #0x000F000F, %d0
+2:
+	move.w %d4,%d6
+3:	
+	move.l %d0,(%a0)+
+	dbra   %d4,3b
+	move.w %d7,%d4
+	cmp.l  %a2,%a0
+	ble 4f
+	sub.w  %d7,%a0
+	move.w %d6,%d4
+	bra 2b
+4:
+	movem.l (%sp)+, %d2-%d7/%a2
+	rts
+
+	.section	.text.scrollUp,"ax",@progbits
     .type scrollUp, @function 
 scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint16_t rightX, uint16_t bottomY, 
 					uint16_t fillMode, uint8_t bitplanes) */
@@ -41,13 +146,8 @@ scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint1
 	move.l %a0,%a1
 	add.l  %d0,%a1			  /* source pointer */
 	move.l #(SCREEN),%a2
-	add.l  %d7,%a2			  /* bottom */
+	add.l  %d5,%a2			  /* bottom */
 	
-/*	move.l #(SCREEN),%a0
-	move.l #(SCREEN+LINE_BYTES*14),%a1
-	move.l #(SCREEN+LINE_BYTES*384),%a2  
-	move.l #(LINE_BYTES/4-1),%d6 */
-
 0:
 	cmp.l  %a2,%a1
 	bge	   1f 
@@ -91,6 +191,8 @@ notBit3:
 1:
 
 /* clear bottom */
+	bra 4f 
+
 	move.l (28+24)(%sp),%d1     /* fillMode */
 	move.w %d1,SCREEN_MEMORY_CONTROL
 
