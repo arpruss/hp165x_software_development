@@ -218,7 +218,7 @@ uint16_t putText(const char* s) {
 			if (curY >= winBottomY) {
 				curY = winBottomY-1;
 				if (scrollMode) {
-					scrollText(1);
+					scrollTextUp(1);
 					scrolled++;
 				}
 			}
@@ -444,8 +444,13 @@ void putchar_(int c) {
 	putText(s);
 }
 
-void scrollText(uint16_t rows) {
+void scrollTextUp(uint16_t rows) {
 	scrollUp(rows*fontHeight, winX*FONT_WIDTH, winY*fontHeight, winRightX*FONT_WIDTH, winBottomY*fontHeight, 
+		background, scrollBitplanes);
+}
+
+void scrollTextDown(uint16_t rows) {
+	scrollDown(rows*fontHeight, winX*FONT_WIDTH, winY*fontHeight, winRightX*FONT_WIDTH, winBottomY*fontHeight, 
 		background, scrollBitplanes);
 }
 

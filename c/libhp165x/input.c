@@ -22,7 +22,7 @@ static void setXYFromOffset(uint16_t offset) {
 		}
 		else {
 			uint16_t delta = row - rows + 1;
-			scrollText(delta);
+			scrollTextUp(delta);
 			row = rows-1;
 			startY -= delta;
 		}
