@@ -324,8 +324,6 @@ scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint1
 
 #ifndef NO_SCROLL_OPTIMIZE	
 	/* special case optimization */
-	cmp.w  #1,%d2             /* bitplane 0 */
-	bne	   0f
 	cmp.w  #(LINE_DWORDS-1),%d6 /* full lines */
 	bne	   0f
 	btst.l #0,(28+4)(%sp)      
