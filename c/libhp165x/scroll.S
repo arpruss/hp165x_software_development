@@ -122,8 +122,8 @@ notBit3Down:
 #ifndef NO_SCROLL_OPTIMIZE	
 wholeLinesPlane0:
 /* %a1 = source, %a0 = dest, %a2 = bottom: keep copying until %a1 >= %a2 */
-/* %d0 = bitplanes */
-/* use d4-d7 as scrap */
+/* %d2 = bitplanes */
+/* use all the other data registers as scrap */
 /* assumes: whole lines, even number of lines to scroll, even height of region */
 
 	move.l #(LINE_BYTES*2),%d1
@@ -324,7 +324,7 @@ scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint1
 
 #ifndef NO_SCROLL_OPTIMIZE	
 	/* special case optimization */
-	cmp.w  #(LINE_DWORDS-1),%d6 /* full lines */
+   	cmp.w  #(LINE_DWORDS-1),%d6 /* full lines */
 	bne	   0f
 	btst.l #0,(28+4)(%sp)      
 	bne	   0f                   /* vertical distance is even */
