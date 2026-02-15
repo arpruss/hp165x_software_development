@@ -51,6 +51,8 @@ static void drawCursor(void) {
 	setTextReverse(1);
 	if (cursor<length) 
 		putChar(buffer[cursor]);
+	else if (getTextX() == cols-1 && cursor == length)
+		putChar(buffer[cursor-1]);
 	else
 		putChar(' ');
 	setTextReverse(0);
