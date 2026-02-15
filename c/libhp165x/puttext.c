@@ -185,7 +185,7 @@ void highlightText(uint16_t n, uint8_t highlightState) {
 }
 
 /* returns number of lines scrolled */
-uint16_t putText(const char* s) {
+uint16_t putTextN(const char* s, uint16_t n) {
 	volatile uint16_t* pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4)) + curX*2;
 	uint16_t bg;
 	uint16_t fg;
@@ -200,8 +200,9 @@ uint16_t putText(const char* s) {
 		fg = foreground;
 	}
 		
-	while(*s) {
+	while(*s && n) {
 		uint16_t c = 0xFF & *s++;
+		n--;
 		
 		if (c == '\n' || curX >= winRightX) {
 			curX = winX;
@@ -422,17 +423,12 @@ uint16_t putText(const char* s) {
 }
 
 void putChar(char c) {
-	char s[2];
-	s[1] = 0;
-	s[0] = c;
-	putText(s);
+	putTextN(&c,1);
 }
 
 void putchar_(int c) {
-	char s[2];
-	s[1] = 0;
-	s[0] = c;
-	putText(s);
+	/* ASSUME BIG ENDIAN */
+	putTextN(3+(char*)&c,1);
 }
 
 void scrollTextUp(uint16_t rows) {
