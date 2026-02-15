@@ -8,6 +8,14 @@
 #define WRITE_BLACK   0xF00 // clears all other planes than data, draws black on data
 #define WRITE_WHITE   0xE00 // clears all other planes than data, draws white on data
 #define WRITE_GRAY    0xC00 // clears attr & overlay planes, then draws gray using data and overlay-data
+
+/* useful for overlay windows */
+#define WRITE_OVERLAY_GRAY       0b110000000001
+#define WRITE_OVERLAY_BLACK      0b101000000001
+#define WRITE_OVERLAY_WHITE      0b100000000001
+#define WRITE_OVERLAY_ERASE 	 0b111000000001
+
+
 // the following 4 modes allow reading
 #define WRITE_SET_ATTR   0x007  // leaves data unchanged
 #define WRITE_CLEAR_ATTR 0x807  // leaves data unchanged
