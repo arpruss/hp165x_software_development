@@ -14,6 +14,8 @@
 #define KEYBOARD_DELETE '\x07' // ctrl-g
 #define KEYBOARD_HOME 0xD2
 #define KEYBOARD_END  0xD5
+#define KEYBOARD_F1   0xC2
+#define KEYBOARD_ALT_ALPHA(x) ((x)-'a'+0x88)
 
 void initKeyboard(char useSerial);
 char kbhit(void);
