@@ -184,6 +184,10 @@ void highlightText(uint16_t n, uint8_t highlightState) {
 	}
 }
 
+uint16_t putText(const char* s) {
+	return putTextN(s, 0xFFFF);
+}
+
 /* returns number of lines scrolled */
 uint16_t putTextN(const char* s, uint16_t n) {
 	volatile uint16_t* pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4)) + curX*2;
@@ -307,8 +311,8 @@ uint16_t putTextN(const char* s, uint16_t n) {
 			"  ror.l #4, %[x]\n"
 			"  move.l %[x], (14*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
 
-			: [x] "=&r" (x),
-			  [y] "=&r" (y)
+			: [x] "=&d" (x),
+			  [y] "=&d" (y)
 			: [fg] "r" (fg), 
 			  [bg] "r" (bg),
 			  [pos2] "a" (pos2),
@@ -394,8 +398,8 @@ uint16_t putTextN(const char* s, uint16_t n) {
 			"  ror.l #4, %[x]\n"
 			"  move.l %[x], (13*" _QUOTE(SCREEN_WIDTH) "/2)(%[pos2])\n"
 
-			: [x] "=&r" (x),
-			  [y] "=&r" (y)
+			: [x] "=&d" (x),
+			  [y] "=&d" (y)
 			: [fg] "r" (fg), 
 			  [bg] "r" (bg),
 			  [pos2] "a" (pos2),

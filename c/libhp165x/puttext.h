@@ -17,7 +17,7 @@ void setTextXY(uint16_t x, uint16_t y);
 void setTextX(uint16_t x);
 void setTextY(uint16_t x);
 uint16_t putTextN(const char* s,uint16_t count);
-#define putText(s) putTextN((s),0xFFFF)
+uint16_t putText(const char* s);
 void putChar(char c);
 void setFont(uint8_t* data, uint16_t height);
 uint16_t getFontHeight(void);
