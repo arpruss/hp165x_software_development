@@ -24,7 +24,8 @@ char _shape[112]; /* [4*4*7]; */
 char grid[GHEIGHT][GWIDTH]={{0}};
 #define SQUARE_HEIGHT 17
 #define SQUARE_WIDTH  ADJUST_WIDTH(SQUARE_HEIGHT) // 19
-#define BOARD_X ((SCREEN_WIDTH-SQUARE_WIDTH*GWIDTH)/2)
+
+uint16_t boardX;
 
 
 //#include "ibm8x14.c"
@@ -114,7 +115,7 @@ void init()
 // TODO: assembly
 void dosquare(uint16_t i,uint16_t j,uint16_t c,uint16_t currentBackground)  /* row,column,color */
 {
-	uint16_t x = BOARD_X + j*SQUARE_WIDTH;
+	uint16_t x = boardX + j*SQUARE_WIDTH;
 	uint16_t y = (GHEIGHT_1-i)*SQUARE_HEIGHT;
 
 	if (c) 
@@ -290,12 +291,12 @@ void fr(short x1,short y1,short x2,short y2) {
 void drawbox() {
 	*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
 	for (int i=0;i<2;i++) {
-		drawVerticalLine(BOARD_X-2-i,0,GHEIGHT*SQUARE_HEIGHT);
-		drawVerticalLine(BOARD_X+GWIDTH*SQUARE_WIDTH+i,0,GHEIGHT*SQUARE_HEIGHT);
-		drawHorizontalLine(BOARD_X-3,GHEIGHT*SQUARE_HEIGHT+i,BOARD_X+GWIDTH*SQUARE_WIDTH+1);
+		drawVerticalLine(boardX-2-i,0,GHEIGHT*SQUARE_HEIGHT);
+		drawVerticalLine(boardX+GWIDTH*SQUARE_WIDTH+i,0,GHEIGHT*SQUARE_HEIGHT);
+		drawHorizontalLine(boardX-3,GHEIGHT*SQUARE_HEIGHT+i,boardX+GWIDTH*SQUARE_WIDTH+1);
 	}
 	*SCREEN_MEMORY_CONTROL = DRAW_BOARD;
-	fillRectangle(BOARD_X-1,0,BOARD_X+GWIDTH*SQUARE_WIDTH,GHEIGHT*SQUARE_HEIGHT);
+	fillRectangle(boardX-1,0,boardX+GWIDTH*SQUARE_WIDTH,GHEIGHT*SQUARE_HEIGHT);
 }
 
 void drop()
@@ -622,13 +623,15 @@ void save_scores(void)
 int main()
 {
 	char randomized = 0;
+
+	initScreen(0, DRAW_BACKGROUND);
+
+	boardX = (screenWidth-SQUARE_WIDTH*GWIDTH)/2;
 	
 	*LAST_KEY = 0;
 
 	patchVBL();	
 	atexit(reload);
-	setTextColors(DRAW_FOREGROUND,DRAW_BACKGROUND);
-	setTextReverse(0);
 	setKeyRepeat(20,8);
 	load_scores();
 	atexit(save_scores);

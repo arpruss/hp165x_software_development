@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stddef.h>
-#include <hp165x.h>
+#include "hp165x.h"
+#include "screensize.h"
 
 static uint16_t foreground = WRITE_BLACK;
 static uint16_t background = WRITE_WHITE;
@@ -14,7 +15,7 @@ typedef uint8_t byte;
 
 static uint16_t winX=0;
 static uint16_t winY=0;
-static uint16_t winRightX=MAX_TEXT_COLUMNS;
+static uint16_t winRightX=SCREEN_WIDTH/8;
 static uint16_t winBottomY=DEFAULT_SCREEN_HEIGHT/14;
 static uint16_t curX=0;
 static uint16_t curY=0;
@@ -23,6 +24,7 @@ static uint8_t scrollMode=1;
 static uint8_t* font = (uint8_t*)font8x14;
 static uint16_t fontHeight = 14;
 static uint16_t maxRows = DEFAULT_SCREEN_HEIGHT/14;
+static uint16_t maxColumns = SCREEN_WIDTH/8;
 static uint8_t reverse = 0;
 
 #define ROR4(x) ((x) << 28 | (x) >> 4)
@@ -45,7 +47,7 @@ void setTextWindow(uint16_t topLeftX,uint16_t topLeftY,int16_t bottomRightX,int1
 	winX = topLeftX;
 	winY = topLeftY;
 	if (bottomRightX <= 0)
-		bottomRightX += MAX_TEXT_COLUMNS;
+		bottomRightX += maxColumns;
 	if (bottomRightY <= 0)
 		bottomRightY += maxRows;
 	winRightX = bottomRightX;
@@ -63,7 +65,7 @@ void setTextWindow(uint16_t topLeftX,uint16_t topLeftY,int16_t bottomRightX,int1
 
 void setFont(uint8_t* data, uint16_t height) {
 	uint16_t pixelY = curY * fontHeight;
-	maxRows = SCREEN_HEIGHT / height;
+	maxRows = screenHeight / height;
 	if (height != fontHeight) {
 		winY = 0;
 		winBottomY = maxRows-1;

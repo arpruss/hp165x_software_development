@@ -36,7 +36,7 @@ PREFIX=m68k-elf
 # Dont modify below this line (unless you know what youre doing).
 BUILDDIR=build
 
-BUILDDIR640x392=build640x392
+BUILDDIR640=build640
 
 CC=$(PREFIX)-gcc
 LD=$(PREFIX)-ld
@@ -44,9 +44,9 @@ OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 AR = $(PREFIX)-ar
 
-CFLAGS=-m$(CPU) -ffunction-sections -fdata-sections --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
+CFLAGS=-m$(CPU) -ffunction-sections -fdata-sections  --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
 
-CFLAGS640x392=$(CFLAGS) -DDEFAULT_SCREEN_HEIGHT=392 -DSCREEN_WIDTH=640
+CFLAGS640=$(CFLAGS) -DDEFAULT_SCREEN_HEIGHT=400 -DSCREEN_WIDTH=640
 
 LFLAGS=--script=platform.ld -L../../m68k_bare_metal/libmetal -lmetal-$(CPU)
 
@@ -55,12 +55,12 @@ OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))
 OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))
 DEPS=$(OBJS:.o=.d)
 
-OBJS640x392=$(patsubst %.c,$(BUILDDIR640x392)/%.c.o,$(SRCS))
-OBJS640x392:=$(patsubst %.S,$(BUILDDIR640x392)/%.S.o,$(OBJS640x392))
-OBJS640x392:=$(patsubst %.s,$(BUILDDIR640x392)/%.s.o,$(OBJS640x392))
-DEPS640x392=$(OBJS640x392:.o=.d)
+OBJS640=$(patsubst %.c,$(BUILDDIR640)/%.c.o,$(SRCS))
+OBJS640:=$(patsubst %.S,$(BUILDDIR640)/%.S.o,$(OBJS640))
+OBJS640:=$(patsubst %.s,$(BUILDDIR640)/%.s.o,$(OBJS640))
+DEPS640=$(OBJS640:.o=.d)
 
-all: libhp165x.a libhp165x640x392.a 
+all: libhp165x.a libhp165x640.a 
 
 
 .PHONY: crt clean
@@ -71,40 +71,40 @@ release: all
 $(BUILDDIR):
 	mkdir -p $@
 
-$(BUILDDIR640x392):
+$(BUILDDIR640):
 	mkdir -p $@
 
 libhp165x.a: $(OBJS) platform.ld 
 	cd $(BUILDDIR) && $(AR) rcs ../libhp165x.a *.o
 
-libhp165x640x392.a: $(OBJS640x392) platform.ld 
-	cd $(BUILDDIR640x392) && $(AR) rcs ../libhp165x640x392.a *.o
+libhp165x640.a: $(OBJS640) platform.ld 
+	cd $(BUILDDIR640) && $(AR) rcs ../libhp165x640.a *.o
 
 $(BUILDDIR)/%.c.o: %.c
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BUILDDIR640x392)/%.c.o: %.c
+$(BUILDDIR640)/%.c.o: %.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS640x392) -c -o $@ $<
+	$(CC) $(CFLAGS640) -c -o $@ $<
 
 $(BUILDDIR)/%.S.o: %.S
 	mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(BUILDDIR640x392)/%.S.o: %.S
+$(BUILDDIR640)/%.S.o: %.S
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS640x392) -c -o $@ $<
+	$(CC) $(CFLAGS640) -c -o $@ $<
 
-$(BUILDDIR640x392)/%.s.o: %.s
+$(BUILDDIR640)/%.s.o: %.s
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS640x392) -c -o $@ $<
+	$(CC) $(CFLAGS640) -c -o $@ $<
 
 -include $(DEPS)
 
--include $(DEPS640x392)
+-include $(DEPS640)
 
 clean:
 	rm -rf $(BUILDDIR)/*
-	rm -rf $(BUILDDIR640x392)/*
+	rm -rf $(BUILDDIR640)/*
 

@@ -12,7 +12,6 @@
 #define LAST_KEY_DURATION ((volatile uint16_t*)0x98070A)
 #define SPINNER_STATE ((volatile uint32_t*)0x98070C)
 #define KEY_HOLD_TIME ((volatile uint32_t*)0x980708)
-#define SCREEN_MEMORY_CONTROL ((volatile uint16_t*)0x201000)
 #define HARDWARE_STATUS ((volatile uint16_t*)0x20F000)
 #define BEEPER ((volatile uint8_t*)0x203000)
 #define BEEPER_ON 0xFF

@@ -1,8 +1,13 @@
 MEMORY MAP
-
+00C?????-00C?????: oscilloscope communication
 00980000-00A7FFFF: 1mb RAM
 00600000-0061FFFF: video RAM, multiplexed between two planes, each with 64kb x 4bits of data
+004?????-????????: involved in acquisition
+00200000-002?????: hardware ports
 00000000-0000FFFF: 64kb ROM
+		 
+00A00000=00B00000
+00800000=00900000		 
 		 
 Stuff in ROM seems to reference addresses in a60000-a6ffff, and maybe even A5FFFA=a60000-6, so it'
 s probably safest to end program storage at a5fffa.
@@ -34,7 +39,9 @@ Observed initial stack pointer : 00A7FFDE
 
 VIDEO
 
-Screen size: 592x384
+Default screen size: 592x384 (adjustable to up to 640x400 with mc6845 settings, or 640x480 with 
+minor distortion on bottom of screen).
+
 Some of the ROM routines (e.g., DrawText) enforce an 8-pixel margin.
 
 Apparently the video memory apparently consists of four bit-planes.
@@ -146,7 +153,7 @@ SPECIAL HARDWARE ADDRESSES
 0x200000 ??: involved in acquisition test
 0x200001 ??: involved in acquisition test
 0x201000.w: screen memory control (see below)  
-0x202001.b: set bit 7 to set display lookup table, clear when done; bit 6 is set after writing some stuff to MC6845 ; https://bitsavers.trailing-edge.com/components/motorola/_dataSheets/6845.pdf
+0x202001.b: set bit 7 to set display lookup table, clear when done; bit 6 is clear before and set after writing stuff to MC6845 ; https://bitsavers.trailing-edge.com/components/motorola/_dataSheets/6845.pdf
 0x203000.b: BEEP: 0xFF on, $FE off
 0x204001.b-0x204020: put display look table entries here: 00=black, 01=gray, 02=black
 0x205000 ??: involved in spinner
@@ -164,7 +171,7 @@ SPECIAL HARDWARE ADDRESSES
 0x20d001.b: read. used in interrupt level 3 handler
 0x20d003.b: read/write. unknown. used in interrupt level 3 handler and connected with disk i/o
 0x20e001: ?? write
-0x20F000.w:
+0x20f000.w:
 	bit 0: if clear, disk has been changed and data needs refresh; set by call to ebb0
 	bit 1: last spinner turn was to the right
 	bit 3: no disk in drive
@@ -183,7 +190,6 @@ SPECIAL HARDWARE ADDRESSES
 
 To read, first write a load of 1s to 00c00023, at least 0x10, and maybe 800+0x10, and then read each
 channel, and after reading it, write another 1 to 00c00023. Reading can go on to 0x800 times.
-
 
 SERIAL
 
@@ -374,7 +380,11 @@ as part of the disk copying code. Other functions used in copying: ebb6, eb62, e
 directory stored at 9800ca and 9808ac (sometimes?). In latter location changed with ebb0.
 9808ac is where the data is primarily stored.
 eba4 (implemented 327e) looks like it may load the whole dir
-ebfe: read block
+
+ebfe: read block (unsigned blockNum, char* data); returns 0 if successful
+ebc2: read blocks (unsigned blockNum, unsigned count, char* data); returns 0 if successful
+ebbc: write blocks (unsigned blockNum, unsigned count, char* data)
+ebf8: write block(unsigned blockNum, char* data)
 
 0x9842a6.w: total size in blocks (3079)
 0x98415a.l: directory start block number

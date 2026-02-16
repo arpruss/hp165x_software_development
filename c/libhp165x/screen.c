@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "hp165x.h"
+#include "screensize.h"
+
 #define INITIAL_MARGIN 8
 
 
@@ -8,14 +10,15 @@ _WRAP_1(drawText,0xeaf6);
 _WRAP_1(setTextMode,0xeb08);
 _WRAP_2(setCoordinates,0xeae4);
 
-uint16_t screenHeight = 384;
+uint16_t screenHeight = DEFAULT_SCREEN_HEIGHT;
+uint16_t screenWidth = SCREEN_WIDTH;
 
 uint16_t getScreenHeight() {
 	return screenHeight;
 }
 
 uint16_t getScreenWidth() {
-	return SCREEN_WIDTH;
+	return screenWidth;
 }
 
 void drawBlack(void) {
@@ -55,11 +58,32 @@ void drawPixel(uint16_t x, uint16_t y) {
 	*pos = 8>>(x%4);
 }
 
+// TODO: readPixelAllPlanes()
+void drawPixelAllPlanes(uint16_t x, uint16_t y, uint8_t value) {
+	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH/4) + x/4;
+	uint16_t v = 8>>(x%4);
+	for (uint8_t mask=1; mask<0x10; mask<<=1) {
+		if (mask & value)
+			*SCREEN_MEMORY_CONTROL = SCREEN_MEMORY_CONTROL_VALUE(mask,mask);
+		else
+			*SCREEN_MEMORY_CONTROL = SCREEN_MEMORY_CONTROL_VALUE(~mask,mask);
+		*pos = v;
+	}
+}
+
 // fills screen, up to 392 lines as needed
 // todo: maybe only do the number of lines that are actually
 // needed
 void fillScreen(void) {
+#if 1
 asm(
+	"  move.l #0x600000, %%a1\n"
+	"  move.l %%a1, %%a0\n"
+	"  move.w screenHeight, %%d0\n"
+	"  move.w #392, %%d0\n"
+	"  ext.l  %%d0\n"
+	"  mulu.w #(" _QUOTE(SCREEN_WIDTH/2) "), %%d0\n" /* guaranteed to be divisible by 32 */
+	"  add.l  %%d0, %%a0\n"
 	"  move.l #0x000F000F, %%d0\n"
     "  move.l %%d0,%%d1\n"
     "  move.l %%d0,%%d2\n"
@@ -68,12 +92,11 @@ asm(
     "  move.l %%d0,%%d5\n"
     "  move.l %%d0,%%d6\n"
     "  move.l %%d0,%%d7\n"
-    "  move.l #(0x600000+(" _QUOTE(SCREEN_WIDTH*MAX_SCREEN_HEIGHT/2) ")), %%a0\n" // ; 592*392/2 is divisible by 64
-    "  move.l #0x600000, %%a1\n"
 	"1:\n"
 	"  movem.l %%d0-%%d7,-(%%a0)\n" // ; clear 16 display words at once, decrementing A0 by 32
     "  cmp.l %%a1,%%a0\n"
 	"  bge 1b\n" : : : "d2", "d3", "d4", "d5", "d6", "d7" );
+#endif
 }
 
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2) {
@@ -265,3 +288,13 @@ void setScreenLookupTable(uint8_t* table) {
 	*(volatile uint8_t*)0x202001 = 0x40;		
 }
 
+void initScreen(uint16_t height, uint16_t background) {
+	_setScreenWidth();
+	setScreenHeight(height);
+	*SCREEN_MEMORY_CONTROL = background;
+	fillScreen();
+	setTextWindow(0,0,0,0);
+	setTextColors((background==WRITE_WHITE) ? WRITE_BLACK : WRITE_WHITE, background);
+	setTextXY(0,0);
+	setTextReverse(0);
+}

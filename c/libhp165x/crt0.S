@@ -37,10 +37,6 @@ _start:
 		move.w	%d1,(%a1)+
 		dbra	%d0,3b
 
-#if defined(DEFAULT_SCREEN_HEIGHT) || defined(SCREEN_WIDTH)
-		jsr		setDefaultScreenSize
-#endif		
-
         jsr     main
 		bra		_exit
 ;;		jsr		0x0000ece2				/* reload OS */

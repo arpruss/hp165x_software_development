@@ -119,10 +119,8 @@ void drawEntry(int16_t pos,char inv) {
 }
 
 void menu(void) {
+	initScreen(0, DRAW_BACKGROUND);
 	int selected = 0;
-	*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
-	fillScreen();
-	setTextXY(0,0);
 	putText("Choose program to execute:");
 	setTextXY(0,getTextRows()-1);
 	putText("[SELECT] execute   [STOP] reboot   [RUN] refresh   [CLEAR] delete");
