@@ -7,7 +7,8 @@
 #define MC6845_H_TOTAL     0
 #define MC6845_H_DISPLAYED 1
 #define MC6845_H_SYNC      2
-#define MC6845_V_TOTAL	   5
+#define MC6845_V_TOTAL	   4
+#define MC6845_V_ADJUST	   5
 #define MC6845_V_DISPLAYED 6
 #define MC6845_V_SYNC	   7
 

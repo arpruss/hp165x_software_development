@@ -8,7 +8,7 @@ uint16_t ticksPerSecond(void) {
 	if (screenWidth == 592)
 		return 60;
 	else
-		return 51; /* measure more precisely */
+		return 53; /* measure more precisely */
 }
 
 static uint8_t mc6845Defaults[] = { 
@@ -18,8 +18,8 @@ static uint8_t mc6845Defaults[] = {
 	0xca, 
 	0x32, // MC6845_V_TOTAL
 	0x00, 
-	0x30, 
-	0x30, 
+	0x30, // V_DISPLAYED
+	0x30, // V_SYNC
 	0x00, // 
 	0x07, // maximum scan line 
 	0x00, 
@@ -50,11 +50,11 @@ void setScreenHeight(uint16_t height) {
 	screenHeight = height * 8;
 	
 	*MC6845_REGISTER_ADDRESS = MC6845_V_TOTAL;
-	*MC6845_REGISTER_VALUE = height + 2; // <= 384 ? height + 2 : height + 2; // + 1;
+	*MC6845_REGISTER_VALUE = height <= 384/8 ? height + 2 : height + 1; // okish: height+2
 	*MC6845_REGISTER_ADDRESS = MC6845_V_DISPLAYED;
 	*MC6845_REGISTER_VALUE = height;
 	*MC6845_REGISTER_ADDRESS = MC6845_V_SYNC;
-	*MC6845_REGISTER_VALUE = height <= 384 ? height : height + 1;	
+	*MC6845_REGISTER_VALUE = height; //okish: height+1
 	
 	setTextWindow(0,0,0,0);
 }
