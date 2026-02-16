@@ -15,7 +15,7 @@
 //640x384: 509
 //640x400: 507
 uint16_t width=640;
-uint16_t height=392;//392;
+uint16_t height=400;//392;
 // 517
 
 void set624x392() {

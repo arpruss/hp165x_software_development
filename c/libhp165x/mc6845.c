@@ -2,12 +2,14 @@
 #include "screensize.h"
 
 uint16_t ticksPerSecond(void) {
-	// This should be close to right for 592x384, 640x392, 640x400, 640x408.
+	// This should be close to right for 592x384, 640x392, 640x400.
 	// For others, need to measure better.
 	
 	if (screenWidth == 592)
 		return 60;
-	else
+	else if (screenHeight >= 400)
+		return 52;
+	else 
 		return 53; /* measure more precisely */
 }
 
