@@ -48,13 +48,13 @@ void setScreenHeight(uint16_t height) {
 		return;
 	
 	screenHeight = height * 8;
-
+	
 	*MC6845_REGISTER_ADDRESS = MC6845_V_TOTAL;
-	*MC6845_REGISTER_VALUE = height+2;
+	*MC6845_REGISTER_VALUE = height + 2; // <= 384 ? height + 2 : height + 2; // + 1;
 	*MC6845_REGISTER_ADDRESS = MC6845_V_DISPLAYED;
 	*MC6845_REGISTER_VALUE = height;
 	*MC6845_REGISTER_ADDRESS = MC6845_V_SYNC;
-	*MC6845_REGISTER_VALUE = height;	
+	*MC6845_REGISTER_VALUE = height <= 384 ? height : height + 1;	
 	
 	setTextWindow(0,0,0,0);
 }
