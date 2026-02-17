@@ -59,7 +59,7 @@ void __attribute__ ((noinline)) _restoreAsteriskArea(void) {
 	}
 }
 
-void closeFile(int h) {
+void closeFile(int32_t h) {
 	_saveAsteriskArea();
 	_closeFile(h);
 	_restoreAsteriskArea();
