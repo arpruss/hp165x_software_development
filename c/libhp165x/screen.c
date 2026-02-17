@@ -80,7 +80,6 @@ asm(
 	"  move.l #0x600000, %%a1\n"
 	"  move.l %%a1, %%a0\n"
 	"  move.w screenHeight, %%d0\n"
-	"  move.w #392, %%d0\n"
 	"  ext.l  %%d0\n"
 	"  mulu.w #(" _QUOTE(SCREEN_WIDTH/2) "), %%d0\n" /* guaranteed to be divisible by 32 */
 	"  add.l  %%d0, %%a0\n"

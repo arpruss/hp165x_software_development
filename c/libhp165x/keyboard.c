@@ -21,7 +21,8 @@ char getch(void) {
 		if (k != 0)
 			return parseKey(k);
 		
-		if (0 <= simple_serial_peek()) 
+		if (0 <= simple_serial_peek()) {
 			return simple_serial_getchar();
+		}
 	}
 }

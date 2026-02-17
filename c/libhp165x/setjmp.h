@@ -2,5 +2,7 @@
 #define _SETJMP_H
 
 typedef uint32_t jmp_buf[13];
+int setjmp(jmp_buf env);
+void longjmp(jmp_buf env, int val);
 
 #endif

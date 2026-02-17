@@ -1,6 +1,7 @@
 MEMORY MAP
 00C?????-00C?????: oscilloscope communication
 00980000-00A7FFFF: 1mb RAM
+00A5FFFA-00A6FFFF: heap (6 byte header per chunk) for ROM malloc()--never actually called in ROM, I think
 00600000-0061FFFF: video RAM, multiplexed between two planes, each with 64kb x 4bits of data
 004?????-????????: involved in acquisition
 00200000-002?????: hardware ports
@@ -8,11 +9,13 @@ MEMORY MAP
 		 
 00A00000=00B00000
 00800000=00900000		 
+
 		 
-Stuff in ROM seems to reference addresses in a60000-a6ffff, and maybe even A5FFFA=a60000-6, so it'
-s probably safest to end program storage at a5fffa.
+Stuff in ROM seems to reference addresses in a60000-a6ffff, and maybe even A5FFFA=a60000-6, so it's 
+probably safest to end program storage at a5fffa. This seems to be some sort of a heap.
 
 00983000-00983FFF appears to be unused in ROM. I'm putting the user stack for my code at 983ffe.
+That gives it 4092 bytes. Which is a bit small.
 
 The user stack has been observed by default to be around 00a7fffe.
 
@@ -268,6 +271,8 @@ ec76: strcpy(dest,src)
 ec94: strcat(dest,src)
 ebe0: compare(char*,char*,int): some kind of comparison with special casing for ?
 ea06: delay ticks, apparently (implemented 8002)  
+ed00: (implemented at 6204): free() for heap in a60000-a6ffff (with 6 byte header) according to Gemini analysis
+ecca: probably malloc
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
 D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
