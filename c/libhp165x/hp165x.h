@@ -85,7 +85,6 @@ void setKeyWait(uint8_t w);
 void waitSeconds(uint16_t n); 
 uint32_t getVBLCounter(void);
 void patchVBL(void);
-void unpatchVBL(void);
 void setVBLCounter(uint32_t value);
 void initialScreen();
 char parseKey(uint16_t key);
