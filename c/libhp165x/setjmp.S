@@ -1,17 +1,17 @@
-    .globl setjmp
-	.globl longjmp
+    .globl hpsetjmp
+	.globl hplongjmp
     .text
     .align 2
-    .type setjmp, @function 
-setjmp:
+    .type hpsetjmp, @function 
+hpsetjmp:
 	move.l 4(%sp),%a0 /* address of jmp_buf */
 	movem.l %d2-%d7/%a2-%a7,(%a0)
 	move.l (%sp),48(%a0) /* save return address */
 	clr.l  %d0
 	rts
 	
-    .type longjmp, @function 
-longjmp:
+    .type hplongjmp, @function 
+hplongjmp:
 	move.l  4(%sp),%a0 /* address of jmp_buf */
 	move.l  8(%sp),%d0 /* return value */
 	bne	    1f

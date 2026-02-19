@@ -32,6 +32,7 @@ hpputc(char c, FILE *file)
 static int
 hpgetc(FILE *file)
 {
+	(void)file;
 	static char initialized = 0;
 	if (!initialized) {
 		initKeyboard(1);
