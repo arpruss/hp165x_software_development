@@ -34,9 +34,8 @@ CPU=68000
 PREFIX=m68k-elf
 
 # Dont modify below this line (unless you know what youre doing).
-BUILDDIR=picobuild
-
-BUILDDIR640=picobuild640
+BUILDDIR=build
+BUILDDIR640=build640
 
 CC=$(PREFIX)-gcc
 LD=$(PREFIX)-ld
@@ -60,7 +59,7 @@ OBJS640:=$(patsubst %.S,$(BUILDDIR640)/%.S.o,$(OBJS640))
 OBJS640:=$(patsubst %.s,$(BUILDDIR640)/%.s.o,$(OBJS640))
 DEPS640=$(OBJS640:.o=.d)
 
-all: libhp165xpico.a libhp165x640pico.a 
+all: libhp165x.a libhp165x640.a 
 
 
 .PHONY: crt clean

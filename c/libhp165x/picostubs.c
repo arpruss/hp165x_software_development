@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdio.h>
 #include <hp165x.h>
 
@@ -10,7 +11,6 @@ void * _sbrk(ptrdiff_t incr) {
     char *prev_heap_end;
 
     if (heap_end + incr > &_heap_end) {
-        errno = ENOMEM; // Out of memory
         return (void *)-1;
     }
 
@@ -24,7 +24,6 @@ void * _sbrk(ptrdiff_t incr) {
 static int
 hpputc(char c, FILE *file)
 {
-return c;
 	(void) file;		
 	putTextN(&c, 1);	
 	return c;
@@ -33,7 +32,6 @@ return c;
 static int
 hpgetc(FILE *file)
 {
-	return ' ';
 	static char initialized = 0;
 	if (!initialized) {
 		initKeyboard(1);
@@ -45,12 +43,6 @@ hpgetc(FILE *file)
 
 static FILE __stdio = FDEV_SETUP_STREAM(hpputc, hpgetc, NULL, _FDEV_SETUP_RW);
 FILE *const stdin = &__stdio;
-__strong_reference(stdin, stdout);
-__strong_reference(stdin, stderr);
+FILE *const stdout = &__stdio;
+FILE *const stderr = &__stdio;
 
-#if 0
-void _exit(int status) {
-    (void)status;
-    reload(); 
-}
-#endif
