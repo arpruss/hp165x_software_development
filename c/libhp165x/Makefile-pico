@@ -16,7 +16,7 @@
 #   SRCS=main.c user.c \
 #        driver.s
 SRCS=hp165x.c puttext.c loadexec.c key.c hpfile.c serial.c scroll.S simple_serial.c \
-	keyboard.c input.c mc6845.c screen.c crt0.S strncasecmp.c setjmp.S __clzsi2.c 
+	keyboard.c input.c mc6845.c screen.c crt0.S picostubs.c # setjmp.S __clzsi2.c
 
 # Specify the CPU type that you are targeting your build towards.
 #
@@ -34,9 +34,9 @@ CPU=68000
 PREFIX=m68k-elf
 
 # Dont modify below this line (unless you know what youre doing).
-BUILDDIR=build
+BUILDDIR=picobuild
 
-BUILDDIR640=build640
+BUILDDIR640=picobuild640
 
 CC=$(PREFIX)-gcc
 LD=$(PREFIX)-ld
@@ -44,11 +44,11 @@ OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 AR = $(PREFIX)-ar
 
-CFLAGS=-m$(CPU) -ffunction-sections -fdata-sections  --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../hputils -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
+CFLAGS=-m$(CPU) -DPICO -ffunction-sections -fdata-sections  --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../picolibc/m68k-integer/usr/local/include -I. -msoft-float -MMD -MP -O99
 
 CFLAGS640=$(CFLAGS) -DDEFAULT_SCREEN_HEIGHT=400 -DSCREEN_WIDTH=640
 
-LFLAGS=--script=platform.ld -L../../m68k_bare_metal/libmetal -lmetal-$(CPU)
+LFLAGS=--script=platform.ld -I../../picolibc/usr/local/lib 
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
 OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))
@@ -60,7 +60,7 @@ OBJS640:=$(patsubst %.S,$(BUILDDIR640)/%.S.o,$(OBJS640))
 OBJS640:=$(patsubst %.s,$(BUILDDIR640)/%.s.o,$(OBJS640))
 DEPS640=$(OBJS640:.o=.d)
 
-all: libhp165x.a libhp165x640.a 
+all: libhp165xpico.a libhp165x640pico.a 
 
 
 .PHONY: crt clean
@@ -74,11 +74,11 @@ $(BUILDDIR):
 $(BUILDDIR640):
 	mkdir -p $@
 
-libhp165x.a: $(OBJS) platform.ld 
-	cd $(BUILDDIR) && $(AR) rcs ../libhp165x.a *.o
+libhp165xpico.a: $(OBJS) platform.ld 
+	cd $(BUILDDIR) && $(AR) rcs ../libhp165xpico.a *.o
 
-libhp165x640.a: $(OBJS640) platform.ld 
-	cd $(BUILDDIR640) && $(AR) rcs ../libhp165x640.a *.o
+libhp165x640pico.a: $(OBJS640) platform.ld 
+	cd $(BUILDDIR640) && $(AR) rcs ../libhp165x640pico.a *.o
 
 $(BUILDDIR)/%.c.o: %.c
 	mkdir -p $(@D)

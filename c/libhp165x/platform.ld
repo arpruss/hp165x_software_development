@@ -18,7 +18,6 @@
  */
 _program_base = 0x984500;
 _program_end = 0xA5FFFA;
-/* _stack_start = 0x00983FFE; */ /* there will be up to 4094 bytes */ /* used to set to 0x00A7FFFE; */
 _stack_start = 0x00A79000; /* there should be about 30K here */
 _program_sz = _program_end - _program_base;
 
@@ -33,10 +32,10 @@ OUTPUT_ARCH(m68k)
 
 __text_org = _program_base;
 __text_sz = _program_sz;
-
-
-/* Make sure stack size is a multiple of 16, and at least the amount the user
- * thought they were getting. */
+__heap_start = _bss_end;
+_heap_start = __heap_start;
+__heap_end = ORIGIN(text)+LENGTH(text);
+_heap_end = __heap_end;
 
 MEMORY {
     text         (rwx!w) : ORIGIN = __text_org, LENGTH = __text_sz
@@ -47,35 +46,46 @@ SECTIONS {
         _text_start = .;
 		*(.text.init)
         *(.text .text.*)
-        . = ALIGN(0x10);
+        . = ALIGN(4);
         _text_end = .;
     } > text
 
-    .rodata : AT(_text_end) {
+    .rodata : {
         _rodata_start = .;
         *(.rodata .rodata.*)
-        . = ALIGN(0x10);
+        . = ALIGN(4);
         _rodata_end = .;
     } > text
 
-    .data : AT(_rodata_end) {
+	.eh_frame : {
+        _eh_frame_start = .;
+        KEEP(*(.eh_frame))
+        . = ALIGN(4);
+        _eh_frame_end = .;
+    } > text
+
+    .data : {
         _data_start = .;
         *(.data .data.*)
-        . = ALIGN(0x10);
+        . = ALIGN(4);
         _data_end = .;
     } > text
 
-    .bss : {
+    .bss (NOLOAD) : {
         _bss_start = .;
         *(.bss .bss.*)
         *(COMMON)
-        . = ALIGN(0x10);
+        . = ALIGN(4);
         _bss_end = .;
     } > text
 
-    .heap : {
+    .heap (NOLOAD) : {
         _heap_start = .;
-        . += (__text_sz - SIZEOF(.bss) - SIZEOF(.data) - SIZEOF(.text) - SIZEOF(.rodata));
-        _heap_end = .;
+        __heap_start = .;
+        . = ALIGN(4);
+		. = ORIGIN(text)+LENGTH(text);
+		_heap_end = .;
+		__heap_end = .;
     } > text
+
 }

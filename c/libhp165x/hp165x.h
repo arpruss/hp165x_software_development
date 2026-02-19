@@ -2,7 +2,11 @@
 #define _UTILS_H
 
 #include <stdint.h>
+#ifdef PICO
+#include <stdio.h>
+#else
 #include <printf.h>
+#endif
 
 #define INT_VBL 	1
 #define INT_SERIAL  6
@@ -100,7 +104,9 @@ uint16_t peekKey(void);
 int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks);
 int getText(char* _buffer, uint16_t maxSize);
 void padFilename(char* paddedName, const char* name);
-int strncasecmp(const char* s1, const char* s2, int n);
+#ifndef PICO
+int strncasecmp(const char* s1, const char* s2, long n);
+#endif
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to
