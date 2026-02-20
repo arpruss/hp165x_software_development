@@ -1,47 +1,35 @@
-# List all of the source files that will be compiled into your binary.
-#
-# For example, if you have the following source files
-#
-#   main.c
-#   user.c
-#   driver.s
-#
-# then your SRCS list would be
-#
-#   SRCS=main.c user.c driver.s
-#
-# The list may span several lines of text by appending a backslash to each line,
-# for example:
-#
-#   SRCS=main.c user.c \
-#        driver.s
-SRCS=wiztris.c blacksquare.S graysquare.S
+SRCS=wiztris.c blacksquare.S
 
-# Specify the CPU type that you are targeting your build towards.
-#
-# Supported architectures can usually be found with the --target-help argument
-# passed to gcc, but a quick summary is:
-#
-# 68000, 68010, 68020, 68030, 68040, 68060, cpu32 (includes 68332 and 68360),
-# 68302
 CPU=68000
 
-# Uncomment either of the following depending on how you have installed gcc on
-# your system. m68k-linux-gnu for Linux installations, m68k-eabi-elf if gcc was
-# built from scratch e.g. on a Mac by running the build script.
-# PREFIX=m68k-linux-gnu
+LIBRARY=picolibc 
+#LIBRARY=libmetal
 PREFIX=m68k-elf
+HPLIB=hp165x
+PRINTF_VERSION= #--defsym=vfscanf=__d_vfscanf --defsym=vfprintf=__d_vfprintf 
+GCC_LIB_DIR=C:/68k/bin/../lib/gcc/m68k-elf/13.1.0/m$(CPU)/ 
 
-# Dont modify below this line (unless you know what youre doing).
+LIBRARY=picolibc
+ifeq ($(LIBRARY),picolibc)
+LIBC_INCLUDE = ../picolibc-$(CPU)/usr/local/include
+LIBC_LIB_DIR = ../picolibc-$(CPU)/usr/local/lib
+LIBC = c
+LIBC_OPTIONS =
+else
+LIBC_INCLUDE = ../../m68k_bare_metal/include
+LIBC_LIB_DIR = ../../m68k_bare_metal/libmetal
+LIBC = metal-$(CPU)	
+LIBC_OPTIONS = -Dsetjmp=hpsetjmp -Dlongjmp=hplongjmp -Djmp_buf=hpjmp_buf
+endif
+
 BUILDDIR=build
-
 CC=$(PREFIX)-gcc
 LD=$(PREFIX)-ld
 OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 
-CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
-LFLAGS=-gc-sections -L../libhp165x -L../../m68k_bare_metal/libmetal --script=platform.ld -lhp165x -lmetal-$(CPU) 
+CFLAGS=-m$(CPU) $(LIBC_OPTIONS) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I$(LIBC_INCLUDE) -I. -msoft-float -MMD -MP -O99
+LFLAGS=-gc-sections $(PRINTF_VERSION) -L../libhp165x -L$(LIBC_LIB_DIR) --script=platform.ld -l$(HPLIB) -l$(LIBC) -l$(HPLIB) -L$(GCC_LIB_DIR) -lgcc
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
 OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))
