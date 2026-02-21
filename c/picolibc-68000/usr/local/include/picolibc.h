@@ -17,7 +17,7 @@
 /* Use atomics for fgetc/ungetc for re-entrancy */
 #define __ATOMIC_UNGETC
 
-#undef __FAST_BUFIO
+#define __FAST_BUFIO
 
 /* Always optimize strcmp for performance */
 #define __FAST_STRCMP
