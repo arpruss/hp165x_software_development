@@ -135,7 +135,7 @@ int open(const char* name, int flags, ...) {
 		char* data = malloc(dataSize);
 		if (data == NULL)
 			return -1;
-		int f = openFile(hpName, fileType == 0 ? DEFAULT_FILE_TYPE : fileType, READ_FILE);
+		int f = openFile(hpName, d.type, READ_FILE);
 		if (f < 0) {
 			free(data);
 			return -1;
@@ -316,8 +316,55 @@ int write(int fd, const void* p, size_t size) {
 	return wrote;
 }
 
+int fsync(int fd) {
+	(void)fd;
+	return -1; // this cannot be supported on our memory-backed files
+}
+
 int unlink(const char *pathname) {
 	char hpName[MAX_FILENAME_LENGTH+1];
 	uint16_t type = getHpName(hpName, pathname);
     return deleteByNameAndType(pathname, type);
 }
+
+DIR *opendir(const char *name) {
+	(void)name;
+	DIR* dirp = malloc(sizeof(DIR));
+	if (dirp == NULL)
+		return NULL;
+	dirp->offset = 0;
+	return dirp;
+}
+
+struct dir_data {
+	DirEntry_t dirEntry;
+	struct dirent posixDirEnt;
+};
+
+struct dirent* readdir(DIR* dirp) {
+	if (dirp->offset == (size_t)-1)
+		return NULL;
+	
+	struct dir_data* d = (struct dir_data*)(dirp->buf);
+
+	if (getDirEntry(dirp->offset, &(d->dirEntry)) == -1) {
+		dirp->offset = (size_t)-1;
+		return NULL;
+	}
+	dirp->offset++;
+	strcpy(d->posixDirEnt.d_name, d->dirEntry.name);
+	d->posixDirEnt.d_type = 6; // DT_REG
+	d->posixDirEnt.d_ino = d->dirEntry.startBlock;
+
+	return &d->posixDirEnt;
+}
+
+long telldir(DIR* dirp) {
+	return dirp->offset;
+}
+
+int closedir(DIR *dirp) {
+	free(dirp);
+	return 0;
+}
+

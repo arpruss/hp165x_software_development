@@ -11,6 +11,7 @@ DIR_ENTRY_SIZE = 32
 RESERVED_TRACK = None # 79
 CHUNKING = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
+CHUNK_FILLER_ODD = b'\x00\xFF\xFF' + (BLOCK_SIZE-3)*b'\x00'
 DIRECTORY = os.path.split(sys.argv[0])[0]
 HXCFE = os.path.join(DIRECTORY,"hxcfe.exe")
 
@@ -106,7 +107,10 @@ def chunkFile(unchunked):
         pos += size
     n = len(chunked) % BLOCK_SIZE
     if n % BLOCK_SIZE != 0:
-        chunked += CHUNK_FILLER[:BLOCK_SIZE - n]
+        if n % 2 != 0:
+            chunked += CHUNK_FILLER_ODD[:BLOCK_SIZE - n]
+        else:
+            chunked += CHUNK_FILLER[:BLOCK_SIZE - n]
     return chunked
     
 def unchunkFile(chunked):
