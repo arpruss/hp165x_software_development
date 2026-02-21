@@ -164,3 +164,23 @@ int deleteByNameAndType(const char* name, uint16_t fileType) {
 	}
 }
 
+int getFileType(const char* name) {
+	if (refreshDir() < 0)
+		return -1;
+	char paddedName[MAX_FILENAME_LENGTH];
+	padFilename(paddedName, name);
+	ROMDirEntry_t d;
+	int i = 0;
+	_saveAsteriskArea();
+	while(1) {
+		if ( -1 == _getDirEntry(i, &d) ) {
+			_restoreAsteriskArea();
+			return 0;
+		}
+		if (!strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && d.type != 0) {
+			_restoreAsteriskArea();
+			return d.type;
+		}
+		i++;
+	}
+}

@@ -164,6 +164,9 @@ int close(int fd) {
 		WriteData_t* w = (WriteData_t*)f->rw.writeData;
 		struct chunk *chunkP = &(w->firstChunk);
 		char first = 1;
+		int foundType = getFileType(w->filename);
+		if (foundType > 0 && foundType != w->fileType)
+			deleteByNameAndType(w->filename, foundType);
 		int out = openFile(w->filename, w->fileType, WRITE_FILE);
 		do {
 			struct chunk* next = chunkP->next;

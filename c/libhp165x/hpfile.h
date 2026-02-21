@@ -33,6 +33,7 @@ typedef struct {
 int getDirEntry(int index, DirEntry_t* dirEntry); 
 int _getDirEntry(int index, ROMDirEntry_t* dirEntry); 
 int deleteByNameAndType(const char* name, uint16_t fileType);
+int getFileType(const char* name);
 
 #define ERROR_FILE_NOT_FOUND (-5)
 #endif

@@ -338,6 +338,9 @@ eb74 int OpenFile(char *filename,int filetype,int mode)
  E.g.: OpenFile(s_AUTOLOAD_000064da,0xc301,2);
        OpenFile("SYSTEM_",0xc001,1);
        OpenFile("PVTEST_",0xc001,1);	   
+If opening in write mode, file gets cleared, UNLESS it already exists with a different
+file type. If it exists with a different file type, we have a silent failure!
+	   
 implemented at 390C	   
 	
 eb86 int ReadFile(int fd, void* out, int size) 

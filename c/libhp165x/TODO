@@ -1,3 +1,4 @@
 The keyboard.[ch] support for a serial keyboard will change as the 
 hardware evolves.
-picolibc support: still doesn't work
+
+Add O_RDWR support for hpposix.
