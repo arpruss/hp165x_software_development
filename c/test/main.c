@@ -170,15 +170,16 @@ void rows(void) {
 }
 
 void scroll(void) {
-	for (int i=0; i<getTextRows(); i++) {
-		printf("%d %d The quick brown fox\n", i,i*i);
-	}
-	setScreenStartLine(8);
+	showTextCursor(1);
+	getKey(1); // see
+	setTextCursorXY(1);
+	getKey(1); // see
+	*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
+	fillScreen();
 	getKey(1);
-	setScreenStartLine(16);
-	getKey(1);
-	setScreenStartLine(17);
-	getKey(1);
+	*SCREEN_MEMORY_CONTROL = WRITE_CLEAR_ATTR;
+	fillScreen();
+	showTextCursor(0);
 }
 
 main(int argc, char** argv) {
@@ -197,7 +198,7 @@ main(int argc, char** argv) {
 	putText("4 - setjmp/longjmp\n");
 	putText("5 - rows\n");
 	putText("6 - stack test\n");
-	putText("7 - hardware scroll\n");
+	putText("7 - cursor\n");
 	putText("8 - file test\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");

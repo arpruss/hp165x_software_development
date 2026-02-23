@@ -36,5 +36,8 @@ void setScrollMode(uint8_t active);
 uint16_t getTextForeground(void);
 uint16_t getTextBackground(void);
 extern uint8_t font8x14[];
+void setTextCursorXY(uint16_t x, uint16_t y);
+void updateTextCursor(char visible);
+void showTextCursor(char value);
 
 #endif

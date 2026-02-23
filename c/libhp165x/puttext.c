@@ -13,12 +13,15 @@ typedef uint8_t byte;
 
 #include "ibm8x14hp.c"
 
+static uint16_t cursorX=0;
+static uint16_t cursorY=0;
+static char cursorVisible=0;
 static uint16_t winX=0;
 static uint16_t winY=0;
 static uint16_t winRightX=SCREEN_WIDTH/8;
 static uint16_t winBottomY=DEFAULT_SCREEN_HEIGHT/14;
-static uint16_t curX=0;
-static uint16_t curY=0;
+static uint16_t currentX=0;
+static uint16_t currentY=0;
 static uint8_t scrollMode=1;
 
 static uint8_t* font = (uint8_t*)font8x14;
@@ -53,18 +56,20 @@ void setTextWindow(uint16_t topLeftX,uint16_t topLeftY,int16_t bottomRightX,int1
 	winRightX = bottomRightX;
 	winBottomY = bottomRightY;
 
-	if (curX < winX)
-		curX = winX;
-	else if (curX >= winRightX)
-		curX = winRightX-1;
-	if (curY < winY)
-		curY = winY;
-	else if (curY >= winBottomY)
-		curY = winBottomY-1;
+	if (currentX < winX)
+		currentX = winX;
+	else if (currentX >= winRightX)
+		currentX = winRightX-1;
+	if (currentY < winY)
+		currentY = winY;
+	else if (currentY >= winBottomY)
+		currentY = winBottomY-1;
+	cursorX = winX;
+	cursorY = winY;
 }
 
 void setFont(uint8_t* data, uint16_t height) {
-	uint16_t pixelY = curY * fontHeight;
+	uint16_t pixelY = currentY * fontHeight;
 	maxRows = screenHeight / height;
 	if (height != fontHeight) {
 		winY = 0;
@@ -72,9 +77,9 @@ void setFont(uint8_t* data, uint16_t height) {
 	}
 	font = data;
 	fontHeight = height;
-	curY = pixelY / height;
-	if (curY >= maxRows)
-		curY = maxRows-1;
+	currentY = pixelY / height;
+	if (currentY >= maxRows)
+		currentY = maxRows-1;
 }
 
 uint16_t getFontHeight(void) {
@@ -143,37 +148,37 @@ uint16_t getTextBackground(void) {
 }
 
 uint16_t getTextX(void) {
-	return curX-winX;
+	return currentX-winX;
 }
 
 uint16_t getTextY(void) {
-	return curY-winY;
+	return currentY-winY;
 }
 
 void setTextXY(uint16_t x, uint16_t y) {
-	curX = winX+x;
-	curY = winY+y;
+	currentX = winX+x;
+	currentY = winY+y;
 }
 
 void setTextX(uint16_t x) {
-	curX = winX+x;
+	currentX = winX+x;
 }
 
 void setTextY(uint16_t y) {
-	curY = winY+y;
+	currentY = winY+y;
 }
 
 void highlightText(uint16_t n, uint8_t highlightState) {
-	volatile uint16_t* pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4)) + curX*2;
+	volatile uint16_t* pos = SCREEN + currentY * (fontHeight*(SCREEN_WIDTH/4)) + currentX*2;
 
 	*SCREEN_MEMORY_CONTROL = highlightState ? WRITE_SET_ATTR : WRITE_CLEAR_ATTR;
 	while(n--) {
-		if (curX >= winRightX) {
-			curY++;
-			if (curY >= winBottomY)
-				curY = winBottomY-1;
-			curX = winX;
-			pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4));
+		if (currentX >= winRightX) {
+			currentY++;
+			if (currentY >= winBottomY)
+				currentY = winBottomY-1;
+			currentX = winX;
+			pos = SCREEN + currentY * (fontHeight*(SCREEN_WIDTH/4));
 		}
 		volatile uint16_t* pos2 = pos;
 		uint16_t row;
@@ -182,7 +187,7 @@ void highlightText(uint16_t n, uint8_t highlightState) {
 			pos2 += SCREEN_WIDTH/4;			
 		}
 		pos += 2;
-		curX++;
+		currentX++;
 	}
 }
 
@@ -192,7 +197,7 @@ uint16_t putText(const char* s) {
 
 /* returns number of lines scrolled */
 uint16_t putTextN(const char* s, uint16_t n) {
-	volatile uint16_t* pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4)) + curX*2;
+	volatile uint16_t* pos = SCREEN + currentY * (fontHeight*(SCREEN_WIDTH/4)) + currentX*2;
 	uint16_t bg;
 	uint16_t fg;
 	uint16_t scrolled = 0;
@@ -210,17 +215,17 @@ uint16_t putTextN(const char* s, uint16_t n) {
 		uint16_t c = 0xFF & *s++;
 		n--;
 		
-		if (c == '\n' || curX >= winRightX) {
-			curX = winX;
-			curY++;
-			if (curY >= winBottomY) {
-				curY = winBottomY-1;
+		if (c == '\n' || currentX >= winRightX) {
+			currentX = winX;
+			currentY++;
+			if (currentY >= winBottomY) {
+				currentY = winBottomY-1;
 				if (scrollMode) {
 					scrollTextUp(1);
 					scrolled++;
 				}
 			}
-			pos = SCREEN + curY * (fontHeight*(SCREEN_WIDTH/4)) + curX * 2;
+			pos = SCREEN + currentY * (fontHeight*(SCREEN_WIDTH/4)) + currentX * 2;
 			if (c == '\n')
 				continue;
 		}
@@ -422,7 +427,7 @@ uint16_t putTextN(const char* s, uint16_t n) {
 		}
 		
 		pos += 2;
-		curX++;
+		currentX++;
 	}
 	
 	return scrolled;
@@ -482,3 +487,27 @@ void setFontSystem(uint8_t bold) {
 	}
 }
 
+void setTextCursorXY(uint16_t x, uint16_t y) {
+	char v = cursorVisible;
+	if (v)
+		showTextCursor(0);
+	cursorX = x;
+	cursorY = y;
+	if (v)
+		showTextCursor(1);
+}
+
+void updateTextCursor(char visible) {
+	cursorVisible = visible;
+	setTextCursorXY(currentX, currentY);
+}
+
+void showTextCursor(char value) {
+	volatile uint32_t* pos = (uint32_t*)(SCREEN + cursorY * (fontHeight*(SCREEN_WIDTH/4)) + cursorX*2);
+	*SCREEN_MEMORY_CONTROL = value ? WRITE_SET_ATTR : WRITE_CLEAR_ATTR;
+	for (uint16_t i=0; i < fontHeight; i++) {
+		*pos = 0xFFFFFFFF;
+		pos += SCREEN_WIDTH_DWORDS;
+	}
+	cursorVisible = value;
+}

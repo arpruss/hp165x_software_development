@@ -81,10 +81,3 @@ void _setScreenWidth(void) {
 #endif	
 }
 
-void setScreenStartLine(uint16_t y) {
-	uint16_t address = y * (screenWidth / 8);
-	*MC6845_REGISTER_ADDRESS = MC6845_ADDRESS_HIGH;
-	*MC6845_REGISTER_VALUE = address >> 8;
-	*MC6845_REGISTER_ADDRESS = MC6845_ADDRESS_LOW;
-	*MC6845_REGISTER_VALUE = address & 0xFF;
-}
