@@ -1,5 +1,6 @@
 #include <hp165x.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 //#include <errno.h> //TODO!
 
@@ -368,3 +369,23 @@ int closedir(DIR *dirp) {
 	return 0;
 }
 
+int stat(const char *path, struct stat *buf) {
+	char hpName[MAX_FILENAME_LENGTH+1];
+	uint16_t fileType = getHpName(hpName, path);
+	DirEntry_t d;
+    
+	int16_t i = 0;
+	while(1) {
+		if ( -1 == getDirEntry(i, &d) ) {
+			return -1;
+		}
+		if ((fileType == 0 || d.type == fileType) && !strcmp(d.name, hpName)) {
+			memset(buf, 0, sizeof(struct stat));
+			buf->st_mode = 0100000 /* S_IFREG */ | 0644;
+			buf->st_size = 254*d.numBlocks; // TODO: consider reading to find the actual size
+			return 0;
+		}				
+		i++;
+	}		
+	return -1;
+}

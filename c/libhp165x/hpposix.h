@@ -22,6 +22,8 @@ typedef struct {
     };
 } DIR;
 
+struct stat;
+
 int open(const char* name, int flags, ...);
 int close(int fd);
 int read(int fd, void* ptr, size_t size);
@@ -34,6 +36,7 @@ long telldir(DIR* dirp);
 struct dirent* readdir(DIR* dirp);
 DIR *opendir(const char *name);
 int unlink(const char *pathname);
+int stat(const char *path, struct stat *buf);
 
 #ifndef O_RDONLY
 #define O_RDONLY 0

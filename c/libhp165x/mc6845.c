@@ -1,6 +1,8 @@
 #include <hp165x.h>
 #include "screensize.h"
 
+static uint16_t cellHeight = 8;
+
 uint16_t ticksPerSecond(void) {
 	// This should be close to right for 592x384, 640x392, 640x400.
 	// For others, need to measure better.
@@ -79,3 +81,10 @@ void _setScreenWidth(void) {
 #endif	
 }
 
+void setScreenStartLine(uint16_t y) {
+	uint16_t address = y * (screenWidth / 8);
+	*MC6845_REGISTER_ADDRESS = MC6845_ADDRESS_HIGH;
+	*MC6845_REGISTER_VALUE = address >> 8;
+	*MC6845_REGISTER_ADDRESS = MC6845_ADDRESS_LOW;
+	*MC6845_REGISTER_VALUE = address & 0xFF;
+}

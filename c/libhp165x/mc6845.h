@@ -11,6 +11,8 @@
 #define MC6845_V_ADJUST	   5
 #define MC6845_V_DISPLAYED 6
 #define MC6845_V_SYNC	   7
+#define MC6845_ADDRESS_HIGH 12
+#define MC6845_ADDRESS_LOW  13
 #define MC6845_MAX_SCANLINE 9 // character height - 1
 
 void resetMC6845(void);
