@@ -98,7 +98,7 @@ void testJmp(void) {
 		jumpBack();	
 }
 
-void scrolling(void) {
+void scrolling(void) { /* 760 */
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	for (uint16_t i=0;i<4;i++) {
 		uint16_t x = 64+i * 64 + i;
