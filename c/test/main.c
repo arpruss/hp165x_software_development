@@ -6,6 +6,8 @@
 #include <hpposix.h>
 #include <hpsetjmp.h>
 
+uint32_t bottom; // 764,923
+
 /*
   9842bc.w: -1 to prepare, 0 when ready
   9842cc.l: address to put data
@@ -97,18 +99,20 @@ void testJmp(void) {
 }
 
 void scrolling(void) {
+	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	for (uint16_t i=0;i<4;i++) {
 		uint16_t x = 64+i * 64 + i;
 		for (uint16_t j=0;j<64;j++) 
 			fillRectangle(x-j-1,j,x+j,j+1);
 	}
 	setTextXY(0,getTextRows()-1);
-	putText("This is the bottom line of the screen.");
+	putText("This is the bottom line of the screen. [Press a key.]");
+	getKey(1);
 	uint32_t counter = getVBLCounter();
 	for (short i=0; i<20;i++) {
-		scrollUp(14,0,0,screenWidth,screenHeight,WRITE_BLACK,0xF);
+		scrollUp(14,0,0,screenWidth,screenHeight,WRITE_WHITE,0xF);
 	}
-	printf("%u\n", (unsigned)(getVBLCounter()-counter));
+	printf("\nTime: %u bottom: %lx\n", (unsigned)(getVBLCounter()-counter),bottom);
 	getKey(1);
 }
 
@@ -172,7 +176,7 @@ void rows(void) {
 void scroll(void) {
 	showTextCursor(1);
 	getKey(1); // see
-	setTextCursorXY(1);
+	setTextCursorXY(0,0);
 	getKey(1); // see
 	*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
 	fillScreen();
@@ -226,3 +230,4 @@ main(int argc, char** argv) {
 	resetMC6845();
 	reload();
 }
+ 

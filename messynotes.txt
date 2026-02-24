@@ -467,3 +467,8 @@ Internal font: B
 00000000
 00000000
 00000000
+
+
+TIME
+
+At A7005e we have a seconds counter.
