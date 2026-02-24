@@ -1,12 +1,14 @@
     .globl scrollDown
 	.globl scrollUp
 
-/*#define NO_SCROLL_OPTIMIZE */
-
 #ifndef SCREEN_WIDTH
 # define SCREEN_WIDTH 592
 #endif
 	
+#if SCREEN_WIDTH != 592 && SCREEN_WIDTH != 640
+# define NO_SCROLL_OPTIMIZE 
+#endif
+
 #define LINE_BYTES (SCREEN_WIDTH/4*2)
 #define LINE_WORDS (SCREEN_WIDTH/4)
 #define LINE_DWORDS (SCREEN_WIDTH/8)

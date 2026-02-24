@@ -143,7 +143,9 @@ The Level 1 interrupt autovector is at 60Hz, so it's surely the vertical blankin
 It can be used for a timer. 
 
 The default interrupt handlers are at: 
- 1: 1024E (=024E) 
+ 1: 8f42 (=024E). 
+	- Calls the function whose address is at 0x980712.l, if this address isn't 0.
+	- Does keyboard updates at 8fe2
  2?: 1024E (=024E)
  3?:  B4BC (or B702 according to code)
 	 Main result seems to be to move a byte from 20d003 to 9801f0 and then another to 9801f4.
@@ -158,7 +160,7 @@ The default interrupt handlers are at:
 SPECIAL HARDWARE ADDRESSES
 
 0x200000 ??: involved in acquisition test
-0x200001 ??: involved in acquisition test
+0x200001 ??: involved in acquisition test; involved in trap #0 function 1D
 0x201000.w: screen memory control (see below)  
 0x202001.b: set bit 7 to set display lookup table, clear when done; bit 6 is clear before and set after writing stuff to MC6845 ; https://bitsavers.trailing-edge.com/components/motorola/_dataSheets/6845.pdf
 0x203000.b: BEEP: 0xFF on, $FE off
@@ -183,7 +185,7 @@ SPECIAL HARDWARE ADDRESSES
 	bit 1: last spinner turn was to the right
 	bit 3: no disk in drive
 	bit 4: ???
-0x400001 ??: involved in acquisition test
+0x400001 ??: involved in acquisition test; involved in trap #0 function 1D
 	
 0xc00041.b: scope channel 1(?), read, 6 bits of data, plus the other two bits have individual meaning
 0xc00061.b: scope channel 2(?), read, 6 bits of data
@@ -279,8 +281,12 @@ ed00: (implemented at 6204): free() for heap in a60000-a6ffff (with 6 byte heade
 ecca: probably malloc
 
 trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of display frames, presumably)
-D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
-trap handler starts at #6B52
+	D7=1D has similar arguments, but functionality is unknown; the 1C handler is apparently at 60000D70
+trap #0 with D7=1D? 
+	At d80
+trap #0 handler starts at #6B52
+
+trap #2 handler starts at #6b0e (called from VBL)
 
 
 KEYBOARD
@@ -471,4 +477,9 @@ Internal font: B
 
 TIME
 
-At A7005e we have a seconds counter.
+A7005f: seconds
+A7005e: minutes
+A7005d: hours
+
+It's synchronized to VBL, since if we change the VBL timing, the counter speed changes, alas.
+The update code is at 6b0e.

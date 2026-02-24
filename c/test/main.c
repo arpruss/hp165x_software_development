@@ -110,7 +110,9 @@ void scrolling(void) {
 	getKey(1);
 	uint32_t counter = getVBLCounter();
 	for (short i=0; i<20;i++) {
-		scrollUp(14,0,0,screenWidth,screenHeight,WRITE_WHITE,0xF);
+		uint32_t t = getVBLCounter();
+		while (t == getVBLCounter());
+		scrollUp(14,0,0,screenWidth,screenHeight,WRITE_BLACK,0xF);
 	}
 	printf("\nTime: %u bottom: %lx\n", (unsigned)(getVBLCounter()-counter),bottom);
 	getKey(1);
