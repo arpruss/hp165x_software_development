@@ -14,7 +14,7 @@ blacksquare:  /* void blacksquare(uint16_t x,uint16_t y) */
     add.w %d1,%d0          /* d0 = y*(WIDTH/4) + x/4 */
     and.w #0xFFFF,%d0      
     add.l %d0,%d0          /* this may exceed 64k */
-	move.l #0x600000,%a0
+	move.l #620000,%a0
     add.l %d0,%a0          /* a0 = 0x600000 + (y*WIDTH/4+x/4)*2 */
     btst #0,%d2
     beq .even

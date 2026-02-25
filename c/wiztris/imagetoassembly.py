@@ -41,7 +41,8 @@ def makeImage(img,width,height,startOffset):
             return
         pos = xpos + y * (WIDTH//2)
         if words and words[-1][0] == pos-2:
-            dwords.append( (pos-2, words[-1][1] << 16 | value) )
+            dw = words[-1][1] << 16 | value
+            dwords.append( (pos-2, dw) )
             words.pop()
         else:
             words.append( ( pos, value ) )
@@ -153,17 +154,17 @@ print("""    .text
 """ % (basename,basename,basename,basename))
 
 
-print("""
+print(f"""
 	movem.l %d0-%d2/%a0,-(%sp)
     move.w 26(%sp),%d0 /* y */
-    mulu.w #(592/4),%d0     /* d0.w = y*(WIDTH/4) */
+    mulu.w #({WIDTH:d}/4),%d0     /* d0.w = y*(WIDTH/4) */
     move.w 22(%sp),%d1      /* x */
     move.w %d1,%d2
     lsr.w #2,%d1           /* d1 = x/4 */
     add.w %d1,%d0          /* d0 = y*(WIDTH/4) + x/4 */
     and.w #0xFFFF,%d0      
     add.l %d0,%d0          /* this may exceed 64k */
-	move.l #0x600000,%a0
+	move.l #{SCREEN:x},%a0
     add.l %d0,%a0          /* a0 = 0x600000 + (y*WIDTH/4+x/4)*2 */
     btst #0,%d2
     beq .even
