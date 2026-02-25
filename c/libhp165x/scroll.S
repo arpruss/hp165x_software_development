@@ -108,8 +108,7 @@ notBit3Down:
 1:
 
 /* clear top */
-	move.l ARGL(SCROLLDOWN_SAVED,fillMode),%d1     /* fillMode */
-	move.w %d1,SCREEN_MEMORY_CONTROL
+	move.w ARGW(SCROLLDOWN_SAVED,fillMode),SCREEN_MEMORY_CONTROL
 
 	move.w #(LINE_BYTES),%d7
  	move.w %d6,%d4
@@ -142,9 +141,6 @@ notBit3Down:
 #ifndef NO_SCROLL_OPTIMIZE
 copyTwoLines:
 /* %a1 = source, %a0 = dest */
-#define COPY_TWO_LINES_SAVE_REGS %d2/%a0-%a6
-	movem.l COPY_TWO_LINES_SAVE_REGS,-(%sp)
-		
 	.macro  move52
 	movem.l (%a1)+,%d0-%d7/%a2-%a6 /* 52 bytes */
 	movem.l %d0-%d7/%a2-%a6,(%a0)
@@ -170,15 +166,15 @@ copyTwoLines:
 #error Unsupported width for optimization.
 #endif
 	
-	movem.l (%sp)+,COPY_TWO_LINES_SAVE_REGS
+	move.l  #(LINE_BYTES*2),%d0
+	sub.l	%d0,%a0
+	sub.l	%d0,%a1
+
 	rts
 
 copyTwoLinesNot:
 /* %a1 = source, %a0 = dest */
-/* clobbers all data other than %d1-%d2, but restores addresses */
-#define COPY_TWO_LINES_NOT_SAVE_REGS %d2/%a0-%a2
-	movem.l COPY_TWO_LINES_NOT_SAVE_REGS,-(%sp)
-	
+
 	.macro  move32not
 	movem.l (%a1)+,%d0-%d7 /* 48 bytes */
 	not.l	%d0
@@ -213,8 +209,19 @@ copyTwoLinesNot:
 #else
 #error Unsupported width for optimization.
 #endif
-	movem.l (%sp)+,COPY_TWO_LINES_NOT_SAVE_REGS
+	
+	move.l  #(LINE_BYTES*2),%d0
+	sub.l	%d0,%a0
+	sub.l	%d0,%a1
+
 	rts
+
+	.globl _bitplanes
+_bitplanes:
+	.byte   0
+	.byte   0 /* for alignment */
+_bottom:
+	.long	0
 	
 wholeLines:
 /* %a1 = source, %a0 = dest, %a2 = bottom: keep copying until %a1 >= %a2 */
@@ -222,8 +229,15 @@ wholeLines:
 /* %d2 = bitplanes */
 /* use all the other data registers as scrap */
 /* assumes: even number of lines to scroll, even height of region */
+	move.b  %d2,_bitplanes 
+	move.l  %a2,_bottom
+
+#define WHOLELINES_SAVE_REGS %a3-%a6
+#define WHOLELINES_SAVED 	 4
+	movem.l WHOLELINES_SAVE_REGS,-(%sp)
+
 1:
-	btst    #0,%d2
+	btst.b  #0,_bitplanes
 	beq		4f
 
 	move.w #(~(0x101)),SCREEN_MEMORY_CONTROL	
@@ -232,7 +246,7 @@ wholeLines:
 	bsr		copyTwoLinesNot
 
 4:
-	btst    #1,%d2
+	btst.b  #1,_bitplanes
 	beq		4f	
 
 	move.w #(~(0x202)),SCREEN_MEMORY_CONTROL	
@@ -241,7 +255,7 @@ wholeLines:
 	bsr		copyTwoLinesNot
 
 4:
-	btst    #2,%d2
+	btst.b  #2,_bitplanes
 	beq		4f	
 
 	move.w #(~(0x404)),SCREEN_MEMORY_CONTROL	
@@ -250,7 +264,7 @@ wholeLines:
 	bsr		copyTwoLinesNot
 
 4:
-	btst    #3,%d2
+	btst.l  #3,_bitplanes
 	beq		4f	
 
 	move.w #(~(0x808)),SCREEN_MEMORY_CONTROL	
@@ -259,16 +273,18 @@ wholeLines:
 	bsr		copyTwoLinesNot
 
 4:
-	add.l   #(2*LINE_BYTES),%a0
-	add.l   #(2*LINE_BYTES),%a1
+	move.l  #(LINE_BYTES*2),%d0 
+
+	add.l	%d0,%a0
+	add.l	%d0,%a1
 	
-	cmp.l   %a2,%a1
+	cmp.l   _bottom,%a1
 	blt     1b	
 	
 	/* at this point, %a1 should be pointing to the bottom of the clear area
 	   and %a0 to the top of the clear area */
 
-	move.w (28+24+2)(%sp),SCREEN_MEMORY_CONTROL     /* fillMode */
+	move.w ARGW(SCROLLUP_SAVED+WHOLELINES_SAVED,fillMode),SCREEN_MEMORY_CONTROL
 	move.l #0x000F000F,%d7
 	move.l %d7,%d6
 	move.l %d7,%d5
@@ -278,7 +294,9 @@ wholeLines:
 	cmp.l	%a0,%a1
 	bgt		1b /* a1 > a0 ==> not yet done */
 
+	movem.l (%sp)+, WHOLELINES_SAVE_REGS
 	movem.l (%sp)+, SCROLLUP_SAVE_REGS 
+
 	rts		
 #endif	
 	
@@ -318,7 +336,7 @@ scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint1
 	/* special case optimization */
    	cmp.w  #(LINE_DWORDS-1),%d6 /* full lines */
 	bne	   0f
-	btst.l #0,(28+4)(%sp)      
+	btst.l #0,ARGL(SCROLLUP_SAVED,lines)      
 	bne	   0f                   /* vertical distance is even */
 	move.l ARGL(SCROLLUP_SAVED,topY),%d5     
 	move.l ARGL(SCROLLUP_SAVED,bottomY),%d7     
@@ -370,8 +388,7 @@ notBit3:
 1:
 
 /* clear bottom */
-	move.l ARGL(SCROLLUP_SAVED,fillMode),%d1     /* fillMode */
-	move.w %d1,SCREEN_MEMORY_CONTROL
+	move.w ARGW(SCROLLUP_SAVED,fillMode),SCREEN_MEMORY_CONTROL
 
 	move.l %a0,%a1
 	add.l  %d0,%a1

@@ -98,6 +98,8 @@ void testJmp(void) {
 		jumpBack();	
 }
 
+extern uint32_t _bitplanes;
+
 void scrolling(void) { /* 760 */
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	for (uint16_t i=0;i<4;i++) {
@@ -106,15 +108,18 @@ void scrolling(void) { /* 760 */
 			fillRectangle(x-j-1,j,x+j,j+1);
 	}
 	setTextXY(0,getTextRows()-1);
-	putText("This is the bottom line of the screen. [Press a key.]");
+	printf("This is the bottom line (%u) of the screen. [Press a key.]", getTextRows()-1);
+	for (uint16_t i=0;i<getTextRows();i++) {
+		setTextXY(0,i); printf("%d",i);
+	}
 	getKey(1);
 	uint32_t counter = getVBLCounter();
 	for (short i=0; i<20;i++) {
-		uint32_t t = getVBLCounter();
-		while (t == getVBLCounter());
+		//uint32_t t = getVBLCounter();
+		//while (t == getVBLCounter());
 		scrollUp(14,0,0,screenWidth,screenHeight,WRITE_BLACK,0xF);
 	}
-	printf("\nTime: %u bottom: %lx\n", (unsigned)(getVBLCounter()-counter),bottom);
+	printf("\nTime: %u\n", (unsigned)(getVBLCounter()-counter));
 	getKey(1);
 }
 
@@ -209,6 +214,10 @@ main(int argc, char** argv) {
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
+	for (uint16_t i=0;i<getTextRows();i++) {
+		setTextXY(0,i); printf("%d",i);
+	}
+
 	uint16_t k = getKey(1);
 	*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
 	fillScreen();
