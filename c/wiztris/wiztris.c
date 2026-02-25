@@ -126,12 +126,13 @@ void dosquare(uint16_t i,uint16_t j,uint16_t c,uint16_t currentBackground)  /* r
 	SQUARE(x,y);
 }
 
-void dopiece(uint16_t row0,uint16_t col0,uint16_t n,uint16_t r,uint16_t c,uint16_t currentBackground)
+void dopiece(int16_t row0,int16_t col0,uint16_t n,uint16_t r,uint16_t c,uint16_t currentBackground)
 {
-    uint16_t row;
-    uint16_t col;
+    int16_t row;
+    int16_t col;
     uint16_t colmask;
     uint16_t st;
+
     for(row=0; row<4; row++)
     {
         st=shapetbl(n,row,r);

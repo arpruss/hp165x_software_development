@@ -2,13 +2,18 @@ import sys
 import os
 
 WIDTH = 592
-SCREEN = 0x600000
+SCREEN = 0x620000
+MOVEP = True
 
 #
 # given a text image, generate assembly code
 # blanks are .
 #
 
+if sys.argv[1] == "--width":
+    WIDTH = int(sys.argv[2])
+    sys.argv = sys.argv[:1] + sys.argv[3:]
+    
 filename = sys.argv[1]
 basename,_ = os.path.splitext(filename)
 image = []
@@ -29,8 +34,11 @@ def makeImage(img,width,height,startOffset):
     code = "/* image %d */\n" % startOffset
     words = []
     dwords = []
+    qwords = []
     
     def addValue(xpos,y,value):
+        if value == 0:
+            return
         pos = xpos + y * (WIDTH//2)
         if words and words[-1][0] == pos-2:
             dwords.append( (pos-2, words[-1][1] << 16 | value) )
@@ -54,6 +62,23 @@ def makeImage(img,width,height,startOffset):
                 pos += 2
         if value:
             addValue(pos,y,value)
+         
+    def swizzle(x,y):
+        b0 = (x >> 16) & 0xF;
+        b1 = (x) & 0xF;
+        b2 = (y >> 16) & 0xF;
+        b3 = (y) & 0xF;
+        return b3 | b2<<8 | b1 << 16 | b0 << 24;
+         
+    if MOVEP:
+        i = 0
+        while i + 1 < len(dwords):
+            if dwords[i+1][0] == dwords[i][0]+4:
+                qwords.append((dwords[i][0] + 1, swizzle(dwords[i][1], dwords[i+1][1])))
+                del dwords[i:i+2]
+            else:
+                i += 1
+            
     def toDict(data):
         out = {}
         for datum in data:
@@ -62,6 +87,8 @@ def makeImage(img,width,height,startOffset):
             else:
                 out[datum[1]] = [ datum[0], ]
         return out
+
+    qwordDict = toDict(qwords)
     dwordDict = toDict(dwords)
     wordDict = toDict(words)
     def dest(p):
@@ -70,7 +97,25 @@ def makeImage(img,width,height,startOffset):
         else:
             return f"0x{p:04x}(%a0)"
     lastD0L = -1
-    for dword in dwordDict:
+    for dword in qwordDict:
+        # movep takes a dword and spreads it out to write a qword
+        positions = qwordDict[dword]
+        lowWord = dword & 0xFFFF
+        if len(positions) == 1 and lowWord not in wordDict:
+            if positions[0] == 0:
+                code += f"    movep.l #0x{dword:08x},{dest(positions[0])}\n"
+        else:
+            if dword < 128:
+                code += f"    moveq #0x{dword:02x},%d0\n"
+            else:
+                code += f"    move.l #0x{dword:08x},%d0\n"
+            for p in positions:
+                code += f"    movep.l %d0,{dest(p)}\n"
+            if lowWord in wordDict:
+                for p in wordDict[lowWord]:
+                    code += f"    move.w %d0,{dest(p)}\n"
+                del wordDict[lowWord]                    
+    for dword in dwordDict: 
         positions = dwordDict[dword]
         lowWord = dword & 0xFFFF
         if len(positions) == 1 and lowWord not in wordDict:

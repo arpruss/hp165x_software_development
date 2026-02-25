@@ -5,7 +5,6 @@
 
 #define INITIAL_MARGIN 8
 
-
 _WRAP_1(drawText,0xeaf6);
 _WRAP_1(setTextMode,0xeb08);
 _WRAP_2(setCoordinates,0xeae4);
