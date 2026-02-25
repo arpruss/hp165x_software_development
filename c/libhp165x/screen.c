@@ -71,17 +71,19 @@ void drawPixelAllPlanes(uint16_t x, uint16_t y, uint8_t value) {
 	}
 }
 
-// fills screen, up to 392 lines as needed
-// todo: maybe only do the number of lines that are actually
-// needed
+// fills screen
+//  Because SCREEN_WIDTH/2 * screenHeight may not be divisible
+//  by the 48 bytes we move in each step of the loop, the algorithm
+//  can go over the top of the video memory a little. But the video memory
+//  is mirrored at 0x620000, so if we use that, all will be well---we'll just
+//  wipe a few bytes of invisible space.
+
 void fillScreen(void) {
-#if 1
 asm(
-	"  move.l #0x600000, %%a1\n"
+	"  move.l #0x620000, %%a1\n"
 	"  move.l %%a1, %%a0\n"
 	"  move.w screenHeight, %%d0\n"
-	"  ext.l  %%d0\n"
-	"  mulu.w #(" _QUOTE(SCREEN_WIDTH/2) "), %%d0\n" /* guaranteed to be divisible by 32 */
+	"  mulu.w #(" _QUOTE(SCREEN_WIDTH/2) "), %%d0\n" 
 	"  add.l  %%d0, %%a0\n"
 	"  move.l #0x000F000F, %%d0\n"
     "  move.l %%d0,%%d1\n"
@@ -91,11 +93,14 @@ asm(
     "  move.l %%d0,%%d5\n"
     "  move.l %%d0,%%d6\n"
     "  move.l %%d0,%%d7\n"
+    "  move.l %%d0,%%a2\n"
+    "  move.l %%d0,%%a3\n"
+    "  move.l %%d0,%%a4\n"
+    "  move.l %%d0,%%a5\n"
 	"1:\n"
-	"  movem.l %%d0-%%d7,-(%%a0)\n" // ; clear 16 display words at once, decrementing A0 by 32
+	"  movem.l %%d0-%%d7/%%a2-%%a5,-(%%a0)\n" // ; clear 12 dwords at once, decrementing A0 by 48
     "  cmp.l %%a1,%%a0\n"
-	"  bge 1b\n" : : : "d2", "d3", "d4", "d5", "d6", "d7" );
-#endif
+    "  bge 1b\n" : : : "d2", "d3", "d4", "d5", "d6", "d7", "a2", "a3", "a4", "a5" ); 
 }
 
 void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2) {

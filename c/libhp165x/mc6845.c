@@ -42,14 +42,19 @@ void _disableScreenAndOtherStuff(void) {
 }
 
 void setScreenHeight(uint16_t height) {
+	static char initialized = 0;
+	
 	if (height == 0)
 		height = DEFAULT_SCREEN_HEIGHT;
 	if (height * (SCREEN_WIDTH/8) > 32768) 
 		height = 32768/(SCREEN_WIDTH/8);
 	height = height / 8;
 	
-	if (screenHeight == height * 8)
+	if (initialized && screenHeight == height * 8)
 		return;
+	if (!initialized && screenHeight == ROM_SCREEN_HEIGHT)
+		return;
+	initialized = 1;
 	
 	screenHeight = height * 8;
 	

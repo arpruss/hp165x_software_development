@@ -288,6 +288,11 @@ wholeLines:
 	move.l %d7,%d6
 	move.l %d7,%d5
 	move.l %d7,%d4
+
+#if (LINE_BYTES*2) % 16 != 0
+# error This optimized code only works if LINE_BYTES*2 is divisible by 16.
+#endif
+
 1:
 	movem.l %d4-%d7,-(%a1) 
 	cmp.l	%a0,%a1

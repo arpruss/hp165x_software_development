@@ -197,7 +197,7 @@ main(int argc, char** argv) {
 	(void)argc;
 	(void)argv;
 	
-	initScreen(0, WRITE_BLACK);
+	initScreen(400, WRITE_BLACK);
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	patchVBL();
 
@@ -214,10 +214,6 @@ main(int argc, char** argv) {
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
-	for (uint16_t i=0;i<getTextRows();i++) {
-		setTextXY(0,i); printf("%d",i);
-	}
-
 	uint16_t k = getKey(1);
 	*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
 	fillScreen();

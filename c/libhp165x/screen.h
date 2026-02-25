@@ -3,6 +3,8 @@
 
 #include <hp165x.h>
 
+#define SCREEN ((volatile uint16_t*)0x620000) // we could use 0x600000, but 0x620000 gives us a bit
+											  // of headroom for clipping things at the top if we want
 #define SCREEN_MEMORY_CONTROL ((volatile uint16_t*)0x201000)
 #define SCREEN_WRITE_VALUE(active,value) = ((0xF^(uint8_t)(active)) | (uint16_t)(0xF^(uint8_t)(value))<<8)
 // reading won't be very useful in these modes
@@ -28,8 +30,6 @@
 
 extern uint16_t screenHeight;
 extern uint16_t screenWidth;
-
-#define SCREEN ((volatile uint16_t*)0x600000)
 
 #define ROM_SCREEN_WIDTH  592
 #define ROM_SCREEN_HEIGHT 384
