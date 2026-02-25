@@ -38,7 +38,7 @@ def writeHFE(filename,data):
     assert code == 0
 def help():
     print("python lifutils.py create lifname.lif")
-    print("python lifutils.py dir lifname.lif")
+    print("python lifutils.py dir [-l] lifname.lif")
     print("python lifutils.py del lifname.lif FILE_TO_DELETE [more files]")
     print("python lifutils.py ren lifname.lif SOURCE_NAME DEST_NAME")
     print("python lifutils.py type lifname.lif FILE_TO_RETYPE FileType")
@@ -80,10 +80,16 @@ class DirEntry:
             self.unchunkedFile = unchunkFile(self.chunkedFile)
      
     def __str__(self):
-        return "%s,%04X,%u,%u,%u,%02x/%02x/%02x %02x:%02x:%02x,%s" % (self.name,self.fileType,
-                    self.startBlock,self.blocks,len(self.unchunkedFile),
+        return "%s %04X %u [%u %u] %02x/%02x/%02x %02x:%02x:%02x,%s" % (self.name,self.fileType,
+                    len(self.unchunkedFile),self.startBlock,self.blocks,
                     self.year,self.month,self.day,self.hour,self.minute,self.second,
                     self.misc.hex())
+                    
+    def format(self, verbose):
+        if verbose: 
+            return str(self)
+        return "%-11s %04X %6u [%4u %4u]" % (self.name,self.fileType,len(self.unchunkedFile),
+                    self.startBlock,self.blocks)
                     
     def put(self, pos):
         diskData[dirStart * BLOCK_SIZE + pos * 32 : dirStart * BLOCK_SIZE + pos * DIR_ENTRY_SIZE + DIR_ENTRY_SIZE] = self.toBinary()
@@ -227,32 +233,43 @@ def put(inFile, outFile, fileType):
     diskData[dirStart*BLOCK_SIZE + len(directory) * DIR_ENTRY_SIZE : dirStart * BLOCK_SIZE + len(directory) * DIR_ENTRY_SIZE + DIR_ENTRY_SIZE] = newEntry.toBinary()
     return True
 
-def readDir(quiet=False):                
+def readDir(quiet=False,verbose=False):                
     global directory,lastBlock
     directory = []
     startBlock = 0
     lastBlock = dirStart + dirBlocks
+    largestSpace = 0
+    previous = dirStart + dirBlocks
     for i in range(dirEntries):
         offset = dirStart * BLOCK_SIZE + i * DIR_ENTRY_SIZE
         if diskData[offset] != 0xFF:
             entry = DirEntry(diskData[offset:offset+DIR_ENTRY_SIZE])
             if entry.fileType:
+                if entry.startBlock - previous > largestSpace:
+                    largestSpace = entry.startBlock - previous
                 directory.append((i,entry))
                 if entry.startBlock + entry.blocks > lastBlock:
                     lastBlock = entry.startBlock + entry.blocks
+                previous = lastBlock
                 if not quiet:
+                    e = entry.format(verbose)
                     if entry.fileType == 0xC001:
                         comment = ''
                         try:
                             start = entry.startBlock
-                            comment = "[" + entry.unchunkedFile[4:4+26].decode().strip() + " : " + entry.unchunkedFile[4+26:4+26+6].decode().strip() + "]"
+                            comment = entry.unchunkedFile[4:4+26].decode().strip() 
+                            if verbose:
+                                comment += "\t" + entry.unchunkedFile[4+26:4+26+6].decode().strip()
                         except:
                             pass
-                        print(i,entry,comment)                            
+                        print("%-3u"%i,e,comment)                            
                     else:
-                        print(i,entry)
+                        print("%-3u"%i,e)
+    if totalBlocks - previous > largestSpace:
+        largestSpace = totalBlocks - previous
     if not quiet:
-        print("Last block",lastBlock)
+        print("Last block:",lastBlock)
+        print("Largest space:",largestSpace)
         
 def create(name):
     print("Creating "+name)
@@ -281,6 +298,13 @@ if sys.argv[1] == "--raw":
     sys.argv = sys.argv[:1] + sys.argv[2:]
 
 cmd = sys.argv[1]
+
+options = []
+while sys.argv[2][0] == "-":
+    options.append(sys.argv[2])
+    if sys.argv[2] == "-" or sys.argv[2] == "--":
+        break
+    sys.argv = sys.argv[:2] + sys.argv[3:]
 
 if cmd == "create":
     create(sys.argv[2])
@@ -315,7 +339,7 @@ totalBlocks = tracks * sides * blocksPerTrack
 print("Volume:",name.decode())
 print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
 print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))
-readDir(cmd != "dir")
+readDir(cmd != "dir", verbose="-l" in options)
 if cmd == "rm" or cmd == "del":
     for f in sys.argv[3:]:
         if delete(f):
