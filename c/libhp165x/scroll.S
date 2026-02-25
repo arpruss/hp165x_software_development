@@ -216,7 +216,6 @@ copyTwoLinesNot:
 
 	rts
 
-	.globl _bitplanes
 _bitplanes:
 	.byte   0
 	.byte   0 /* for alignment */
