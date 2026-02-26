@@ -23,7 +23,7 @@ void fileTest(void) {
 	static char testBuffer[6543];
 	for (uint16_t i = 0 ; i < sizeof(testBuffer) ; i++)
 		testBuffer[i] = (char)i;
-	int fd = open("testfile:1234", O_WRONLY|O_CREAT);
+	int fd = open("TESTFILE", O_WRONLY|O_CREAT);
 	printf("Opened %d\n", fd);
 	if (fd < 0) {
 		printf("Error opening file");
@@ -39,7 +39,7 @@ void fileTest(void) {
 		return;
 	}
 	memset(testBuffer, 0, sizeof(testBuffer));
-	fd = open("testfile:1234", O_RDONLY);
+	fd = open("TESTFILE", O_RDONLY);
 	printf("Opened %d\n", fd);
 	if (fd < 0) {
 		printf("reError opening file");
@@ -60,31 +60,19 @@ void fileTest(void) {
 			return;
 		}
 	}
-/*	if (unlink("testfile") < 0) {
+	if (unlink("TESTFILE") < 0) {
 		printf("Error unlinking");
 		return;
-	} */
-	fd = open("testfile:1235", O_WRONLY);
-	if (fd < 0) {
-		printf("Error opening testfile:4321\n");
-		return;
-	}
+	} 
 	else {
-		printf("Opened %d\n", fd);
+		printf("Success unlinking");
 	}
-	if (4 != write(fd, "4321", 4)) {
-		printf("Error writing 4 bytes\n");
+	if (unlink("TESTFILE") < 0) {
+		printf("can't unlink a second time");
+	} 
+	else{
+		printf("can unlink second time");
 	}
-	else {
-		printf("Wrote\n");
-	}
-	if (close(fd) < 0) {
-		printf("Error closing");
-	}
-	else {
-		printf("closed\n");
-	}
-	printf("Success!");
 }
 
 void jumpBack(void) {
@@ -175,6 +163,20 @@ void stack(void) {
 		"jsr 0xece2"); // 
 }
 
+void deleteTest(void) {
+	printf("Switch disks\n");
+	getKey(1);
+	int r = deleteByNameAndType("test.py",0);
+	printf("Return %d\n", r);
+	r = deleteByNameAndType("abc",0);
+	printf("Return %d\n", r);
+	r = deleteByNameAndType("test.py",0);
+	printf("Return %d\n", r);
+	r = deleteByNameAndType("abc",0);
+	printf("Return %d\n", r);
+	printf("%d", unlink("abc"));
+}
+
 void rows(void) {
 	for (int i=0;i<30;i++)
 		printf("\n%d",i);
@@ -211,6 +213,7 @@ main(int argc, char** argv) {
 	putText("6 - stack test\n");
 	putText("7 - cursor\n");
 	putText("8 - file test\n");
+	putText("9 - delete test.py and abc\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -229,7 +232,7 @@ main(int argc, char** argv) {
 		case KEY_6: stack(); break;
 		case KEY_7: scroll(); break;
 		case KEY_8: fileTest(); break;
-		
+		case KEY_9: deleteTest(); break;
 		default:
 			reload();
 	}

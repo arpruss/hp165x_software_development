@@ -4,13 +4,14 @@
 
 #define TOTAL_BLOCKS ((volatile uint32_t*)0x009842a6)
 
-void _renameDirEntry(uint32_t index, const ROMNameAndType_t* newEntry);
+int32_t _renameDirEntry(uint32_t index, const ROMDirEntry_t* newEntry);
 int _openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int _writeFile(int32_t fd, const void* data, int32_t size);
 int _readFile(int32_t fd, void* data, int32_t size);
 void _closeFile(int32_t fd);
 int _getDirEntry(int index, ROMDirEntry_t* dirEntry);
 void _diskPack(void);
+int _commitDir(void);
 
 _WRAP_2(_renameDirEntry,0xebc8);
 _WRAP_3(_openFile,0xeb74);
@@ -22,6 +23,7 @@ _WRAP_2(_getDirEntry,0xebce);
 _WRAP_0(_refreshDir, 0xebb0);
 _WRAP_1(_eb62, 0x227c);
 _WRAP_0(_packDir, 0xeb92);
+_WRAP_0(_commitDir, 0xeb9e);
 
 void _eb62(int x);
 
@@ -141,11 +143,22 @@ int openFile(const char* name, uint32_t fileType, uint32_t mode) {
 	return h;
 }
 
-int deleteByNameAndType(const char* name, uint16_t fileType) {
+/*void _ebda();
+void _ebe6();
+void _ebec();
+void _eb68();
+_WRAP_0(_ebda,0xebda);
+_WRAP_0(_ebe6,0xebe6);
+_WRAP_0(_ebec,0xebec);
+_WRAP_0(_eb68,0xeb68); */
+
+int renameFile(const char* name, uint16_t fileType, const char* newName, uint16_t newFileType) {
 	if (refreshDir() < 0)
 		return -1;
 	char paddedName[MAX_FILENAME_LENGTH];
 	padFilename(paddedName, name);
+	char newPaddedName[MAX_FILENAME_LENGTH];
+	padFilename(newPaddedName, newName);
 	ROMDirEntry_t d;
 	int i = 0;
 	_saveAsteriskArea();
@@ -154,14 +167,20 @@ int deleteByNameAndType(const char* name, uint16_t fileType) {
 			_restoreAsteriskArea();
 			return -1;
 		}
-		if (!strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
-			d.type = 0;
-			_renameDirEntry(i, (ROMNameAndType_t*)&d);
+		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
+			d.type = newFileType;
+			memcpy(d.name, newPaddedName, MAX_FILENAME_LENGTH);
+			_renameDirEntry(i, &d);
+			int r = _commitDir();
 			_restoreAsteriskArea();
-			return 0;
+			return r;
 		}
 		i++;
 	}
+}
+
+int deleteByNameAndType(const char* name, uint16_t fileType) {
+	return renameFile(name, fileType, name, 0);
 }
 
 int getFileType(const char* name) {

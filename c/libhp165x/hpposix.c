@@ -325,7 +325,7 @@ int fsync(int fd) {
 int unlink(const char *pathname) {
 	char hpName[MAX_FILENAME_LENGTH+1];
 	uint16_t type = getHpName(hpName, pathname);
-    return deleteByNameAndType(pathname, type);
+    return deleteByNameAndType(hpName, type);
 }
 
 DIR *opendir(const char *name) {
@@ -348,11 +348,13 @@ struct dirent* readdir(DIR* dirp) {
 	
 	struct dir_data* d = (struct dir_data*)(dirp->buf);
 
-	if (getDirEntry(dirp->offset, &(d->dirEntry)) == -1) {
-		dirp->offset = (size_t)-1;
-		return NULL;
-	}
-	dirp->offset++;
+	do {
+		if (getDirEntry(dirp->offset, &(d->dirEntry)) == -1) {
+			dirp->offset = (size_t)-1;
+			return NULL;
+		}
+		dirp->offset++;
+	} while(d->dirEntry.type == 0);
 	strcpy(d->posixDirEnt.d_name, d->dirEntry.name);
 	d->posixDirEnt.d_type = 6; // DT_REG
 	d->posixDirEnt.d_ino = d->dirEntry.startBlock;

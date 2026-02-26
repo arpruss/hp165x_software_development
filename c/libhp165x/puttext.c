@@ -68,10 +68,6 @@ void setTextWindow(uint16_t topLeftX,uint16_t topLeftY,int16_t bottomRightX,int1
 	cursorY = winY;
 }
 
-void _textInfo() {
-	printf("maxRows = %d numRows = %d winBottomY = %d\n", maxRows, getTextRows(), winBottomY);
-}
-
 void setFont(uint8_t* data, uint16_t height) {
 	uint16_t pixelY = currentY * fontHeight;
 	maxRows = screenHeight / height;
