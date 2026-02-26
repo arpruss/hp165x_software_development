@@ -328,6 +328,17 @@ int unlink(const char *pathname) {
     return deleteByNameAndType(hpName, type);
 }
 
+/* if no type is specified in newPathname, the type is unchanged */
+int rename(const char *pathname, const char* newPathname) {
+	char hpName[MAX_FILENAME_LENGTH+1];
+	uint16_t type = getHpName(hpName, pathname);
+	char hpName2[MAX_FILENAME_LENGTH+1];
+	int32_t type2 = getHpName(hpName2, newPathname);
+	if (type2 == 0)
+		type2 = -1;
+    return renameFile(hpName, type, hpName2, type2);
+}
+
 DIR *opendir(const char *name) {
 	(void)name;
 	DIR* dirp = malloc(sizeof(DIR));
@@ -391,3 +402,4 @@ int stat(const char *path, struct stat *buf) {
 	}		
 	return -1;
 }
+

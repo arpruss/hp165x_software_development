@@ -24,7 +24,7 @@ typedef struct {
 } DirEntry_t;
 
 #define TYPE_EXE 0xC001
-int renameFile(const char* name, uint16_t fileType, const char* newName, uint16_t newFileType);
+int renameFile(const char* name, uint16_t fileType, const char* newName, int32_t newFileType);
 int openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int writeFile(int32_t fd, const void* data, int32_t size);
 int readFile(int32_t fd, void* data, int32_t size);

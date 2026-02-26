@@ -152,7 +152,8 @@ _WRAP_0(_ebe6,0xebe6);
 _WRAP_0(_ebec,0xebec);
 _WRAP_0(_eb68,0xeb68); */
 
-int renameFile(const char* name, uint16_t fileType, const char* newName, uint16_t newFileType) {
+/* if newFileType == -1, don't change fileType */
+int renameFile(const char* name, uint16_t fileType, const char* newName, int32_t newFileType) {
 	if (refreshDir() < 0)
 		return -1;
 	char paddedName[MAX_FILENAME_LENGTH];
@@ -168,7 +169,8 @@ int renameFile(const char* name, uint16_t fileType, const char* newName, uint16_
 			return -1;
 		}
 		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
-			d.type = newFileType;
+			if (newFileType >= 0) 
+				d.type = newFileType;
 			memcpy(d.name, newPaddedName, MAX_FILENAME_LENGTH);
 			_renameDirEntry(i, &d);
 			int r = _commitDir();
