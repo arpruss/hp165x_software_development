@@ -1,6 +1,10 @@
 #ifndef _HPFILE_H
 #define _HPFILE_H
 
+#define OPEN_READ 1
+#define OPEN_WRITE 2
+#define MAX_FILENAME_LENGTH 10
+
 int openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int writeFile(int32_t fd, const void* data, int32_t size);
 int readFile(int32_t fd, void* data, int32_t size);

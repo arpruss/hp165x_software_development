@@ -71,10 +71,6 @@ void reload(void);
 void _exit(int status);
 void exit(int status);
 
-#define OPEN_READ 1
-#define OPEN_WRITE 2
-#define MAX_FILENAME_LENGTH 10
-
 void romDelayTicks(uint32_t ticks);
 void _restore_original_int_handlers(void);
 void _final_cleanup(void);
