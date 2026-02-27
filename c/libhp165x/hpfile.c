@@ -12,7 +12,14 @@ void _closeFile(int32_t fd);
 int _getDirEntry(int index, ROMDirEntry_t* dirEntry);
 void _diskPack(void);
 int _commitDir(void);
+int _writeBlocks(uint32_t blockNum, unsigned count, const void* data);
+int _readBlocks(uint32_t blockNum, unsigned count, void* data);
+int _commitBlocks(void);
 
+_WRAP_0(_commitBlocks,0xec0a);
+_WRAP_2(_writeBlock,0xebf8);
+_WRAP_3(_writeBlocks,0xebbc);
+_WRAP_3(_readBlocks,0xebc2);
 _WRAP_2(_renameDirEntry,0xebc8);
 _WRAP_3(_openFile,0xeb74);
 _WRAP_1(_closeFile,0xeb7a);
@@ -28,8 +35,12 @@ _WRAP_0(_commitDir, 0xeb9e);
 void _eb62(int x);
 
 static uint8_t _savedAsteriskAreaData[4][15];
+static uint32_t savedAsteriskAreaDepth = 0;
 
 void  __attribute__ ((noinline)) _saveAsteriskArea(void) {
+	if (savedAsteriskAreaDepth++ > 0) 
+		return;
+	
 	uint8_t mask;
 	mask = 1;
 	volatile uint16_t* pos = SCREEN+592/4*14+71*8/4; 
@@ -43,6 +54,9 @@ void  __attribute__ ((noinline)) _saveAsteriskArea(void) {
 }
 
 void __attribute__ ((noinline)) _restoreAsteriskArea(void) {
+	if (--savedAsteriskAreaDepth > 0)
+		return;
+	
 	volatile uint16_t* pos = SCREEN+592/4*14+71*8/4; 
 	*SCREEN_MEMORY_CONTROL = 0xF00; // clear all
 	volatile uint16_t* pos2 = pos;
@@ -59,6 +73,22 @@ void __attribute__ ((noinline)) _restoreAsteriskArea(void) {
 			pos2[1] = _savedAsteriskAreaData[bitplane][y] >> 4;
 		}
 	}
+}
+
+int writeBlocks(uint32_t blockNum, unsigned count, const void* data) {
+	_saveAsteriskArea();
+	int r = _writeBlocks(blockNum, count, data);
+	if (r >= 0)
+		r = _commitBlocks();
+	_restoreAsteriskArea();
+	return r;
+}
+
+int readBlocks(uint32_t blockNum, unsigned count, void* data) {
+	_saveAsteriskArea();
+	int r = _readBlocks(blockNum, count, data);
+	_restoreAsteriskArea();
+	return r;
 }
 
 void closeFile(int32_t h) {
@@ -204,4 +234,45 @@ int getFileType(const char* name) {
 		}
 		i++;
 	}
+}
+
+int diskSpace(uint32_t* totalBlocksP, uint32_t* freeBlocksP, uint32_t* largestSpaceP) {
+	if (refreshDir()<0)
+		return -1;
+	
+	uint32_t nonDataBlocks = *(uint32_t*)0x00984162 + *(uint32_t*)0x0098415a;
+	uint32_t totalBlocks = *(uint16_t*)0x009842a6 - nonDataBlocks;
+	uint32_t freeBlocks = 0;
+	uint32_t largestSpace = 0;
+	uint32_t lastBlock = nonDataBlocks;
+	uint32_t space;
+	
+	DirEntry_t d;
+	int i = 0;
+
+	while (getDirEntry(i, &d) >= 0) {
+		//printf("%u %.10s %u  %u:%u\n", i, d.name, d.type, d.startBlock, d.startBlock+d.numBlocks); 
+		if (d.type != 0) {
+			space = d.startBlock - lastBlock;
+			freeBlocks += space;
+			if (space > largestSpace)
+				largestSpace = space;
+			lastBlock = d.startBlock + d.numBlocks;
+		}
+		i++;
+	}
+	
+	space = totalBlocks + nonDataBlocks - lastBlock;
+	freeBlocks += space;
+	
+	if (space > largestSpace)
+		largestSpace = space;
+	if (totalBlocksP != NULL)
+		*totalBlocksP = totalBlocks;
+	if (freeBlocksP != NULL)
+		*freeBlocksP = freeBlocks;
+	if (largestSpaceP != NULL)
+		*largestSpaceP = largestSpace;
+	
+	return 0;
 }

@@ -68,10 +68,10 @@ void fileTest(void) {
 		printf("Success unlinking");
 	}
 	if (unlink("TESTFILE") < 0) {
-		printf("can't unlink a second time");
+		printf("can't unlink a second time (GOOD)");
 	} 
 	else{
-		printf("can unlink second time");
+		printf("can unlink second time (BAD)");
 	}
 }
 
@@ -136,17 +136,27 @@ void lut(void) {
 	getKey(1);
 }
 
-void misc(void) {
-	printf("384");
+void pack(void) {
+#if 0
+	char buffer[256];
+	char oldBuffer[256];
+	printf("%d\n", readBlocks(2,1,oldBuffer));
+	memset(buffer,'x',256);
+	printf("%d\n", writeBlocks(2,1,buffer));
+	_ec0a();
+	memset(buffer,'y',256);
+	printf("%d\n", readBlocks(2,1,buffer));
+	printf("%.12s\n", buffer);
+	//printf("%d\n", writeBlocks(2,1,oldBuffer));
+#endif
+	diskInfo();
+	printf("Packing\n");
+	lifPack(1);
+	printf("Packed\nPress a key\n");
 	getKey(1);
-	setScreenHeight(400);
-	printf("400");
-	getKey(1);
-	(*(volatile uint8_t*)0x202001) = 0;
-	waitSeconds(2);
-//	setScreenHeight(392);
-	(*(volatile uint8_t*)0x202001) = 1<<6;
-	printf("392");
+	*(volatile uint16_t*)0x00980200 = 0xFFFF;
+	printf("%d\n", refreshDir());
+	diskInfo();
 }
 
 void stack(void) {
@@ -161,20 +171,6 @@ void stack(void) {
 	asm volatile(
 		"move.l #0xa6FFFE,%sp\n"
 		"jsr 0xece2"); // 
-}
-
-void deleteTest(void) {
-	printf("Switch disks\n");
-	getKey(1);
-	int r = deleteByNameAndType("test.py",0);
-	printf("Return %d\n", r);
-	r = deleteByNameAndType("abc",0);
-	printf("Return %d\n", r);
-	r = deleteByNameAndType("test.py",0);
-	printf("Return %d\n", r);
-	r = deleteByNameAndType("abc",0);
-	printf("Return %d\n", r);
-	printf("%d", unlink("abc"));
 }
 
 void rows(void) {
@@ -195,6 +191,16 @@ void scroll(void) {
 	showTextCursor(0);
 }
 
+void diskInfo(void) {
+	uint32_t totalBlocks,freeBlocks,space;
+	if (diskSpace(&totalBlocks, &freeBlocks, &space) < 0) {
+		putText("Cannot read disk space\n");
+	}
+	else {
+		printf("Total: %u; free: %u; max space: %u\n", (unsigned)totalBlocks, (unsigned)freeBlocks, (unsigned)space);
+	}
+}
+
 main(int argc, char** argv) {
 	(void)argc;
 	(void)argv;
@@ -207,13 +213,13 @@ main(int argc, char** argv) {
 	putText("0 - scrolling\n");
 	putText("1 - text\n");
 	putText("2 - lut\n");
-	putText("3 - misc\n");
+	putText("3 - pack disk\n");
 	putText("4 - setjmp/longjmp\n");
 	putText("5 - rows\n");
 	putText("6 - stack test\n");
 	putText("7 - cursor\n");
 	putText("8 - file test\n");
-	putText("9 - delete test.py and abc\n");
+	putText("9 - disk info\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -226,13 +232,13 @@ main(int argc, char** argv) {
 		case KEY_0: scrolling(); break;
 		case KEY_1: text(); break;
 		case KEY_2: lut(); break;
-		case KEY_3: misc(); break;
+		case KEY_3: pack(); break;
 		case KEY_4: testJmp(); break;
 		case KEY_5: rows(); break;
 		case KEY_6: stack(); break;
 		case KEY_7: scroll(); break;
 		case KEY_8: fileTest(); break;
-		case KEY_9: deleteTest(); break;
+		case KEY_9: diskInfo(); break;
 		default:
 			reload();
 	}

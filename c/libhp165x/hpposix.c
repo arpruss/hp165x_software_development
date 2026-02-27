@@ -12,6 +12,8 @@
 
 #include "hpposix.h"
 
+#define LIFPACK // pack disk if not enough space
+
 #define CHUNK_SIZE 4096
 
 #define MAX_FILES 6
@@ -162,6 +164,21 @@ int close(int fd) {
 	
 	if (f->write) {
 		uint32_t size = f->dataSize;
+		
+#ifdef LIFPACK
+		uint32_t available;
+		uint32_t freeSpace;
+		
+		if (diskSpace(NULL, &freeSpace, &available) >= 0) {
+			if (size > freeSpace * 254) {
+				return -1;
+			}
+			if (size > available * 254) {
+				lifPack(1);
+			}
+		}
+#endif		
+		
 		WriteData_t* w = (WriteData_t*)f->rw.writeData;
 		struct chunk *chunkP = &(w->firstChunk);
 		char first = 1;

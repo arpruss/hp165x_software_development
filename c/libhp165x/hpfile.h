@@ -4,6 +4,7 @@
 #define OPEN_READ 1
 #define OPEN_WRITE 2
 #define MAX_FILENAME_LENGTH 10
+#define LIF_BLOCK_SIZE 256
 
 typedef struct {
 	char name[MAX_FILENAME_LENGTH]; // space padded
@@ -24,6 +25,10 @@ typedef struct {
 } DirEntry_t;
 
 #define TYPE_EXE 0xC001
+void  __attribute__ ((noinline)) _saveAsteriskArea(void);
+void  __attribute__ ((noinline)) _restoreAsteriskArea(void);
+int writeBlocks(uint32_t blockNum, unsigned count, const void* data);
+int readBlocks(uint32_t blockNum, unsigned count, void* data);
 int renameFile(const char* name, uint16_t fileType, const char* newName, int32_t newFileType);
 int openFile(const char* filename, uint32_t fileType, uint32_t mode);
 int writeFile(int32_t fd, const void* data, int32_t size);
@@ -34,6 +39,9 @@ int getDirEntry(int index, DirEntry_t* dirEntry);
 int _getDirEntry(int index, ROMDirEntry_t* dirEntry); 
 int deleteByNameAndType(const char* name, uint16_t fileType);
 int getFileType(const char* name);
+int lifPack(char progress);
+int diskSpace(uint32_t* totalBlocksP, uint32_t* freeBlocksP, uint32_t* largestSpaceP);
+int _commitBlocks(void);
 
 #define ERROR_FILE_NOT_FOUND (-5)
 #endif

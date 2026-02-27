@@ -1,5 +1,5 @@
 SRCS=hp165x.c puttext.c loadexec.c key.c hpfile.c serial.c scroll.S simple_serial.c \
-	keyboard.c input.c mc6845.c screen.c crt0.S picostubs.c hpposix.c setjmp.S 
+	keyboard.c input.c mc6845.c screen.c crt0.S picostubs.c hpposix.c setjmp.S pack.c
 
 PREFIX=m68k-elf
 

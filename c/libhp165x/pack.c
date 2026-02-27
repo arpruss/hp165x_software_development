@@ -1,4 +1,8 @@
-#define TEST
+//
+// NOT WORKING ON ACTUAL DEVICE: cannot write dir
+//
+
+//#define TEST
 
 #include <stdint.h>
 #include <malloc.h>
@@ -12,7 +16,8 @@
 
 #define MAX_FILENAME_LENGTH 10
 
-void refreshDir(void) {
+int _refreshDir(void) {
+	return 0;
 }
 
 typedef struct {
@@ -34,7 +39,11 @@ uint32_t FIX16(uint32_t x) {
 	return (x << 8) | (x >> 8);
 }
 
-int _readBlocks(uint32_t startBlock, uint32_t count, void* p) {
+void _saveAsteriskArea(void) {}
+void _restoreAsteriskArea(void) {}
+int commitBlocks(void) { return 0; }
+
+int readBlocks(uint32_t startBlock, uint32_t count, void* p) {
 	if (fseek(testFile, startBlock * BLOCK_SIZE, SEEK_SET) < 0)
 		return -1;
 	if (count != fread(p, BLOCK_SIZE, count, testFile))
@@ -42,7 +51,7 @@ int _readBlocks(uint32_t startBlock, uint32_t count, void* p) {
 	return 0;
 }
 
-int _writeBlocks(uint32_t startBlock, uint32_t count, const void* p) {
+int writeBlocks(uint32_t startBlock, uint32_t count, const void* p) {
 	if (fseek(testFile, startBlock * BLOCK_SIZE, SEEK_SET) < 0) {
 		return -1;
 	}
@@ -54,6 +63,7 @@ int _writeBlocks(uint32_t startBlock, uint32_t count, const void* p) {
 
 #else
 #include "hp165x.h"
+#include "screensize.h"
 
 #define FIX16(x) ((x))
 #define FIX32(x) ((x))
@@ -65,15 +75,18 @@ static char* buffer;
 static uint32_t dirStart;
 static uint32_t dirBlocks;
 static uint32_t totalBlocks;
+static uint32_t lastUsedBlock;
+static char progress;
 static ROMDirEntry_t* dir;
 static ROMDirEntry_t* endDir;
+static uint16_t progressX;
 
 #define MIN_BUFFER_SIZE 2048
 #define MAX_BUFFER_SIZE 65536
 
 static int writeBlocksRetry(uint32_t startBlock, uint32_t count, const void* p) {
 	for (int i=0; i<RETRY; i++) {
-		if (_writeBlocks(startBlock, count, p) >= 0)
+		if (writeBlocks(startBlock, count, p) >= 0)
 			return 0;
 	}
 	return -1;
@@ -81,7 +94,7 @@ static int writeBlocksRetry(uint32_t startBlock, uint32_t count, const void* p) 
 
 static int readBlocksRetry(uint32_t startBlock, uint32_t count, void* p) {
 	for (int i=0; i<RETRY; i++) {
-		if (_readBlocks(startBlock, count, p) >= 0)
+		if (readBlocks(startBlock, count, p) >= 0)
 			return 0;
 	}
 	return -1;
@@ -96,13 +109,56 @@ static char allFF(ROMDirEntry_t* p) {
 	return 1;
 }
 
+void clearProgress(void) {
+	if (!progress)
+		return;
+	*SCREEN_MEMORY_CONTROL = WRITE_CLEAR_ATTR;
+	drawHorizontalLine(0,screenHeight-1,SCREEN_WIDTH-1);
+	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+}
+
+static void updateProgress(uint16_t block) {
+	if (!progress)
+		return;
+	uint16_t total = totalBlocks;
+	uint16_t dataStart = dirStart + dirBlocks;
+	uint16_t dirPortion = dataStart * (SCREEN_WIDTH - 1) / total;
+	uint16_t dataPortion = SCREEN_WIDTH - 1 - dirPortion;
+	uint16_t x;
+	if (block <= dataStart) {
+		/* usedBlocks still not valid */
+		x = dirPortion * block / dataStart;
+	}
+	else {
+		uint16_t used = lastUsedBlock - dataStart;
+		x = dirPortion + dataPortion * (block - dataStart) / used;
+	}
+	if (x > progressX) {
+		*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
+		drawHorizontalLine(progressX+1,screenHeight-1,x);
+		progressX = x;
+	}
+}
+
+static void initProgress(void) {
+	if (!progress)
+		return;
+	clearProgress();
+	progressX = 0;
+	*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
+	drawPixel(0,screenHeight-1);
+}
+
 static int16_t cleanupDir(void) {
 	uint32_t lastChangedBlock = 0;
 	ROMDirEntry_t* src = dir;
 	ROMDirEntry_t* dest = dir;
 	
+	lastUsedBlock = 0;
+	
 	while (src < endDir) {
 		if (src->name[0] != (char)0xFF && src->type != 0) {
+			lastUsedBlock = src->startBlock + src->numBlocks;
 			if (dest != src) {
 				*dest = *src;
 				lastChangedBlock = (src-dir) / (BLOCK_SIZE / sizeof(ROMDirEntry_t));
@@ -122,16 +178,20 @@ static int16_t cleanupDir(void) {
 	printf("dir has %u entries\n", (endDir-dir));
 #endif	
 	
-	uint32_t blocksToWrite = (((char*)endDir - (char*)dir) + BLOCK_SIZE - 1 ) / BLOCK_SIZE;
+//	uint32_t blocksToWrite = (((char*)endDir - (char*)dir) + BLOCK_SIZE - 1 ) / BLOCK_SIZE;
 	
-	if (writeBlocksRetry(dirStart, blocksToWrite, dir) < 0)
+	if (writeBlocksRetry(dirStart, lastChangedBlock + 1, dir) < 0)
 		return -1;
+	
+	updateProgress(dirStart+dirBlocks);
 	
 	return 0;
 }
 
 int moveData(uint32_t destBlock, uint32_t srcBlock, uint32_t numBlocks) {
+#ifdef TEST	
 	printf("moveData %u %u %u\n",destBlock,srcBlock,numBlocks);
+#endif	
 	while (numBlocks > 0) {
 		uint16_t toCopy = numBlocks;
 		if (toCopy > bufferBlocks)
@@ -140,6 +200,7 @@ int moveData(uint32_t destBlock, uint32_t srcBlock, uint32_t numBlocks) {
 			return -1;
 		if (writeBlocksRetry(destBlock, toCopy, buffer) < 0)
 			return -1;
+		updateProgress(destBlock+toCopy);
 		srcBlock += toCopy;
 		destBlock += toCopy;
 		numBlocks -= toCopy;
@@ -147,14 +208,15 @@ int moveData(uint32_t destBlock, uint32_t srcBlock, uint32_t numBlocks) {
 	return 0;
 }
 
-int packDiskData(void) {
-	uint32_t src = dirStart + dirBlocks;
+static int packDiskData(void) {
 	uint32_t dest = dirStart + dirBlocks;
 	
 	ROMDirEntry_t* d = dir;
 	
 	while (d < endDir) {
+#ifdef TEST
 		printf("packing %.10s\n", d->name);
+#endif		
 		uint32_t start = FIX32(d->startBlock);
 		uint32_t num = FIX32(d->numBlocks);
 		if (start != dest) {
@@ -168,6 +230,9 @@ int packDiskData(void) {
 			if (writeBlocksRetry(dirStart + dirBlock, 1, (char*)dir + dirBlock * BLOCK_SIZE) < 0)
 				return -1;
 		}
+		else {
+			updateProgress(start + num);
+		}
 		dest += num;
 		d++;
 	}
@@ -175,7 +240,10 @@ int packDiskData(void) {
 	return 0;
 }
 
-int _lifPack(void) {
+static int _lifPack(void) {
+	if (refreshDir()<0)
+		return -1;
+	
 	uint8_t* blockZero = malloc(BLOCK_SIZE);
 	char success = 0;
 	
@@ -225,10 +293,21 @@ int _lifPack(void) {
 cleanup:
 	free(dir);
 	
-	refreshDir();
+	_refreshDir();
 	
 	if (!success)
 		return -1;
+	return 0;
+}
+
+int lifPack(char _progress) {
+	progress = _progress;
+	initProgress();
+	_saveAsteriskArea();
+	int r = _lifPack();
+	_restoreAsteriskArea();
+	clearProgress();
+	return r;
 }
 
 

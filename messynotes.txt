@@ -404,7 +404,7 @@ ebfe: read block (unsigned blockNum, char* data); returns 0 if successful
 ebc2: read blocks (unsigned blockNum, unsigned count, char* data); returns 0 if successful
 ebbc: write blocks (unsigned blockNum, unsigned count, char* data)
 ebf8: write block(unsigned blockNum, char* data)
-
+ec0a: commit written blocks
 
 0x9842a6.w: total size in blocks (3079)
 0x98415a.l: directory start block number
@@ -438,7 +438,8 @@ SYSTEM_ purge completed message number #14
 disk packing and other file operations in SYSTEM_ 00987c04 case 1e
 pack/rename/purge/format
 
-In SYSTEM_, free space calculations are done at 009c1c90.
+In SYSTEM_, free space calculations are done at 009c1c90. I am finding a discrepancy between my
+lifutils.py code which reports more free space. Don't know what that means.
 
 NOTES ON SYSTEM_
 
