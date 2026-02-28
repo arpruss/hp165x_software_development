@@ -119,7 +119,7 @@ typedef void (*Function)();           /* pointer to a function */
 extern void putDebugChar(char c);        /* write a single character      */
 extern char getDebugChar();        /* read and return a single char */
 
-extern Function exceptionHandler();  /* assign an exception handler */
+extern void exceptionHandler();  /* assign an exception handler */
 extern ExceptionHook exceptionHook;  /* hook variable for errors/exceptions */
 
 /************************/
@@ -288,7 +288,7 @@ asm("        andiw   #0x700,%d0\n"
 "        cmpiw   #0x700,%d0\n"
 "        beq     _already7\n"
 "        movew   %sp@+,%d0\n"
-"        bra     _catchException\n"
+"        bra     catchException\n"
 "_already7:\n"
 "        movew   %sp@+,%d0");
 #if !defined (mc68020) && !defined (mc68332)
@@ -317,8 +317,8 @@ extern void catchException ();
 */
 asm("\n"
 ".text\n"
-".globl _catchException\n"
-"_catchException:");
+".globl catchException\n"
+"catchException:");
 DISABLE_INTERRUPTS();
 asm("\n"
 "        moveml  %d0-%d7/%a0-%a6,registers /* save registers        */\n"
@@ -403,8 +403,8 @@ asm("\n"
 */
 asm("\n"
 ".text\n"
-".globl _catchException\n"
-"_catchException:\n");
+".globl catchException\n"
+"catchException:\n");
 DISABLE_INTERRUPTS();
 asm("\n"
 "        moveml %d0-%d7/%a0-%a6,registers  /* save registers               */\n"
@@ -577,9 +577,11 @@ getpacket (void)
             {
               if (remotedebug)
                 {
+#ifdef STDIO
                   fprintf (stderr,
                            "bad checksum.  My count = 0x%x, sent=0x%x. buf=%s\n",
                            checksum, xmitcsum, buffer);
+#endif						   
                 }
               putDebugChar ('-');        /* failed checksum */
             }
@@ -640,8 +642,10 @@ debug_error (format, parm)
      char *format;
      char *parm;
 {
+#ifdef STDIO
   if (remotedebug)
     fprintf (stderr, format, parm);
+#endif
 }
 
 /* convert the memory pointed to by mem into hex, placing result in buf */
@@ -821,9 +825,11 @@ handle_exception (int exceptionVector)
   int newPC;
   Frame *frame;
 
+#ifdef STDIO
   if (remotedebug)
     printf ("vector=%d, sr=0x%x, pc=0x%x\n",
             exceptionVector, registers[PS], registers[PC]);
+#endif			
 
   /* reply to host that an exception has occurred */
   sigval = computeSignal (exceptionVector);
@@ -945,14 +951,18 @@ handle_exception (int exceptionVector)
            * if it is found, use the old frame it.  otherwise,
            * fake up a dummy frame in returnFromException().
            */
+#ifdef STDIO
           if (remotedebug)
             printf ("new pc = 0x%x\n", newPC);
+#endif
           frame = lastFrame;
           while (frame)
             {
+#ifdef STDIO
               if (remotedebug)
                 printf ("frame at 0x%x has pc=0x%x, except#=%d\n",
                         frame, frame->exceptionPC, frame->exceptionVector);
+#endif						
               if (frame->exceptionPC == newPC)
                 break;                /* bingo! a match */
               /*
@@ -991,10 +1001,12 @@ handle_exception (int exceptionVector)
                   newPC = registers[PC];        /* pc may have changed  */
                   if (newPC != frame->exceptionPC)
                     {
+#ifdef STDIO
                       if (remotedebug)
                         printf ("frame at 0x%x has pc=0x%x, except#=%d\n",
                                 frame, frame->exceptionPC,
                                 frame->exceptionVector);
+#endif								
                       /* re-use the last frame, we're skipping it (longjump?) */
                       frame = (Frame *) 0;
                       _returnFromException (frame);        /* this is a jump */
