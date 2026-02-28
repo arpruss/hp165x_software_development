@@ -1,4 +1,5 @@
-SRCS=main.c
+SRCS=main.c acquire.c
+
 
 CPU=68000
 

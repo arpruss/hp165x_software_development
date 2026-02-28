@@ -5,7 +5,7 @@ import os
 from pathlib import PurePath
 from tempfile import NamedTemporaryFile
 
-
+MAX_BLOCKS = 3079
 BLOCK_SIZE = 256
 DIR_ENTRY_SIZE = 32
 RESERVED_TRACK = None # 79
@@ -336,6 +336,8 @@ if RESERVED_TRACK is not None and tracks > RESERVED_TRACK:
     tracks = RESERVED_TRACK
     diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)    
 totalBlocks = tracks * sides * blocksPerTrack
+if totalBlocks > MAX_BLOCKS:
+    totalBlocks = MAX_BLOCKS
 print("Volume:",name.decode())
 print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
 print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))

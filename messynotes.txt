@@ -344,6 +344,10 @@ Experiment shows that files are written in the largest available contiguous spac
 on the disk. This is smart for a filesystem that does not allow fragmented files.
 Periodic defragmentation ("packing") of the filesystem is needed, however.
 
+The maximum number of 256 byte blocks (including header, directory and file data) 
+on a disc appears to be 3079 (3059 data blocks), even though the discs have more
+tracks than that would account for.
+
 eb74 int OpenFile(char *filename,int filetype,int mode)
  Modes are either 1 (read) or 2 (write)
  E.g.: OpenFile(s_AUTOLOAD_000064da,0xc301,2);
@@ -491,3 +495,8 @@ A7005d: hours
 
 It's synchronized to VBL, since if we change the VBL timing, the counter speed changes, alas.
 The update code is at 6b0e.
+
+
+SCOPE
+
+SYSTEM_ has an apparent scope reading routine at 009e63f6.

@@ -50,7 +50,7 @@ void reload(void) {
 // https://stackoverflow.com/questions/66586687/delay-loop-in-68k-assembly
 
 // the processor is supposed to be 10MHz, but my timing shows more like 8.5MHz
-// 8854 per tick
+// per tick. Some of that may be due to VBL stealing CPU cycles.
 static void waitSecond(void) {
 	asm volatile("  move.l #(8500000/16),%%d0\n" 
 		"  moveq.l #1,%%d1\n"

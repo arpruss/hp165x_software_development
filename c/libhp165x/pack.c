@@ -109,11 +109,22 @@ static char allFF(ROMDirEntry_t* p) {
 	return 1;
 }
 
-void clearProgress(void) {
+void clearProgress(uint8_t* buffer) {
 	if (!progress)
 		return;
+	volatile uint16_t* pos = SCREEN + (screenHeight-1)*SCREEN_WIDTH_WORDS;
+	volatile uint16_t* posSaved = pos;
+	uint8_t* bufferSaved = buffer;
+	*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
+	for (uint16_t i=SCREEN_WIDTH_WORDS ; i > 0 ; i--) {
+		*pos++ = *buffer++;
+	}
+	pos = posSaved;
+	buffer = bufferSaved;
 	*SCREEN_MEMORY_CONTROL = WRITE_CLEAR_ATTR;
-	drawHorizontalLine(0,screenHeight-1,SCREEN_WIDTH-1);
+	for (uint16_t i=SCREEN_WIDTH_WORDS ; i > 0 ; i--) {
+		*pos++ = ~(*buffer++);
+	}
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 }
 
@@ -140,10 +151,16 @@ static void updateProgress(uint16_t block) {
 	}
 }
 
-static void initProgress(void) {
+static void initProgress(uint8_t* buffer) {
 	if (!progress)
 		return;
-	clearProgress();
+	*SCREEN_MEMORY_CONTROL = WRITE_CLEAR_ATTR;
+	volatile uint16_t* pos = SCREEN + (screenHeight-1)*SCREEN_WIDTH_WORDS;
+	for (uint16_t i=SCREEN_WIDTH_WORDS ; i > 0 ; i--) {
+		*buffer++ = (uint8_t)*pos++;
+	}
+	drawHorizontalLine(0,screenHeight-1,SCREEN_WIDTH-1);
+	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	progressX = 0;
 	*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
 	drawPixel(0,screenHeight-1);
@@ -301,12 +318,13 @@ cleanup:
 }
 
 int lifPack(char _progress) {
+	uint8_t progressBuffer[SCREEN_WIDTH/4];
 	progress = _progress;
-	initProgress();
+	initProgress(progressBuffer);
 	_saveAsteriskArea();
 	int r = _lifPack();
 	_restoreAsteriskArea();
-	clearProgress();
+	clearProgress(progressBuffer);
 	return r;
 }
 

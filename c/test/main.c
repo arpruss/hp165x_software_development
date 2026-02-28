@@ -201,6 +201,12 @@ void diskInfo(void) {
 	}
 }
 
+//void acquire(int param_1);
+
+void scope(void) {
+//	acquire(1);
+}
+
 main(int argc, char** argv) {
 	(void)argc;
 	(void)argv;
@@ -217,7 +223,7 @@ main(int argc, char** argv) {
 	putText("4 - setjmp/longjmp\n");
 	putText("5 - rows\n");
 	putText("6 - stack test\n");
-	putText("7 - cursor\n");
+//	putText("7 - scope\n");
 	putText("8 - file test\n");
 	putText("9 - disk info\n");
 	setTextXY(0,getTextRows()-1);
@@ -236,7 +242,7 @@ main(int argc, char** argv) {
 		case KEY_4: testJmp(); break;
 		case KEY_5: rows(); break;
 		case KEY_6: stack(); break;
-		case KEY_7: scroll(); break;
+//		case KEY_7: scope(); break;
 		case KEY_8: fileTest(); break;
 		case KEY_9: diskInfo(); break;
 		default:
