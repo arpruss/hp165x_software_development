@@ -67,9 +67,10 @@
 #define TEXT_MODE_NORMAL 0
 
 uint16_t getKey(char wait);
-void reload(void);
-void _exit(int status);
-void exit(int status);
+void __attribute__((noreturn)) reload(void);
+void __attribute__((noreturn)) _exit(int status);
+void __attribute__((noreturn)) exit(int status);
+void _call_atexit_functions(void);
 
 void romDelayTicks(uint32_t ticks);
 void _restore_original_int_handlers(void);

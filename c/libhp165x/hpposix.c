@@ -30,6 +30,9 @@
    This is a kludge to get around the fact that I don't know how to seek
    within the HP's files, and the HP has a limit of one open file at a time. 
    But, hey, there is 1mb of RAM. */
+   
+extern void (*_posixCleanup)(void);
+static void posixCleanup(void);
 
 struct chunk {
 	uint32_t offset;
@@ -57,7 +60,7 @@ typedef struct {
 
 static HPFILE files[MAX_FILES] = {};
 
-uint16_t fromHex(const char* p) {
+static uint16_t fromHex(const char* p) {
 	uint16_t out = 0;
 	while(1) {
 		if ('0' <= *p && *p <= '9')
@@ -121,6 +124,7 @@ int open(const char* name, int flags, ...) {
 		files[fd].position = 0;
 		files[fd].write = 1;
 		files[fd].dataSize = 0;
+		_posixCleanup = posixCleanup; /* close on _exit() */
 		return fd+FD_OFFSET;
 	}
 	else { // O_RDONLY
@@ -218,6 +222,13 @@ int close(int fd) {
 	files[fd-FD_OFFSET].rw.data = NULL;
 	
 	return e;
+}
+
+static void posixCleanup(void) {
+	for (uint16_t fd=0;fd<MAX_FILES;fd++) {
+		if (files[fd].rw.data != NULL)
+			close(fd+FD_OFFSET);
+	}
 }
 
 int read(int fd, void* ptr, size_t size) {

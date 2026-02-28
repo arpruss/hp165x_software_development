@@ -12,6 +12,7 @@ volatile uint32_t vblCounterValue = -1;
 extern void _vbl_counter_code(void);
 extern void _vbl_counter_jmp(void);
 extern void _original_int1_handler(void);
+void _final_cleanup_with_atexit_support(void);
 
 uint32_t getVBLCounter(void) {
 	return vblCounterValue;
@@ -40,11 +41,11 @@ void patchVBL() {
 }
 
 void reload(void) {
-//	setScreenHeight(0);
-	_final_cleanup();
 	initialScreen();
-	asm("move.l 0x00A7FFFE, %sp"); /* switch to original stack location */
+	_final_cleanup_with_atexit_support();
+	//asm volatile("move.l 0x00A7FFFE, %sp"); 
 	_reload();
+	__builtin_unreachable(); 
 }
 
 // https://stackoverflow.com/questions/66586687/delay-loop-in-68k-assembly

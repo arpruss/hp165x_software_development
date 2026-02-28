@@ -191,6 +191,8 @@ void scroll(void) {
 	showTextCursor(0);
 }
 
+extern uint32_t _original_stack_pointer;
+
 void diskInfo(void) {
 	uint32_t totalBlocks,freeBlocks,space;
 	if (diskSpace(&totalBlocks, &freeBlocks, &space) < 0) {
@@ -199,6 +201,7 @@ void diskInfo(void) {
 	else {
 		printf("Total: %u; free: %u; max space: %u\n", (unsigned)totalBlocks, (unsigned)freeBlocks, (unsigned)space);
 	}
+	printf("BTW, the original stack was %lx\n", _original_stack_pointer);
 }
 
 //void acquire(int param_1);
@@ -207,9 +210,17 @@ void scope(void) {
 //	acquire(1);
 }
 
+void goodbye(void) {
+	printf("Goodbye!");
+	waitSeconds(1);
+	reload();
+}
+
 main(int argc, char** argv) {
 	(void)argc;
 	(void)argv;
+	
+	atexit(goodbye);
 	
 	initScreen(400, WRITE_BLACK);
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
@@ -225,7 +236,7 @@ main(int argc, char** argv) {
 	putText("6 - stack test\n");
 //	putText("7 - scope\n");
 	putText("8 - file test\n");
-	putText("9 - disk info\n");
+	putText("9 - info\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -249,7 +260,5 @@ main(int argc, char** argv) {
 			reload();
 	}
 	getKey(1);
-	resetMC6845();
-	reload();
 }
  

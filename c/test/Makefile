@@ -1,4 +1,4 @@
-SRCS=main.c acquire.c
+SRCS=main.c 
 
 
 CPU=68000
@@ -30,7 +30,7 @@ OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 
 CFLAGS=-m$(CPU) $(LIBC_OPTIONS) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I$(LIBC_INCLUDE) -I. -msoft-float -MMD -MP -O99
-LFLAGS=-gc-sections $(PRINTF_VERSION) -L../libhp165x -L$(LIBC_LIB_DIR) --script=platform.ld -l$(HPLIB) -l$(LIBC) -l$(HPLIB) -L$(GCC_LIB_DIR) -lgcc
+LFLAGS=-gc-sections $(PRINTF_VERSION) -L../libhp165x -L$(LIBC_LIB_DIR) --script=platform.ld -l$(HPLIB) -l$(LIBC) -l$(HPLIB) -L$(GCC_LIB_DIR) -lgcc -Map=test.map
 
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
 OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))

@@ -15,6 +15,7 @@
         .type _start, @function
         .globl _start
 _start:
+		move.l  %sp, _original_stack_pointer /* just in case */
         movea.l #_stack_start, %sp
 
         /* Initialise (clear) the BSS area */
@@ -38,32 +39,32 @@ _start:
 		dbra	%d0,3b
 
         jsr     main
-		bra		_exit
-;;		jsr		0x0000ece2				/* reload OS */
 		
-		.globl atexit
-atexit:
-		move.l	%a0,-(%sp)
-		move.l 	#_atexit_functions,%a0
-		move.w  #31,%d0
-1:
-		tst.l	(%a0)
-		beq		2f
-		add		#4,%a0
-		dbra	%d0,1b
+		.globl  exit
+exit:		
+		bsr		_final_cleanup_with_atexit_support
+		bra		hang
 
-		moveq	#-1,%d0
-		bra		3f
-2:
-		move.l  8(%sp),(%a0)           /* add new function */
-		moveq	#0,%d0
-3:		
-		move.l	(%sp)+,%a0
-		rts
+		.globl	_exit
+_exit:
+		bsr		_final_cleanup
+hang:
+		bra 	hang
+		
+		.globl	_final_cleanup_with_atexit_support		
+_final_cleanup_with_atexit_support:		
+		move.l	__call_atexit_functions,%a0
+		cmp.l	#0,%a0
+		beq		_final_cleanup
+		jsr		(%a0)
 
+		.globl	_final_cleanup
 _final_cleanup:
-	/* TODO: close files */
-	
+		move.l	_posixCleanup,%a0
+		cmp.l	#0,%a0
+		beq		1f
+		jsr		(%a0)
+1:	
 		move.w 	#0xF00, 0x201000 /* restore screen writing mode */
 #if defined(DEFAULT_SCREEN_HEIGHT) || defined(SCREEN_WIDTH)
 		jsr	resetMC6845
@@ -72,54 +73,32 @@ _final_cleanup:
 		beq		1f
 		jsr		resetMC6845
 1:		
-#endif
-	/*	bra _restore_original_int_handlers */
-		
+#endif		
+		.globl _restore_original_int_handlers
 _restore_original_int_handlers:
 		move.l	#_original_int1_handler,%a0
 		move.l	#0x00980000,%a1
 		move.w  #(7-1),%d1
 1:
-		move.l	2(%a0),%d0 /* move address, and then move opcode */
-		move.l  %d0,2(%a1)
-		move.w	(%a0),%d0
-		move.w	%d0,(%a1)
-		add.q	#6,%a0
-		add.q	#6,%a1
+		move.l	2(%a0),2(%a1) /* move address */
+		move.w	(%a0),(%a1)   /* then change the opcode */
+		addq	#6,%a0
+		addq	#6,%a1
 		dbra	%d1,1b
 
 		rts
+	
+
+		.globl _posixCleanup
+_posixCleanup:
+		.long   0
+		.globl __call_atexit_functions
+__call_atexit_functions: /* avoid linking atexit stuff if atexit() is not called */
+		.long   0
 		
-_atexit_functions:
-		.zero	32*4
-
-		.globl _restore_original_int_handlers
-		.globl _final_cleanup
-		.globl  _exit
-		.globl	exit
-exit:
-_exit:
-		move.l	#(_atexit_functions+32*4-4),%a0
-		move.w	#31,%d0
-1:
-		tst.l	(%a0)
-		bne		4f
-2:		
-		sub.l	#4,%a0
-		dbra	%d0,1b
-
-		bsr		_final_cleanup
-
-hang:
-		bra 	hang
-4:
-		movem.l	%d0/%a0,-(%sp)
-
-		move.l	(%a0),%a0
-		jsr		(%a0) 
-
-		movem.l	(%sp)+,%d0/%a0
-		bra		2b
+		.globl _original_stack_pointer
+_original_stack_pointer:		
+		.space  4
 
 		.globl _original_int1_handler
 _original_int1_handler:
