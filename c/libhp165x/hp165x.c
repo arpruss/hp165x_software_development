@@ -41,8 +41,8 @@ void patchVBL() {
 }
 
 void reload(void) {
-	initialScreen();
 	_final_cleanup_with_atexit_support();
+	initialScreen();
 	//asm volatile("move.l 0x00A7FFFE, %sp"); 
 	_reload();
 	__builtin_unreachable(); 

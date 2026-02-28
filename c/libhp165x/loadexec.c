@@ -7,7 +7,7 @@ void _loadexec_relocatable_end(void);
 
 #define RELOCATABLE_SIZE ( (uint32_t)( (uint8_t*)&_loadexec_relocatable_end - (uint8_t*)&_loadexec_relocatable_start ) )
 
-int loadAndRun(const char* filename) {
+int loadAndRun(const char* filename, void (*overrideStart)(void), void (**originalStartP)()) {
 	uint8_t header[0x24];
 	uint32_t codeAddress;
 	uint32_t codeSize;
@@ -25,6 +25,11 @@ int loadAndRun(const char* filename) {
 		closeFile(fd);
 		return -1;
 	}
+	
+	if (originalStartP != NULL)
+		originalStartP = (void*)codeAddress;
+	if (overrideStart != NULL)
+		codeAddress = (uint32_t)overrideStart;
 	
 	initialScreen();
 

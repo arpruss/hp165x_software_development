@@ -142,7 +142,7 @@ void menu(void) {
 			drawEntry(selected, 0);
 			if (c < numNames) {
 				drawEntry(c, 1);
-				loadAndRun(names[c]);
+				loadAndRun(names[c], NULL, NULL);
 			}
 			continue;
 		}
@@ -151,12 +151,12 @@ void menu(void) {
 			drawEntry(selected, 0);
 			if (c < numNames) {
 				drawEntry(c, 1);
-				loadAndRun(names[c]);
+				loadAndRun(names[c], NULL, NULL);
 			}
 			continue;
 		}
 		else if (KEY_SELECT == k) {
-			loadAndRun(names[selected]);
+			loadAndRun(names[selected], NULL, NULL);
 		}
 		else if (KEY_TURN_CW == k) {
 			drawEntry(selected, 0);

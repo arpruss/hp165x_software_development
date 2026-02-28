@@ -89,7 +89,7 @@ void patchVBL(void);
 void setVBLCounter(uint32_t value);
 void initialScreen();
 char parseKey(uint16_t key);
-int loadAndRun(const char* filename);
+int loadAndRun(const char* filename, void (*overrideStart)(void), void (**originalStartP)());
 int refreshDir(void);
 int _refreshDir(void);
 void delayTicks(uint32_t ticks);
