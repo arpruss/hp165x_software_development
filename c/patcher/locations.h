@@ -1,0 +1,3 @@
+#define ORIGINAL_START ((uint32_t*)0xA72000)
+#define ORIGINAL_SIZE ((uint32_t*)0xA72004)
+#define PATCH_LOCATION 0xA72008
