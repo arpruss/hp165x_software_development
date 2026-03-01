@@ -1,3 +1,4 @@
+// start SYSTEM, then start this via the IO/selftest
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -16,12 +17,19 @@ main(int argc, char** argv) {
 	memcpy((void*)PATCH_LOCATION, patch, sizeof(patch));
 	
 	initScreen(0, WRITE_BLACK);
-
-	setTextColors(WRITE_WHITE,WRITE_BLACK);
 	
-	uint16_t k = getKey(1);
-	*SCREEN_MEMORY_CONTROL = WRITE_BLACK;
-	fillScreen();
+	simple_serial_init(BAUD_9600);
+	while (1) {
+		char s[] = "Ready... Press a key to launch...\n";
+		simple_serial_write(s, sizeof(s)-1);
+		if (getKey(0))
+			break;
+		delayTicks(30);
+	}
+
+//	loadAndRunForPatch("SYSTEM_", (void*)PATCH_LOCATION, (void*)ORIGINAL_START, (void*)ORIGINAL_SIZE);
 	loadAndRunForPatch("osystem", (void*)PATCH_LOCATION, (void*)ORIGINAL_START, (void*)ORIGINAL_SIZE);
+	char s[] = "Failed\n";
+	simple_serial_write(s, sizeof(s)-1);
 	reload();
 }

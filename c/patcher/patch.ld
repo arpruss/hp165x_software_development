@@ -16,7 +16,7 @@
  * grow into the heap, the user is responsible for reserving sufficient
  * stack space to prevent it overwriting the upper areas of the heap.
  */
-_program_base = 0xA72000;
+_program_base = 0xA72008;
 _program_end =  0xA77FFE;
 _stack_start = 0; /* there should be about 30K here */
 _program_sz = _program_end - _program_base;

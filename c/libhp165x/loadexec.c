@@ -4,6 +4,7 @@
 
 void _loadexec_relocatable_start(void);
 void _loadexec_relocatable_end(void);
+void _final_cleanup_with_atexit_support(void);
 
 #define RELOCATABLE_SIZE ( (uint32_t)( (uint8_t*)&_loadexec_relocatable_end - (uint8_t*)&_loadexec_relocatable_start ) )
 
@@ -11,10 +12,16 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 	uint8_t header[0x24];
 	uint32_t codeAddress;
 	uint32_t codeSize;
+	uint32_t runAddress;
 	uint8_t relocatableCode[RELOCATABLE_SIZE + 2048]; // safety margin for stack
 	
-	_final_cleanup_with_atexit_support();
-	
+	if (overrideStart == NULL && originalStartP == NULL && originalCodeSizeP == NULL && 
+		(!strcmp(filename, "SYSTEM_") || !strcmp(filename, "SYSTEM_   "))) {
+		reload();
+		return -1;// should not happen
+	}
+
+	_final_cleanup_with_atexit_support();	
 	memcpy(relocatableCode, _loadexec_relocatable_start, RELOCATABLE_SIZE);
 	
 	int fd = openFile(filename, 0xC001, OPEN_READ);
@@ -27,19 +34,15 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 	}
 	
 	if (originalStartP != NULL)
-		originalStartP = (void*)codeAddress;
+		*originalStartP = (void*)codeAddress;
 	if (overrideStart != NULL)
-		codeAddress = (uint32_t)overrideStart;
+		runAddress = (uint32_t)overrideStart;
+	else
+		runAddress = (uint32_t)codeAddress;
 	if (originalCodeSizeP != NULL)
-		*originalCodeSizeP = codeSize;
+		*originalCodeSizeP = codeSize; 
 	
 	initialScreen();
-
-	if (! strcmp(filename, "SYSTEM_") || ! strcmp(filename, "SYSTEM_   ")) {
-		closeFile(fd);
-		_reload();
-		return -1;// should not happen
-	}
 
 	asm volatile(
 			"  move.l %0,%%a0\n"
@@ -53,7 +56,9 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 		"  lea _codeSize(%%pc), %%a1\n"
 		"  move.l %[codeSize], (%%a1)\n" //save
 		"  lea _codeAddress(%%pc), %%a1\n"
-		"  move.l %[codeAddress], (%%a1)\n" // sve
+		"  move.l %[codeAddress], (%%a1)\n" // save
+		"  lea _runAddress(%%pc), %%a1\n"
+		"  move.l %[runAddress], (%%a1)\n" // save
 
 		"  move.l %[codeSize], -(%%sp)\n" 
 		"  move.l %[codeAddress], -(%%sp)\n" 
@@ -73,23 +78,24 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 		"  move.l %[fd], -(%%sp)\n"
 		"  jsr 0xeb7a\n" // close file
 		"  add #4,%%sp\n"
-		"  move.l _codeAddress(%%pc),%%a0\n"
-		"  move.l #0x00A7FFFC,%%sp\n" // hope the code here doesn't get overwritten too quickly
+		"  move.l _runAddress(%%pc),%%a0\n"
+		"  move.l #0x00A7FFFE,%%sp\n" // hope the code here doesn't get overwritten too quickly
 		"  jsr (%%a0)\n" // should not return
 		"4:\n"
 		"  move.l %[fd], -(%%sp)\n"
 		"  jsr 0xeb7a\n" // close file
 		"  add #4,%%sp\n"
-		"  move.l #0x00A7FFFC,%%sp\n"
+		"  move.l #0x00A7FFFE,%%sp\n"
 		"5:\n"
 		"  jsr 0xece2\n" // reload
 		"  bra 5b\n" // try again forever
 		"_fd: dc.l 0\n"
 		"_codeAddress: dc.l 0\n"
+		"_runAddress: dc.l 0\n"
 		"_codeSize: dc.l 0\n"
 		"_dataAddress: dc.l 0\n"
 		"_loadexec_relocatable_end:\n"
-		:  : [fd] "d" (fd), [codeAddress] "a" (codeAddress), [codeSize] "d" (codeSize) );
+		:  : [fd] "d" (fd), [codeAddress] "a" (codeAddress), [codeSize] "d" (codeSize), [runAddress] "r" (runAddress) );
 	
 	/* should not happen */
 	return -1;

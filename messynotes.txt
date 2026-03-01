@@ -479,3 +479,26 @@ The update code is at 6b0e.
 SCOPE
 
 SYSTEM_ has an apparent scope reading routine at 009e63f6.
+
+Function 0x9e7986(mode).
+First called with a value dependent on s/Div
+  s/Div 5 : 0x1840
+  s/Div 2 or 1: 1240
+  s/Div 500ms : 1820
+  s/Div 200ms or 100ms: 1220
+  s/Div 50ms: 1810
+  s/Div 20ms or 10ms: 1210
+  s/Div 5ms: 1808
+  s/Div 2ms or 1ms: 1208
+  s/Div 500us: 1804
+  s/Div 200us or 100us: 1204
+  s/Div 50us: 1802
+  s/Div 20us or 10us: 1202
+  s/Div 5us: 1801
+  s/Div 2us: 1201
+  s/Div 1us: 2201
+  s/Div 500ns or 200ns or 100ns or 50ns or 20ns or 10ns or 5ns: 4201
+Then after delay called with 0x1201
+Value of 0xa3b405 is what it was last called with.
+
+This value is put into 
