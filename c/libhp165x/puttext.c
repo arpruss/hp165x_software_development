@@ -196,7 +196,7 @@ uint16_t putText(const char* s) {
 }
 
 /* returns number of lines scrolled */
-uint16_t putTextN(const char* s, uint16_t n) {
+uint16_t __attribute__((noinline,noclone)) putTextN(const char* s, uint16_t n) {
 	volatile uint16_t* pos = SCREEN + currentY * (fontHeight*(SCREEN_WIDTH/4)) + currentX*2;
 	uint16_t bg;
 	uint16_t fg;

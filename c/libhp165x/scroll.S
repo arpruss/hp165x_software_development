@@ -30,7 +30,7 @@
     .text
     .align 2
     .type scrollDown, @function 
-	.section	.text.scrollUp,"ax",@progbits
+	.section	.text.scrollDown,"ax",@progbits
 scrollDown:  /* void scrollDown(uint16_t lines, uint16_t leftX, uint16_t topY, uint16_t rightX, uint16_t bottomY, 
 					uint16_t fillMode, uint8_t bitplanes) */
 		   /* leftX and rightX must be divisible by 4 and their difference by 8 */

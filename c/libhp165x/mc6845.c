@@ -68,6 +68,7 @@ void setScreenHeight(uint16_t height) {
 	setTextWindow(0,0,0,0);
 }
 
+__attribute__((optimize("Os")))
 void resetMC6845(void) {
 	for (uint8_t i=0; i<sizeof(mc6845Defaults)/sizeof(*mc6845Defaults); i++) {
 		*MC6845_REGISTER_ADDRESS = i;

@@ -37,7 +37,7 @@ void _eb62(int x);
 static uint8_t _savedAsteriskAreaData[4][15];
 static uint32_t savedAsteriskAreaDepth = 0;
 
-void  __attribute__ ((noinline)) _saveAsteriskArea(void) {
+void  __attribute__ ((noinline, optimize("Os"))) _saveAsteriskArea(void) {
 	if (savedAsteriskAreaDepth++ > 0) 
 		return;
 	
@@ -53,7 +53,7 @@ void  __attribute__ ((noinline)) _saveAsteriskArea(void) {
 	}
 }
 
-void __attribute__ ((noinline)) _restoreAsteriskArea(void) {
+void __attribute__ ((noinline, optimize("Os"))) _restoreAsteriskArea(void) {
 	if (--savedAsteriskAreaDepth > 0)
 		return;
 	
@@ -143,7 +143,7 @@ void unpadFilename(char* unpaddedName, const char* name) {
 	}
 }
 
-int getDirEntry(int index, DirEntry_t* dirEntry) {
+int __attribute__((noinline)) getDirEntry(int index, DirEntry_t* dirEntry) {
 	ROMDirEntry_t d;
 	if (index == 0 && refreshDir() < 0)
 		return -1;

@@ -5,8 +5,3 @@ Add O_RDWR support for hpposix.
 
 Test lifPack() in close().
 
-Investigate while lifutils.py reports different total size than the OS.
-
-Test hpposix() write() with lifpack
-
-Make lifpack progress bar save background
