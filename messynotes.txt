@@ -3,6 +3,7 @@ MEMORY MAP
 00980000-00A7FFFF: 1mb RAM
 00A5FFFA-00A6FFFF: heap (6 byte header per chunk) for ROM malloc()--never actually called in ROM, I think
 00600000-0061FFFF: video RAM, multiplexed between two planes, each with 64kb x 4bits of data
+				   Address duplicated at least at 620000 and 640000.
 004?????-????????: involved in acquisition
 00200000-002?????: hardware ports
 00000000-0000FFFF: 64kb ROM
@@ -114,27 +115,23 @@ The ROM routines store the current mode. At 0x98077c.w, we have the low byte, se
 eaae. At 0x98077e.w, we have the high byte, set with ROM function eaba. It's not a terrible idea to
 restore this mode when done with your changes.
 
-WAIT! I just realized that there is a grayscale. I never noticed because I had the screen set to
-too low brightness. 0xC
+WAIT! I just realized that there is a grayscale value. I never noticed because I had the screen set to
+too low brightness. This value occurs when one writes ATTR=0, Overlay-Data=0, Overlay=1, Data=anything.
 
 
 Font bitmap locations: a674 (bold), 9e74; 16 bytes per char 
 
 
-There seems to be a palette.
+There is a palette.
 
-At 8d3e there seems to be a function to load an rgb palette, with initial table at 8dc4, probably a leftover from a color screen model.
+At 8d3e there is a function to load an rgb palette, with initial table at 8dc4, probably a leftover from a color screen model.
 
-At 8da6 there is a more promising palette loader, which loads a palette at 8e9a. The entries correspond precisely to what is 
-observed if 00=black, 01=gray, 02=black. 
+At 8da6 there is a more promising palette loader, which loads a palette at 8e9a. The entries correspond precisely to what is observed if 00=black, 01=gray, 02=black. 
 
 The writing procedure is:
  Write 1 to bit 7 of 202000.w
  Write the 16 entries to 204001.b, 204003.b, etc.
  Write 0 to bit 7 of 202000.w
-
-This has not been tested. A cool thing would be to implement
-night mode by a simple reversal. 
 
 
 INTERRUPTS
@@ -293,7 +290,7 @@ trap #2 handler starts at #6b0e (called from VBL)
 KEYBOARD
 
 ROM keyboard handler maintains this data:
-at 0x980700.w:  the current key
+at 0x980700.w: the current key
 at 0x980702.b: 03 if a key is pressed and 00 otherwise
 at 0x980704.w: the last key pressed (FFFF if spinner)
 at 0x980706.b: 01 if last event was spinner and 00 if it was a key
@@ -414,7 +411,8 @@ ec0a: commit written blocks
 0x98415a.l: directory start block number
 0x984162.l: directory size in blocks
 
-e.g., free 2344 largest 2344 total 3059
+E.g., free 2344 largest 2344 total 3059. Oddly, this doesn't quite match the number of 
+blocks in the LIF disk--it's a bit less.
 
 2f78: blockToDiskLocation??(uint32 blockNum,uint16_t* headP,uint16_t* sectorIndexOneBasedP,uint16_t* offsetP);??
 0x9808aa: disk index
@@ -445,6 +443,7 @@ pack/rename/purge/format
 In SYSTEM_, free space calculations are done at 009c1c90. I am finding a discrepancy between my
 lifutils.py code which reports more free space. Don't know what that means.
 
+
 NOTES ON SYSTEM_
 
 0xa32a64: lookup table for oscilloscope channel data (0-0x3f)
@@ -467,26 +466,6 @@ one of them. The nth functions calls ECFA with the third argument being n.
  FUN_009c174a: some sort of big complicated file operation thingy
  
  
-Internal font: B
-
-01100011
-00010000
-01101100
-10000000
-01100111
-01100110
-01101110
-01100110
-00000000
-01100110
-00000000
-01100110
-00000000
-00000000
-00000000
-00000000
-
-
 TIME
 
 A7005f: seconds
