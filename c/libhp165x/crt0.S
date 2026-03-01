@@ -16,7 +16,10 @@
         .globl _start
 _start:
 		move.l  %sp, _original_stack_pointer /* just in case */
-        movea.l #_stack_start, %sp
+		move.l	#_stack_start, %d0
+		tst.l	%d0
+		beq		1f
+        movea.l %d0, %sp
 
         /* Initialise (clear) the BSS area */
 1:      movea.l #_bss_start, %a0        /* Starting address */

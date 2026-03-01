@@ -8,7 +8,6 @@ import struct
 
 binary = bytearray()
 BASE = 0x984500
-MINIMUM_FILE_LENGTH = 0x400
 checkedPos = False
 
 with open(sys.argv[1],"r") as s:

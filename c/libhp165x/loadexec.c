@@ -13,7 +13,7 @@ int loadAndRun(const char* filename, void (*overrideStart)(void), void (**origin
 	uint32_t codeSize;
 	uint8_t relocatableCode[RELOCATABLE_SIZE + 2048]; // safety margin for stack
 	
-	_restore_original_int_handlers();
+	_final_cleanup_with_atexit_support();
 	
 	memcpy(relocatableCode, _loadexec_relocatable_start, RELOCATABLE_SIZE);
 	
