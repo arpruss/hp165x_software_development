@@ -18,6 +18,10 @@ uint32_t bottom; // 764,923
 
 hpjmp_buf jb;
 
+_WRAP_0(_eb02,0xeb02);
+
+
+
 void fileTest(void) {
 	printf("starting test\n");
 	static char testBuffer[6543];
@@ -237,6 +241,7 @@ main(int argc, char** argv) {
 //	putText("7 - scope\n");
 	putText("8 - file test\n");
 	putText("9 - info\n");
+//	putText("A - eb02\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -256,6 +261,7 @@ main(int argc, char** argv) {
 //		case KEY_7: scope(); break;
 		case KEY_8: fileTest(); break;
 		case KEY_9: diskInfo(); break;
+//		case KEY_A: _eb02(); break;
 		default:
 			reload();
 	}

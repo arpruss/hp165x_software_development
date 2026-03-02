@@ -84,10 +84,12 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 		"  add #12,%%sp\n"
 		"  tst.l %%d0\n"
 		"  bmi 4f\n"
+		"  add.l _dataAddress(%%pc),%%d0\n"
+		"  move.l %%d0,0x98071c\n" // end of program
 		"  move.l %[fd], -(%%sp)\n"
 		"  jsr 0xeb7a\n" // close file
 		"  add #4,%%sp\n"
-		"  move.l _runAddress(%%pc),%%a0\n" // TODO: put end address at _DAT_0098071c
+		"  move.l _runAddress(%%pc),%%a0\n" 
 		"  move.l #0x00A7FFFE,%%sp\n" // hope the code here doesn't get overwritten too quickly
 		"  jsr (%%a0)\n" // should not return
 		"4:\n"

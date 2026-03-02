@@ -69,6 +69,10 @@ _final_cleanup:
 		jsr		(%a0)
 1:	
 		move.w 	#0xF00, 0x201000 /* restore screen writing mode */
+		clr.w	0x98077c
+		move.w  #0xF,0x9077e 
+		move.w	#0x4,0x9800b2 /* black on white */
+		move.w	#0,0x9800b0 /* not bold */
 #if defined(DEFAULT_SCREEN_HEIGHT) || defined(SCREEN_WIDTH)
 		jsr	resetMC6845
 #else

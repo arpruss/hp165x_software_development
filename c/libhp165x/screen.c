@@ -28,6 +28,8 @@ void drawWhite(void) {
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 }
 
+//_WRAP_0(initialScreen,0xeb02);
+
 void initialScreen() {
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	fillScreen();

@@ -253,12 +253,14 @@ Stop bits stored at: 00a286c8
 
 ROM ROUTINES
 
+eb02: drawInitialScreen() : but crashes when I call it
 ead8: rectangle: 7,h,w,y,x ???? not quite
 eac6: 8,8,170,240 (after 0000eaae : fe) : clears rectangle on screen
-eaba: set high byte of 0x201000 mode register to the logical not of the uint16_t argument
-eaae: set low byte of 0x201000 mode regster to the uint16_t argument
+eaba: setBitplaneWriteValues(uint16_t v): set high byte of 0x201000 mode register to the logical not of the uint16_t argument (mirrored at 98077e)
+eaae: set low byte of 0x201000 mode regster to the uint16_t argument (mirrored at 98077c)
 eade: bold : set bold if 1, set normal if 0
-eb08: text mode?? : 0 = black on white (9800b2 set to 4) ; else: white background, no text (9800b2 set to 7)
+eb08: text mode?? : 0 = black on white (9800b2 set to 4 --> setBitplaneWriteValues() --> overlay) ; else: white 
+	(9800b2 set to 7 --> all 1s)
 eae4: y,x : set coordinates
 eaf6: DrawText: print 0-terminated string
 eacc: 2,coordinates,coordinates :  

@@ -142,7 +142,7 @@ void menu(void) {
 			drawEntry(selected, 0);
 			if (c < numNames) {
 				drawEntry(c, 1);
-//				uint32_t startAddress;
+				uint32_t startAddress;
 //				loadAndRunForPatch(names[c], NULL, &startAddress, NULL);
 				loadAndRun(names[c]);
 			}
