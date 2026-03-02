@@ -18,7 +18,7 @@ main(int argc, char** argv) {
 	
 	initScreen(0, WRITE_BLACK);
 	
-	simple_serial_init(BAUD_9600);
+	simple_serial_init(BAUD_19200);
 	while (1) {
 		char s[] = "Ready... Press a key to launch...\n";
 		simple_serial_write(s, sizeof(s)-1);

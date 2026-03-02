@@ -34,7 +34,7 @@ EXECUTABLE FILE FORMAT
 
 LIF file type 0xC001
 
-0x0000: dword:    length
+0x0000: dword:    length (from 0x0024 to EOF)
 0x0004: char[20]: comment (space filled)
 0x0024: dword:	  code length
 0x0028: dword:    code loading location, normally 0x00984500
@@ -481,7 +481,7 @@ SCOPE
 SYSTEM_ has an apparent scope reading routine at 009e63f6.
 
 Function 0x9e7986(mode).
-First called with a value dependent on s/Div
+First called with a value dependent on s/Div stored at 0x00a33244.w
   s/Div 5 : 0x1840
   s/Div 2 or 1: 1240
   s/Div 500ms : 1820
@@ -499,6 +499,32 @@ First called with a value dependent on s/Div
   s/Div 1us: 2201
   s/Div 500ns or 200ns or 100ns or 50ns or 20ns or 10ns or 5ns: 4201
 Then after delay called with 0x1201
-Value of 0xa3b405 is what it was last called with.
 
-This value is put into 
+
+00A3B415 tends to be 4
+
+Voltage settings in: FUN_009e6ab2
+
+voltage relays set around or after 009E7592
+
+009E6AB2() sets analog adjustments?
+
+00A331FE,00A33200: attenuator setting for the two channels; 
+	scaling by factor of 5 (finer divisions probably done at 9E7EE2)
+
+009E7EE2(voltage1,voltage2) called from 009e6eee: fine adjustment?
+Channel 1:
+150mV = 0xAC
+200mV = 0x4C
+500mV = 0xE7
+1V = 0x4C
+2V = 0x4E
+5v = 0x54
+10V = 0x4E
+20V = 0xAC
+50V = 0x56
+100V = 0x57
+
+200mV/200mV = 0x4C/0x44
+200mV/20V = 0x4C/0xB4
+1V/200mV = 0x4C/0x44

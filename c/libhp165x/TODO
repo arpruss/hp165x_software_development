@@ -5,3 +5,4 @@ Add O_RDWR support for hpposix.
 
 Test lifPack() in close().
 
+Put end of file loaded data in _DAT_0098071c.

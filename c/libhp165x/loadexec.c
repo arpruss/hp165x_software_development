@@ -13,7 +13,7 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 	uint32_t codeAddress;
 	uint32_t codeSize;
 	uint32_t runAddress;
-	uint8_t relocatableCode[RELOCATABLE_SIZE + 2048]; // safety margin for stack
+	uint8_t relocatableCode[RELOCATABLE_SIZE/* + 2048*/];
 	
 	if (overrideStart == NULL && originalStartP == NULL && originalCodeSizeP == NULL && 
 		(!strcmp(filename, "SYSTEM_") || !strcmp(filename, "SYSTEM_   "))) {
@@ -65,9 +65,18 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 		"  move.l %[fd], -(%%sp)\n"
 		"  jsr 0xeb86\n"
 		"  add #12,%%sp\n"
-		
 		"  cmp.l _codeSize(%%pc),%%d0\n"
 		"  bne 4f\n"
+		
+		"  pea 4\n" 
+		"  pea _dataAddress(%%pc)\n"
+		"  move.l _fd(%%pc),-(%%sp)\n"
+		"  jsr 0xeb86\n"
+		"  add #12,%%sp\n"
+		"  cmp.l 4,%%d0\n"
+		
+		"  beq 4f\n"		
+		
 		"  pea -1\n" // size
 		"  move.l _dataAddress(%%pc),-(%%sp)\n" 
 		"  move.l _fd(%%pc),-(%%sp)\n"
@@ -78,7 +87,7 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 		"  move.l %[fd], -(%%sp)\n"
 		"  jsr 0xeb7a\n" // close file
 		"  add #4,%%sp\n"
-		"  move.l _runAddress(%%pc),%%a0\n"
+		"  move.l _runAddress(%%pc),%%a0\n" // TODO: put end address at _DAT_0098071c
 		"  move.l #0x00A7FFFE,%%sp\n" // hope the code here doesn't get overwritten too quickly
 		"  jsr (%%a0)\n" // should not return
 		"4:\n"

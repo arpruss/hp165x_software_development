@@ -81,7 +81,7 @@ $(BUILDDIR)/%.S.o: %.S
 
 $(PATCHBUILDDIR)/%.c.o: %.c
 	mkdir -p $(@D)
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) -fno-inline -fno-ipa-cp -c -o $@ $<
 
 $(PATCHBUILDDIR)/%.S.o: %.S
 	mkdir -p $(@D)

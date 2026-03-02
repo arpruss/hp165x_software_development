@@ -33,11 +33,13 @@ with open(sys.argv[1],"r") as s:
                     binary += (pos - len(binary)) * b'\x00'
                 assert(pos == len(binary))
                 binary += data
-                
+               
+if len(binary) % 2 == 1:
+    binary += '\0'
+    
 origLength = len(binary)
 
-# no separate data area                
-binary = binary + 4 * b'\x00' 
+binary += struct.pack(">I", 0x984500 + origLength)
 
 name = os.path.splitext(os.path.basename(sys.argv[2]))[0].encode('ascii')
     

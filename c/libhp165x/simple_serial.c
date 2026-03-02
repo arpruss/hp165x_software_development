@@ -66,6 +66,10 @@ void _myHandleSerialInterrupt(void) {
 	}
 }
 
+void simple_serial_flush(void) {
+	while (outputCount != 0 || (*SERIAL_COMMAND & SERIAL_COMMAND_TRANSMIT)) ;
+}
+
 void simple_serial_write(const void* data, uint32_t size) {
 	while (outputCount != 0 || (*SERIAL_COMMAND & SERIAL_COMMAND_TRANSMIT)) ;
 //	outputCount = 0;
@@ -87,6 +91,11 @@ void simple_serial_set_circular(char c) {
 }
 	
 void simple_serial_close() {
+	simple_serial_flush();
+	simple_serial_close_no_flush();
+}
+
+void simple_serial_close_no_flush() {
 	unpatchInt(INT_SERIAL);
 	inputCount = 0;
 	inputBufferHead = 0;
