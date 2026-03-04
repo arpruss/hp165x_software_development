@@ -5,13 +5,13 @@ import os
 from pathlib import PurePath
 from tempfile import NamedTemporaryFile
 
-TRACK_MULTIPLIER = 2
+SIDES = 2
 BLOCK_SIZE = 256
 DATA_TRACKS = 77
 BLOCKS_PER_SECTOR = 4
 SECTORS_PER_TRACK = 5
 DIR_ENTRY_SIZE = 32
-RESERVED_TRACK = 79 # None # 79
+RESERVED_TRACK = None # 79
 CHUNKING = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
 CHUNK_FILLER_ODD = b'\x00\xFF\xFF' + (BLOCK_SIZE-3)*b'\x00'
@@ -290,10 +290,14 @@ def readDir(quiet=False,verbose=False):
 def create(name):
     print("Creating "+name)
     blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
-    header=bytes.fromhex("8000413136355820000000021000000000000012000000000000004D00000002000000%02x" % blocksPerTrack)
-    tracks = 79
+    if RESERVED_TRACK is not None:
+        tracks = RESERVED_TRACK + 1
+        totalBlocks = (tracks-1) * SIDES * blocksPerTrack
+    else:
+        tracks = DATA_TRACKS
+        totalBlocks = tracks * SIDES * blocksPerTrack
+    header=bytes.fromhex("800041313635582000000002100000000000001200000000%08x00000002%08x" % (DATA_TRACKS,blocksPerTrack))
     sides = 2
-    totalBlocks = tracks * sides * blocksPerTrack
     with open(name,"wb") as outf:
         def writeReservedSector(data=b''):
             outf.write(data)
@@ -315,6 +319,9 @@ while sys.argv[1].startswith("--"):
         sys.argv = sys.argv[:1] + sys.argv[2:]
     elif sys.argv[1] == "--sectors":
         SECTORS_PER_TRACK = int(sys.argv[2])
+        sys.argv = sys.argv[:1] + sys.argv[3:]
+    elif sys.argv[1] == "--sectors":
+        DATA_TRACKS = int(sys.argv[2])
         sys.argv = sys.argv[:1] + sys.argv[3:]
     else:
         assert False
@@ -343,7 +350,7 @@ lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPe
 dirEntries = dirBlocks * BLOCK_SIZE // DIR_ENTRY_SIZE
 if tracks == 0:
     print("assuming default geometry")
-    tracks = 77
+    tracks = DATA_TRACKS
     sides = 2
     blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
     diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)
