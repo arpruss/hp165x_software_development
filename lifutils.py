@@ -35,7 +35,12 @@ def writeHFE(filename,data):
     tempname = f.name
     f.write(data)
     f.close()
-    pipe = subprocess.Popen((HXCFE, "-uselayout:"+os.path.join(DIRECTORY,"hp165x79.xml"), "-finput:"+tempname, "-conv:HXC_HFE", "-foutput:"+filename),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    if struct.unpack(">I",data[32:36])[0] == 4*8:
+        xml = "hp8sec.xml"
+    else:
+        xml = "hp165x79.xml"
+    print("Converting with "+xml)
+    pipe = subprocess.Popen((HXCFE, "-uselayout:"+os.path.join(DIRECTORY,xml), "-finput:"+tempname, "-conv:HXC_HFE", "-foutput:"+filename),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     code = pipe.wait()
     os.unlink(tempname)
     assert code == 0
@@ -129,6 +134,8 @@ def unchunkFile(chunked):
     pos = 0
     while pos < len(chunked):
         size = bytesToWord(chunked[pos:pos+2])
+        if len(chunked) == 28928:
+            size = 254
         unchunked += chunked[pos+2:pos+2+size]
         if size < BLOCK_SIZE - 2:
             break
