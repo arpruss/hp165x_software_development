@@ -159,7 +159,7 @@ SPECIAL HARDWARE ADDRESSES
 0x200000 ??: involved in acquisition test
 0x200001 ??: involved in acquisition test; involved in trap #0 function 1D
 0x201000.w: screen memory control (see below)  
-0x202001.b: set bit 7 to set display lookup table, clear when done; bit 6 is clear before and set after writing stuff to MC6845 ; https://bitsavers.trailing-edge.com/components/motorola/_dataSheets/6845.pdf
+0x202001.b: set bit 7 to set display lookup table, clear when done; bit 6 is clear before and set after writing stuff to MC6845 ; https://bitsavers.trailing-edge.com/components/motorola/_dataSheets/6845.pdf ; bit 1 gets cleared when a changed disk is read
 0x203000.b: BEEP: 0xFF on, $FE off
 0x204001.b-0x204020: put display look table entries here: 00=black, 01=gray, 02=black
 0x205000 ??: involved in spinner

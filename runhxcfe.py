@@ -1,6 +1,7 @@
 import subprocess 
 import os
 import sys
+import struct
 from tempfile import NamedTemporaryFile
 
 EXE = os.path.join(os.path.split(sys.argv[0]),"hxcfe.exe")
@@ -22,7 +23,12 @@ def writeHFE(filename,data):
     tempname = f.name
     f.write(data)
     f.close()
-    pipe = subprocess.Popen((EXE, "-uselayout:"+directory+"hp165x79.xml", "-finput:"+tempname, "-conv:HXC_HFE", "-foutput:"+filename),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+    if struct.unpack(">I",data[32:36]) == 4*8:
+        xml = "hp8sec.xml"
+    else:
+        xml = "hp165x79.xml"
+    print("Converting with %s.\n" % xml)
+    pipe = subprocess.Popen((EXE, "-uselayout:"+directory+xml, "-finput:"+tempname, "-conv:HXC_HFE", "-foutput:"+filename),stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
     code = pipe.wait()
     os.unlink(tempname)
     assert code == 0

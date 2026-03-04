@@ -5,10 +5,13 @@ import os
 from pathlib import PurePath
 from tempfile import NamedTemporaryFile
 
-MAX_BLOCKS = 3079
+TRACK_MULTIPLIER = 2
 BLOCK_SIZE = 256
+DATA_TRACKS = 77
+BLOCKS_PER_SECTOR = 4
+SECTORS_PER_TRACK = 5
 DIR_ENTRY_SIZE = 32
-RESERVED_TRACK = None # 79
+RESERVED_TRACK = 79 # None # 79
 CHUNKING = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
 CHUNK_FILLER_ODD = b'\x00\xFF\xFF' + (BLOCK_SIZE-3)*b'\x00'
@@ -273,10 +276,10 @@ def readDir(quiet=False,verbose=False):
         
 def create(name):
     print("Creating "+name)
-    header=bytes.fromhex("8000413136355820000000021000000000000012000000000000004F0000000200000014")
+    blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
+    header=bytes.fromhex("8000413136355820000000021000000000000012000000000000004D00000002000000%02x" % blocksPerTrack)
     tracks = 79
     sides = 2
-    blocksPerTrack = 20
     totalBlocks = tracks * sides * blocksPerTrack
     with open(name,"wb") as outf:
         def writeReservedSector(data=b''):
@@ -288,14 +291,20 @@ def create(name):
         if RESERVED_TRACK is not None:
             for side in range(2):
                 writeReservedSector(bytes.fromhex("E60000"))
-                writeReservedSector(bytes.fromhex("5002880503010201A301A3E6321632"))
+                writeReservedSector(bytes.fromhex("500288%02x03010201A301A3E6321632" % SECTORS_PER_TRACK))
                 writeReservedSector()
                 writeReservedSector()
                 writeReservedSector()
 
-if sys.argv[1] == "--raw":
-    CHUNKING = False
-    sys.argv = sys.argv[:1] + sys.argv[2:]
+while sys.argv[1].startswith("--"):
+    if sys.argv[1] == "--raw":
+        CHUNKING = False
+        sys.argv = sys.argv[:1] + sys.argv[2:]
+    elif sys.argv[1] == "--sectors":
+        SECTORS_PER_TRACK = int(sys.argv[2])
+        sys.argv = sys.argv[:1] + sys.argv[3:]
+    else:
+        assert False
 
 cmd = sys.argv[1]
 
@@ -321,9 +330,9 @@ lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPe
 dirEntries = dirBlocks * BLOCK_SIZE // DIR_ENTRY_SIZE
 if tracks == 0:
     print("assuming default geometry")
-    tracks = 79
+    tracks = 77
     sides = 2
-    blocksPerTrack = 20
+    blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
     diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)
 if lifHeader != 0x8000:
     print("Not a valid lif file")
@@ -336,8 +345,8 @@ if RESERVED_TRACK is not None and tracks > RESERVED_TRACK:
     tracks = RESERVED_TRACK
     diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)    
 totalBlocks = tracks * sides * blocksPerTrack
-if totalBlocks > MAX_BLOCKS:
-    totalBlocks = MAX_BLOCKS
+if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
+    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1
 print("Volume:",name.decode())
 print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
 print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))
@@ -365,7 +374,7 @@ elif cmd == "put":
         fileType = int(sys.argv[5],16)
     else:
         inFile = sys.argv[3]
-        outFile = sys.argv[3]
+        outFile = os.path.basename(sys.argv[3])
         fileType = int(sys.argv[4],16)
     if put(inFile,outFile,fileType):
         rewrite = True
