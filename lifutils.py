@@ -159,10 +159,16 @@ def rename(name, newName):
             return True
     return False
     
+def match(name, pattern):
+    if '?' in pattern or '*' in pattern:
+        return PurePath(name).match(pattern)
+    else:
+        return name == pattern
+    
 def retype(name, newType):
     ret = False
     for i in range(len(directory)):
-        if PurePath(directory[i][1].name).match(name):
+        if match(directory[i][1].name,name):
             n = directory[i][1].name
             directory[i][1].fileType = newType
             directory[i][1].put(directory[i][0])
@@ -184,7 +190,7 @@ def get(inFile,outFile):
 def getAll(inFile):
     ret = False
     for i in range(len(directory)):
-        if PurePath(directory[i][1].name).match(inFile):
+        if match(directory[i][1].name,inFile):
             ret = get(directory[i][1].name,directory[i][1].name) or ret
             if ret:
                 print("Got %s" % directory[i][1].name)
