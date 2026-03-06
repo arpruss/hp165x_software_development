@@ -49,7 +49,7 @@ OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))
 DEPS=$(OBJS:.o=.d)
 
 
-all: bmbinary.rom
+all: bmbinary.s68
 
 .PHONY: bmbinary release all clean rom dump dumps hexdump
 
