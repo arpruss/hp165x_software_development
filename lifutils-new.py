@@ -27,6 +27,7 @@ BIG_DISK = False
 
 magicBlock = ((MAGIC_TRACK * SIDES + MAGIC_SIDE) * SECTORS_PER_TRACK + MAGIC_SECTOR) * BLOCKS_PER_SECTOR
 magicBlockCount = BLOCKS_PER_SECTOR
+magicData = bytes.fromhex("500288%02x03010201A301A3E6321632" % SECTORS_PER_TRACK)
 
 def readHFE(filename):
     f = NamedTemporaryFile(delete=False)
@@ -227,13 +228,14 @@ def pack():
     usedBlocks = filePos
     dirPos = 0
     
+    fillFF( dirStart * BLOCK_SIZE, len(diskData) - dirStart * BLOCK_SIZE )
     newDirectory = []
     
     for _,entry in directory:
         if BIGDISK and entry.misc == RESERVED_MISC and entry.fileType == RESERVED_TYPE:
             continue
         if BIGDISK and not disjoint(filePos,entry.blocks,magicBlock,magicBlockCount):
-            # skip the magic area
+            newDirectory.append(DirEntry.makeReserved())
             filePos = magicBlock+magicBlockCount
         diskData[filePos*BLOCK_SIZE:filePos*BLOCK_SIZE + len(entry.chunkedFile)] = entry.chunkedFile
         entry.startBlock = filePos
@@ -242,21 +244,13 @@ def pack():
         newDirectory.append(entry)
         
     if BIGDISK:
-        if usedBlocks < magicBlock + magicBlockCount:
+        if usedBlocks <= magicBlock:
             usedBlocks = magicBlock + magicBlockCount
-        for i in range(len(newDirectory)):
-            if newDirectory[i].startBlock > magicBlock:
-                newDirectory.insert(i,DirEntry.makeReserved())
-                break
-        else:
             newDirectory.append(DirEntry.makeReserved())
+        diskData[magicBlock*BLOCK_SIZE:magicBlock*BLOCK_SIZE+len(magicData)] = magicData
 
     directoryBin = b''.join(d.toBinary() for d in newDirectory)
-
-    # TODO: fill space before magicBlock if needed
-    fillFF( usedBlocks * BLOCK_SIZE, (totalBlocks - usedBlocks) * BLOCK_SIZE)
     diskData[dirStart * BLOCK_SIZE : dirStart * BLOCK_SIZE + len(directoryBin)] = directoryBin
-    fillFF( dirStart * BLOCK_SIZE + len(directoryBin), dirEntries * DIR_ENTRY_SIZE - len(directoryBin))
     
 def insertDirEntry(offset):
     if dirEndOffset >= (dirStart + dirBlocks) * BLOCK_SIZE:
@@ -401,7 +395,6 @@ def create(name):
         offset = MAGIC_TRACK * SIDES * blocksPerTrack * BLOCK_SIZE
         offset += MAGIC_SIDE * blocksPerTrack * BLOCK_SIZE
         offset += MAGIC_SECTOR * BLOCKS_PER_SECTOR * BLOCK_SIZE
-        magicData = bytes.fromhex("500288%02x03010201A301A3E6321632" % SECTORS_PER_TRACK)
         diskData[offset:offset+len(magicData)] = magicData
         diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = DirEntry.makeReserved().toBinary()
     with open(name,"wb") as outf:
@@ -504,7 +497,11 @@ elif cmd == "put":
     else:
         inFile = sys.argv[3]
         outFile = os.path.basename(sys.argv[3])
-        fileType = int(sys.argv[4],16)
+        if len(sys.argv) >= 5:
+            fileType = int(sys.argv[4],16)
+        else:
+            print("Assuming file type 0001")
+            fileType = 1
     if put(inFile,outFile,fileType):
         rewrite = True
     else:
