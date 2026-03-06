@@ -5,7 +5,7 @@ import os
 from pathlib import PurePath
 from tempfile import NamedTemporaryFile
 
-GENERIC = False # set to True for use with devices other than HP 1652B/53B
+GENERIC = False # set to True for use with devices other than HP 1652B/53B; may want to use RAW with it
 SIDES = 2
 BLOCK_SIZE = 256
 DATA_TRACKS = 77
@@ -15,13 +15,18 @@ DIR_ENTRY_SIZE = 32
 MAGIC_TRACK = 79 # set to 0 to disable
 MAGIC_SIDE = 0
 MAGIC_SECTOR = 1 # 0-based
-RESERVED_TYPE = 0xFEEF
 CHUNKING = True
 PACK = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
 CHUNK_FILLER_ODD = b'\x00\xFF\xFF' + (BLOCK_SIZE-3)*b'\x00'
 DIRECTORY = os.path.split(sys.argv[0])[0]
 HXCFE = os.path.join(DIRECTORY,"hxcfe.exe")
+RESERVED_TYPE = 0xFEEF
+RESERVED_MISC = b'\x80\x01RSVD'
+BIG_DISK = False
+
+magicBlock = ((MAGIC_TRACK * SIDES + MAGIC_SIDE) * SECTORS_PER_TRACK + MAGIC_SECTOR) * BLOCKS_PER_SECTOR
+magicBlockCount = BLOCKS_PER_SECTOR
 
 def readHFE(filename):
     f = NamedTemporaryFile(delete=False)
@@ -103,6 +108,16 @@ class DirEntry:
             return str(self)
         return "%-11s %04X %6u [%4u %4u]" % (self.name,self.fileType,len(self.unchunkedFile),
                     self.startBlock,self.blocks)
+        
+    @staticmethod
+    def makeReserved():
+        reservedEntry = DirEntry()
+        reservedEntry.startBlock = magicBlock
+        reservedEntry.blocks = magicBlockCount
+        reservedEntry.name = "*RESERVED*"
+        reservedEntry.misc = RESERVED_MISC
+        reservedEntry.fileType = RESERVED_TYPE    
+        return reservedEntry
                     
     def put(self, pos):
         diskData[dirStart * BLOCK_SIZE + pos * 32 : dirStart * BLOCK_SIZE + pos * DIR_ENTRY_SIZE + DIR_ENTRY_SIZE] = self.toBinary()
@@ -200,23 +215,48 @@ def getAll(inFile):
             if ret:
                 print("Got %s" % directory[i][1].name)
     return ret
+    
+def disjoint(x,xcount,y,ycount):
+    if x<=y:
+        return x+xcount <= y
+    else:
+        return y+ycount <= x
 
 def pack():
     filePos = dirStart + dirBlocks
+    usedBlocks = filePos
     dirPos = 0
     
-    newDirectory = bytearray()
+    newDirectory = []
     
     for _,entry in directory:
+        if BIGDISK and entry.misc == RESERVED_MISC and entry.fileType == RESERVED_TYPE:
+            continue
+        if BIGDISK and not disjoint(filePos,entry.blocks,magicBlock,magicBlockCount):
+            # skip the magic area
+            filePos = magicBlock+magicBlockCount
         diskData[filePos*BLOCK_SIZE:filePos*BLOCK_SIZE + len(entry.chunkedFile)] = entry.chunkedFile
         entry.startBlock = filePos
         filePos += entry.blocks
         usedBlocks = filePos
-        newDirectory += entry.toBinary()
-    
+        newDirectory.append(entry)
+        
+    if BIGDISK:
+        if usedBlocks < magicBlock + magicBlockCount:
+            usedBlocks = magicBlock + magicBlockCount
+        for i in range(len(newDirectory)):
+            if newDirectory[i].startBlock > magicBlock:
+                newDirectory.insert(i,DirEntry.makeReserved())
+                break
+        else:
+            newDirectory.append(DirEntry.makeReserved())
+
+    directoryBin = b''.join(d.toBinary() for d in newDirectory)
+
+    # TODO: fill space before magicBlock if needed
     fillFF( usedBlocks * BLOCK_SIZE, (totalBlocks - usedBlocks) * BLOCK_SIZE)
-    diskData[dirStart * BLOCK_SIZE : dirStart * BLOCK_SIZE + len(newDirectory)] = newDirectory
-    fillFF( dirStart * BLOCK_SIZE + len(newDirectory), dirEntries * DIR_ENTRY_SIZE - len(newDirectory))
+    diskData[dirStart * BLOCK_SIZE : dirStart * BLOCK_SIZE + len(directoryBin)] = directoryBin
+    fillFF( dirStart * BLOCK_SIZE + len(directoryBin), dirEntries * DIR_ENTRY_SIZE - len(directoryBin))
     
 def insertDirEntry(offset):
     if dirEndOffset >= (dirStart + dirBlocks) * BLOCK_SIZE:
@@ -231,6 +271,7 @@ def insertFile(newEntry):
     offset = dirStart*BLOCK_SIZE
     lastVacantPos = -1
     availableStartBlock = dirStart + dirBlocks
+    availableEndBlock = -1
 
     while offset < dirEndOffset:
         availableEndBlock = -1
@@ -362,13 +403,7 @@ def create(name):
         offset += MAGIC_SECTOR * BLOCKS_PER_SECTOR * BLOCK_SIZE
         magicData = bytes.fromhex("500288%02x03010201A301A3E6321632" % SECTORS_PER_TRACK)
         diskData[offset:offset+len(magicData)] = magicData
-        reservedEntry = DirEntry()
-        reservedEntry.blocks = BLOCKS_PER_SECTOR
-        reservedEntry.startBlock = offset // BLOCK_SIZE
-        reservedEntry.name = "_RESERVED_";
-        reservedEntry.misc = "RESRVD".encode()
-        reservedEntry.fileType = RESERVED_TYPE
-        diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = reservedEntry.toBinary()
+        diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = DirEntry.makeReserved().toBinary()
     with open(name,"wb") as outf:
         outf.write(diskData)
 
@@ -382,6 +417,10 @@ while sys.argv[1].startswith("--"):
         sys.argv = sys.argv[:1] + sys.argv[2:]
     elif sys.argv[1] == "--nopack":
         PACK = False
+        sys.argv = sys.argv[:1] + sys.argv[2:]
+    elif sys.argv[1] == "--big":
+        BIGDISK = True
+        DATA_TRACKS = 254
         sys.argv = sys.argv[:1] + sys.argv[2:]
     elif sys.argv[1] == "--sectors":
         SECTORS_PER_TRACK = int(sys.argv[2])
@@ -423,13 +462,17 @@ if tracks == 0:
 if lifHeader != 0x8000:
     print("Not a valid lif file")
     sys.exit(2)
-if GENERIC and lifId != 0x1000:
-    print("Invalid lif ID %04x" % lifId)
-    sys.exit(3)
-if not GENERIC and (tracks == 80 or tracks == 79):
-    tracks = DATA_TRACKS
-if tracks == 254:
-    PACK = False
+if GENERIC:
+    if lifId != 0x1000:
+        print("Invalid lif ID %04x" % lifId)
+        sys.exit(3)
+else:
+    if tracks == 80 or tracks == 79:
+        tracks = DATA_TRACKS
+    if lifId == 254:
+        BIGDISK = True
+        tracks = 254
+        print("Big disk mode")
 totalBlocks = tracks * sides * blocksPerTrack - 1
 #if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
 #    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1
