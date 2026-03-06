@@ -5,16 +5,17 @@ import os
 from pathlib import PurePath
 from tempfile import NamedTemporaryFile
 
-ADJUST_DATA_TRACKS = True # for HP165x, if tracks is 79 or 80, make it be 77
+GENERIC = False # set to True for use with devices other than HP 1652B/53B
 SIDES = 2
 BLOCK_SIZE = 256
 DATA_TRACKS = 77
 BLOCKS_PER_SECTOR = 4
 SECTORS_PER_TRACK = 5
 DIR_ENTRY_SIZE = 32
-MAGIC_TRACK = 79
+MAGIC_TRACK = 79 # set to 0 to disable
 MAGIC_SIDE = 0
 MAGIC_SECTOR = 1 # 0-based
+RESERVED_TYPE = 0xFEEF
 CHUNKING = True
 PACK = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
@@ -39,8 +40,8 @@ def writeHFE(filename,data):
     tempname = f.name
     f.write(data)
     f.close()
-    if struct.unpack(">I",data[32:36])[0] == 4*8:
-        xml = "hp8sec.xml"
+    if tracks > 80:
+        xml = "hpbig.xml"
     else:
         xml = "hp165x79.xml"
     print("Converting with "+xml)
@@ -345,7 +346,11 @@ def create(name):
     blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
     tracks = DATA_TRACKS
     totalBlocks = tracks * SIDES * blocksPerTrack
-    header=bytes.fromhex("8000%02x313635582000000002100000000000001200000000%08x00000002%08x" % ((0x43 if DATA_TRACKS==254 else 0x41),DATA_TRACKS,blocksPerTrack))
+    header=bytearray.fromhex("800041313635582000000002100000000000001200000000FFFFFFFF00000002FFFFFFFF")
+    header[24:28] = struct.pack(">I", tracks)
+    header[32:36] = struct.pack(">I", blocksPerTrack)
+    if 0 < MAGIC_TRACK and MAGIC_TRACK < tracks:
+        header[12:14] = struct.pack(">H", tracks)
     sides = 2
     diskData = bytearray()
     diskData += header
@@ -360,10 +365,9 @@ def create(name):
         reservedEntry = DirEntry()
         reservedEntry.blocks = BLOCKS_PER_SECTOR
         reservedEntry.startBlock = offset // BLOCK_SIZE
-        print("sb",reservedEntry.startBlock)
         reservedEntry.name = "_RESERVED_";
         reservedEntry.misc = "RESRVD".encode()
-        reservedEntry.fileType = 0xFEEF;
+        reservedEntry.fileType = RESERVED_TYPE
         diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = reservedEntry.toBinary()
     with open(name,"wb") as outf:
         outf.write(diskData)
@@ -371,6 +375,10 @@ def create(name):
 while sys.argv[1].startswith("--"):
     if sys.argv[1] == "--raw":
         CHUNKING = False
+        sys.argv = sys.argv[:1] + sys.argv[2:]
+    elif sys.argv[1] == "--generic":
+        GENERIC = False
+        MAGIC_TRACK = -1
         sys.argv = sys.argv[:1] + sys.argv[2:]
     elif sys.argv[1] == "--nopack":
         PACK = False
@@ -415,10 +423,10 @@ if tracks == 0:
 if lifHeader != 0x8000:
     print("Not a valid lif file")
     sys.exit(2)
-if lifId != 0x1000:
+if GENERIC and lifId != 0x1000:
     print("Invalid lif ID %04x" % lifId)
     sys.exit(3)
-if ADJUST_DATA_TRACKS and (tracks == 80 or tracks == 79):
+if not GENERIC and (tracks == 80 or tracks == 79):
     tracks = DATA_TRACKS
 if tracks == 254:
     PACK = False
