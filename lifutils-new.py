@@ -345,12 +345,9 @@ def create(name):
     blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
     tracks = DATA_TRACKS
     totalBlocks = tracks * SIDES * blocksPerTrack
-    header=bytes.fromhex("800041313635582000000002100000000000001200000000%08x00000002%08x" % (DATA_TRACKS,blocksPerTrack))
+    header=bytes.fromhex("8000%02x313635582000000002100000000000001200000000%08x00000002%08x" % ((0x43 if DATA_TRACKS==254 else 0x41),DATA_TRACKS,blocksPerTrack))
     sides = 2
     diskData = bytearray()
-    def writeReservedSector(data=b''):
-        diskData += data
-        diskData + b'\xFF' * (1024-len(data))
     diskData += header
     diskData += (BLOCK_SIZE-len(header)) * b'\x00'
     diskData += (BLOCK_SIZE*(totalBlocks-1)) * b'\xFF'
@@ -363,6 +360,7 @@ def create(name):
         reservedEntry = DirEntry()
         reservedEntry.blocks = BLOCKS_PER_SECTOR
         reservedEntry.startBlock = offset // BLOCK_SIZE
+        print("sb",reservedEntry.startBlock)
         reservedEntry.name = "_RESERVED_";
         reservedEntry.misc = "RESRVD".encode()
         reservedEntry.fileType = 0xFEEF;
@@ -422,9 +420,11 @@ if lifId != 0x1000:
     sys.exit(3)
 if ADJUST_DATA_TRACKS and (tracks == 80 or tracks == 79):
     tracks = DATA_TRACKS
-totalBlocks = tracks * sides * blocksPerTrack
-if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
-    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1
+if tracks == 254:
+    PACK = False
+totalBlocks = tracks * sides * blocksPerTrack - 1
+#if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
+#    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1
 print("Volume:",name.decode())
 print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
 print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))

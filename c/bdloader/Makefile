@@ -49,8 +49,7 @@ OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))
 DEPS=$(OBJS:.o=.d)
 
 
-all: bmbinary.s68
-
+all: bmbinary.rom
 
 .PHONY: bmbinary release all clean rom dump dumps hexdump
 
@@ -86,7 +85,16 @@ $(BUILDDIR)/%.s.o: %.s
 clean:
 	rm -rf $(BUILDDIR)/*
 	rm -f bmbinary*
+	rm -f *.elf *.rom bigdisk.c
 	
+build/loader.c.o: loader.c bigdisk.c
+	$(CC) $(CFLAGS) -c -o $@ loader.c
+	
+bigdisk.c: build/bigdisk.S.o
+	$(LD) -Ttext 0x00983000 build/bigdisk.S.o -o bigdisk.elf
+	$(OBJCOPY) -O binary bigdisk.elf bigdisk.rom
+	python bintoc.py bigdisk.rom > bigdisk.c
+
 bmbinary.s68: bmbinary
 	$(OBJCOPY) -O binary bmbinary bmbinary.rom
 	$(OBJCOPY) -O srec bmbinary bmbinary.s68

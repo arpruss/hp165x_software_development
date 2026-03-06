@@ -9,7 +9,7 @@
 
     ORG    $A09710 ;; 984500
 
-buffer equ $983000
+buffer equ $983000+$30
 buffer_size equ $200 ; divides into screen byte size
 file_type equ $C999
 START:                  ; first instruction of program
@@ -324,6 +324,7 @@ filename:
 
 
     
+
 
 
 
