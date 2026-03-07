@@ -356,6 +356,7 @@ def readDir(quiet=False,verbose=False):
         print("Largest space:",largestSpace)
         
 def create(name):
+    global diskData
     print("Creating "+name)
     blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
     tracks = DATA_TRACKS
@@ -373,8 +374,39 @@ def create(name):
     if MAGIC_TRACK >= 0 and MAGIC_TRACK < tracks:
         diskData[magicBlock * BLOCK_SIZE : (magicBlock + 1) * BLOCK_SIZE] = magicData
         diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = DirEntry.makeReserved().toBinary()
-    with open(name,"wb") as outf:
-        outf.write(diskData)
+
+def loadHeader():
+    global lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPerTrack
+    global dirEntries, BIGDISK, totalBlocks
+    lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPerTrack = struct.unpack(">H6sIH2xIH2x3I", diskData[:36])
+    dirEntries = dirBlocks * BLOCK_SIZE // DIR_ENTRY_SIZE
+    if tracks == 0:
+        print("assuming default geometry")
+        tracks = DATA_TRACKS
+        sides = 2
+        blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
+        diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)
+    if lifHeader != 0x8000:
+        print("Not a valid lif file")
+        sys.exit(2)
+    if GENERIC:
+        if lifId != 0x1000:
+            print("Invalid lif ID %04x" % lifId)
+            sys.exit(3)
+    else:
+        if tracks == 80 or tracks == 79:
+            tracks = DATA_TRACKS
+        if lifId == 254:
+            BIGDISK = True
+            tracks = 254
+            print("Big disk mode")
+    totalBlocks = tracks * sides * blocksPerTrack - 1
+    #if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
+    #    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1
+    print("Volume:",name.decode())
+    print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
+    print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))
+    readDir(cmd != "dir", verbose="-l" in options)
 
 while sys.argv[1].startswith("--"):
     if sys.argv[1] == "--raw":
@@ -387,7 +419,7 @@ while sys.argv[1].startswith("--"):
     elif sys.argv[1] == "--nopack":
         PACK = False
         sys.argv = sys.argv[:1] + sys.argv[2:]
-    elif sys.argv[1] == "--big":
+    elif sys.argv[1] == "--bigdisk":
         BIGDISK = True
         DATA_TRACKS = 254
         sys.argv = sys.argv[:1] + sys.argv[2:]
@@ -408,7 +440,15 @@ while sys.argv[2][0] == "-":
 
 if cmd == "create":
     create(sys.argv[2])
-    cmd = "dir"
+    loadHeader()
+    if sys.argv[2].lower().endswith(".hfe"):
+        print("Converting to hfe")
+        writeHFE(sys.argv[2], diskData)
+    else:
+        with open(sys.argv[2],"wb") as outf:
+            outf.write(diskData)
+    readDir()
+    sys.exit(0)
 
 if sys.argv[2].lower().endswith(".hfe"):
     print("Converting from hfe")
@@ -417,35 +457,9 @@ else:
     with open(sys.argv[2],"rb") as inf:
         diskData = bytearray(inf.read())
 
-lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPerTrack = struct.unpack(">H6sIH2xIH2x3I", diskData[:36])
-dirEntries = dirBlocks * BLOCK_SIZE // DIR_ENTRY_SIZE
-if tracks == 0:
-    print("assuming default geometry")
-    tracks = DATA_TRACKS
-    sides = 2
-    blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
-    diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)
-if lifHeader != 0x8000:
-    print("Not a valid lif file")
-    sys.exit(2)
-if GENERIC:
-    if lifId != 0x1000:
-        print("Invalid lif ID %04x" % lifId)
-        sys.exit(3)
-else:
-    if tracks == 80 or tracks == 79:
-        tracks = DATA_TRACKS
-    if lifId == 254:
-        BIGDISK = True
-        tracks = 254
-        print("Big disk mode")
-totalBlocks = tracks * sides * blocksPerTrack - 1
-#if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
-#    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1
-print("Volume:",name.decode())
-print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
-print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))
-readDir(cmd != "dir", verbose="-l" in options)
+    
+loadHeader()    
+    
 if cmd == "rm" or cmd == "del":
     for f in sys.argv[3:]:
         if delete(f):
