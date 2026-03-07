@@ -8,11 +8,16 @@
 ;; call (423c) allocates 256 bytes on the stack
 
     ORG    $A09710 ;; 984500
-
-buffer equ $983000+$30
+buffer equ $983000+$80 ; must have space for VBL handler for big disk support
+new_stack equ $983FFE
 buffer_size equ $200 ; divides into screen byte size
 file_type equ $C999
+
 START:                  ; first instruction of program
+    jmp     installVBL
+resumeStart:    
+    jmp     $DEADBEEF   ; address @ ORG+8
+patch_ROM_GET_KEY:      ; @ ORG+C
     jsr     ROM_GET_KEY
     tst.w   triggered
     beq     maybePatch
@@ -50,7 +55,7 @@ patch:
     move.w  #1,triggered
     
     move.l  SP,savedStack
-    move.l  #$983FFE,SP
+    move.l  #new_stack,SP
     
     movem.l D0-D7/A0-A6, -(SP)
 
@@ -305,6 +310,26 @@ statePosition:
 savedStack:
     dc.l 0    
 
+installVBL:    
+    move.l  #$983000,a0
+    move.l  #bigDiskSupport,a1
+    move.w  #(bigDiskSupportEnd-bigDiskSupport-1),d0
+instLoop:
+    move.b  (a1)+,(a0)+
+    dbra    d0,instLoop
+    move.l  #$983000,$980002
+    bra     resumeStart    
+    
+bigdiskSupport:
+	tst.b ($984152+13)
+	beq noBD
+	move.w #(254*20*2-1),$9842a6
+	move.w #(254*20*2-1),$9842a8
+	clr.b ($984152+13)
+noBD:	
+	jmp $8F42    
+bigdiskSupportEnd:
+
 pbmHeader:
     dc.b 'P4',$0A,'592 384',$0A
 pbmHeaderEnd:    
@@ -324,6 +349,8 @@ filename:
 
 
     
+
+
 
 
 

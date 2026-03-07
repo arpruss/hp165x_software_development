@@ -295,11 +295,11 @@ def put(inFile, outFile, fileType):
     
     for i in range(len(directory)):
         entry = directory[i][1]
-        if entry.name == outFile and entry.blocks == blocksNeeded:
+        if entry.name == outFile and entry.blocks == newEntry.blocks:
             entry.fileType = fileType
             entry.name = outFile
             entry.put(directory[i][0])
-            diskData[entry.startBlock * BLOCK_SIZE : (entry.startBlock + blocksNeeded) * BLOCK_SIZE] = data
+            diskData[entry.startBlock * BLOCK_SIZE : (entry.startBlock + newEntry.blocks) * BLOCK_SIZE] = data
             return True
 
     if delete(outFile):
