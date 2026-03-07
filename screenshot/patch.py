@@ -8,6 +8,8 @@ import struct
 
 binary = bytearray()
 BASE = 0xA09710
+BUFFER_SIZE = 0x200
+STACK_SIZE = 0x800
 checkedPos = False
 
 replaceFrom = bytes.fromhex("4EB90000EB38")
@@ -46,6 +48,9 @@ with open(sys.argv[2],"rb") as f:
     assert codeLength + 0x984500 == BASE
     code = f.read(codeLength)
     data = f.read()
+    dataAddress = struct.unpack(">I", data[0:4])[0]
+    print("Patch size: %d; space available: %d" % (extraLength, dataAddress-BASE))
+    assert dataAddress >= BASE+extraLength
 
 newcode = code.replace(replaceFrom,replaceTo,-1)
 assert code != newcode

@@ -2,15 +2,12 @@
 
 ;; ORG $A09710 (for insertion between end of SYSTEM_ code and beginning of SYSTEM_ data)
 
-;; this code uses RAM in the $983000-983FFF area that appears to be unused
-;; it relocates the stack to 983FFE because the call to ebb0 seems to do 
+;; th code relocates the stack because the call to ebb0 seems to do 
 ;; poorly with the standard stack position, probably because the ReadDiskHeader
 ;; call (423c) allocates 256 bytes on the stack
 
     ORG    $A09710 ;; 984500
 
-buffer equ $983000+$30
-buffer_size equ $200 ; divides into screen byte size
 file_type equ $C999
 START:                  ; first instruction of program
     jsr     ROM_GET_KEY
@@ -50,7 +47,7 @@ patch:
     move.w  #1,triggered
     
     move.l  SP,savedStack
-    move.l  #$983FFE,SP
+    move.l  #stack,SP
     
     movem.l D0-D7/A0-A6, -(SP)
 
@@ -315,10 +312,13 @@ filename:
 ;    include utilities.x68       
 
     org  (*+1)&-2
-;buffer:
- 
+buffer_size equ $200    
+buffer:
+stack_size equ $800
+stack equ buffer+stack_size
     
     END    START        ; last line of source
+
 
 
 *~Font name~Courier New~
