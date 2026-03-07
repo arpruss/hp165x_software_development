@@ -1,0 +1,34 @@
+BigDisk mode lets you have virtual .hfe floppies that are 2.5mb in capacity,
+by putting 254 tracks on them--with the catch that some software support is
+needed.
+
+You create the image with:
+	python lifutils.py --bigdisk create disk.lif
+	./lif2hfe.sh disk
+or more directly with:
+	python lifutils.py --bigdisk create disk.hfe
+
+Because the HP-1653B/52B requires a special magic sector #98 (actually, the second
+sector on the track, but weirdly renumbered) on track 79 side 0 of the floppy, 
+with some floppy parameters on it, there is basically a one-sector (1024 byte) hole
+in the middle of the disk data. This is handled by lifutils.py creating a special
+1024 byte file that sits right over that sector, and should not be deleted or moved,
+named "*RESERVED*". Because of that file, you should not use the HP's system PACK
+function to defragment the storage. Instead use the lifutils.py pack function.
+If you do accidentally pack the disk with the HP's PACK function and the *RESERVED*
+file gets moved, the virtual disk will no longer be readable by the HP. Fortunately,
+it will still be readable by lifutils.py, and you can restore full functionality by
+running the lifutils.py function on it.
+
+However, there is a second catch. The ROM sets a hard 77 track (minus the last 256
+byte block, probably due to an off-by-one bug) limit on floppies. To overcome this limit, 
+a software fix is needed. Currently (this will change) the software fix is provided in two 
+ways. First, if you use the libhp165x.a library for your own code, the code will incorporate
+the fix. As a result if you write something yourself that stores data on disk and use
+the library, as long as your code is on the first 77 tracks, the code will be able to access
+the full disk.
+
+The other option is to use the bdloader program. If you run bdloader, it installs a very
+small memory resident VBL interrupt handler that removes the 77 track limit on BigDisk
+virtual floppies. You can then use bdloader to load the standard HP SYSTEM_ file by
+putting that somewhere on the same disk.

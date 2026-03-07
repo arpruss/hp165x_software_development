@@ -5,18 +5,31 @@ import os
 from pathlib import PurePath
 from tempfile import NamedTemporaryFile
 
+GENERIC = False # set to True for use with devices other than HP 1652B/53B; may want to use RAW with it
 SIDES = 2
 BLOCK_SIZE = 256
 DATA_TRACKS = 77
 BLOCKS_PER_SECTOR = 4
 SECTORS_PER_TRACK = 5
 DIR_ENTRY_SIZE = 32
-RESERVED_TRACK = None # 79
+MAGIC_TRACK = 79 # set to 0 to disable
+MAGIC_SIDE = 0
+MAGIC_SECTOR = 1 # 0-based
+MAGIC_BLOCKS = 4
 CHUNKING = True
+PACK = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
 CHUNK_FILLER_ODD = b'\x00\xFF\xFF' + (BLOCK_SIZE-3)*b'\x00'
 DIRECTORY = os.path.split(sys.argv[0])[0]
 HXCFE = os.path.join(DIRECTORY,"hxcfe.exe")
+RESERVED_TYPE = 0xFEEF
+RESERVED_MISC = b'\x80\x01RSVD'
+RESERVED_NAME = "*RESERVED*"
+BIG_DISK = False
+
+magicBlock = ((MAGIC_TRACK * SIDES + MAGIC_SIDE) * SECTORS_PER_TRACK + MAGIC_SECTOR) * BLOCKS_PER_SECTOR
+magicData = bytes.fromhex("500288%02x03010201A301A3E6321632" % SECTORS_PER_TRACK)
+magicData += (BLOCK_SIZE * MAGIC_BLOCKS - len(magicData)) * b'\xFF'
 
 def readHFE(filename):
     f = NamedTemporaryFile(delete=False)
@@ -35,8 +48,8 @@ def writeHFE(filename,data):
     tempname = f.name
     f.write(data)
     f.close()
-    if struct.unpack(">I",data[32:36])[0] == 4*8:
-        xml = "hp8sec.xml"
+    if tracks > 80:
+        xml = "hpbig.xml"
     else:
         xml = "hp165x79.xml"
     print("Converting with "+xml)
@@ -85,7 +98,10 @@ class DirEntry:
             name,self.fileType,self.startBlock,self.blocks,self.year,self.month,self.day,self.hour,self.minute,self.second,self.misc = struct.unpack(">10sHII6B6s", args[0])
             self.name = name.decode("cp437").strip()
             self.chunkedFile = diskData[self.startBlock*BLOCK_SIZE:(self.startBlock+self.blocks)*BLOCK_SIZE]
-            self.unchunkedFile = unchunkFile(self.chunkedFile)
+            if self.isReserved():
+                self.unchunkedFile = self.chunkedFile
+            else:
+                self.unchunkedFile = unchunkFile(self.chunkedFile)
      
     def __str__(self):
         return "%s %04X %u [%u %u] %02x/%02x/%02x %02x:%02x:%02x,%s" % (self.name,self.fileType,
@@ -99,6 +115,24 @@ class DirEntry:
         return "%-11s %04X %6u [%4u %4u]" % (self.name,self.fileType,len(self.unchunkedFile),
                     self.startBlock,self.blocks)
                     
+    def isReserved(self):
+        return ( self.fileType == RESERVED_TYPE and self.misc == RESERVED_MISC and
+            self.name == RESERVED_NAME )
+            
+    def isSystem(self):
+        return not GENERIC and self.fileType == 0xC001 and self.name == "SYSTEM_"
+        
+    @staticmethod
+    def makeReserved():
+        reservedEntry = DirEntry()
+        reservedEntry.startBlock = magicBlock
+        reservedEntry.blocks = MAGIC_BLOCKS
+        reservedEntry.name = RESERVED_NAME
+        reservedEntry.misc = RESERVED_MISC
+        reservedEntry.fileType = RESERVED_TYPE    
+        reservedEntry.chunkedFile = magicData
+        return reservedEntry
+                    
     def put(self, pos):
         diskData[dirStart * BLOCK_SIZE + pos * 32 : dirStart * BLOCK_SIZE + pos * DIR_ENTRY_SIZE + DIR_ENTRY_SIZE] = self.toBinary()
                     
@@ -108,7 +142,7 @@ class DirEntry:
         
 def chunkFile(unchunked):
     if not CHUNKING:
-        return unchunked
+        return unchunked + (256 - len(unchunked)%256) * '\x00'
     chunked = bytearray()
     pos = 0
     while pos < len(unchunked):
@@ -156,6 +190,8 @@ def rename(name, newName):
         if name == directory[i][1].name:
             directory[i][1].name = newName
             directory[i][1].put(directory[i][0])
+            if BIGDISK and directory[i][1].isSystem() and i != 0:
+                pack()
             return True
     return False
     
@@ -195,30 +231,68 @@ def getAll(inFile):
             if ret:
                 print("Got %s" % directory[i][1].name)
     return ret
+    
+def disjoint(x,xcount,y,ycount):
+    if x<=y:
+        return x+xcount <= y
+    else:
+        return y+ycount <= x
+        
+def packFiles(d):
+    global diskData
+    
+    fillFF( dirStart * BLOCK_SIZE, len(diskData) - dirStart * BLOCK_SIZE )
+    if BIGDISK:
+        for i in range(len(d)-1,-1,-1):
+            if d[i].isReserved():
+                del d[i]
+        for i in range(1,len(d)):
+            if d[i].isSystem():
+                d = [ d[i], ] + d[:i] + d[i+1:]
+                break
+        block = dirStart + dirBlocks
+        for i in range(len(d)):
+            if block + d[i].blocks > magicBlock:
+                e = DirEntry.makeReserved()
+                d = d[:i] + [ e, ] + d[i:]
+                break
+            block += d[i].blocks
+        else:
+            d.append(DirEntry.makeReserved())
+    if len(d) > dirEntries:
+        print("Too many directory entries!")
+        return False
+    block = dirStart + dirBlocks
+    for e in d:
+        if BIGDISK and e.isReserved():
+            block = e.startBlock + e.blocks
+        else:
+            e.startBlock = block
+            block += e.blocks
+        diskData[e.startBlock * BLOCK_SIZE : (e.startBlock + e.blocks) * BLOCK_SIZE] = e.chunkedFile
+    if block > totalBlocks:
+        print("Data does not fit!")
+        return False
+    binDir = b''.join((e.toBinary() for e in d))
+    diskData[dirStart*BLOCK_SIZE : dirStart*BLOCK_SIZE + len(binDir)] = binDir
+
+    return True
 
 def pack():
-    filePos = dirStart + dirBlocks
-    dirPos = 0
-    
-    newDirectory = bytearray()
-    
-    for _,entry in directory:
-        diskData[filePos*BLOCK_SIZE:filePos*BLOCK_SIZE + len(entry.chunkedFile)] = entry.chunkedFile
-        entry.name = entry.name
-        entry.startBlock = filePos
-        newDirectory += entry.toBinary()
-        filePos += entry.blocks
-    
-    fillFF( filePos * BLOCK_SIZE, (totalBlocks - filePos) * BLOCK_SIZE)
-    diskData[dirStart * BLOCK_SIZE : dirStart * BLOCK_SIZE + len(newDirectory)] = newDirectory
-    fillFF( dirStart * BLOCK_SIZE + len(newDirectory), dirEntries * DIR_ENTRY_SIZE - len(newDirectory))
+    return packFiles([e for _,e in directory])
     
 def put(inFile, outFile, fileType):
     outFile = outFile[:10]
+    
+    newEntry = DirEntry()
+    newEntry.name = outFile
+    newEntry.fileType = fileType
+    
     with open(inFile, "rb") as inf:
         data = chunkFile(inf.read())
-    blocksNeeded = (len(data) + BLOCK_SIZE - 1) // BLOCK_SIZE
-    data += (blocksNeeded * BLOCK_SIZE - len(data)) * b'\xFF'
+    newEntry.blocks = len(data) // BLOCK_SIZE
+    newEntry.chunkedFile = data
+    
     for i in range(len(directory)):
         entry = directory[i][1]
         if entry.name == outFile and entry.blocks == blocksNeeded:
@@ -227,100 +301,129 @@ def put(inFile, outFile, fileType):
             entry.put(directory[i][0])
             diskData[entry.startBlock * BLOCK_SIZE : (entry.startBlock + blocksNeeded) * BLOCK_SIZE] = data
             return True
+
     if delete(outFile):
         print("Deleted original")
         readDir(True)
-    print("Packing")
-    pack()
+        
+    print("Packing directory and data")
+    if not packFiles([d for _,d in directory] + [ newEntry, ]):
+        return False
     readDir(True)
-    if len(directory) + 1 > dirEntries:
-        print("Out of space in directory")
-        return False
-    if lastBlock+blocksNeeded > totalBlocks:
-        print("Needed %d, have %d blocks" % (blocksNeeded,totalBlocks-lastBlock))
-        print("No space!")
-        return False
-    newEntry = DirEntry()
-    newEntry.name = outFile
-    newEntry.fileType = fileType
-    newEntry.blocks = blocksNeeded
-    newEntry.startBlock = lastBlock
-    diskData[lastBlock*BLOCK_SIZE:lastBlock*BLOCK_SIZE+len(data)] = data
-    diskData[dirStart*BLOCK_SIZE + len(directory) * DIR_ENTRY_SIZE : dirStart * BLOCK_SIZE + len(directory) * DIR_ENTRY_SIZE + DIR_ENTRY_SIZE] = newEntry.toBinary()
     return True
 
 def readDir(quiet=False,verbose=False):                
-    global directory,lastBlock
+    global directory,usedBlocks,largestSpace,dirEndOffset
     directory = []
     startBlock = 0
-    lastBlock = dirStart + dirBlocks
+    usedBlocks = dirStart + dirBlocks
     largestSpace = 0
     previous = dirStart + dirBlocks
+    dirEndOffset = previous * BLOCK_SIZE
     for i in range(dirEntries):
         offset = dirStart * BLOCK_SIZE + i * DIR_ENTRY_SIZE
-        if diskData[offset] != 0xFF:
-            entry = DirEntry(diskData[offset:offset+DIR_ENTRY_SIZE])
-            if entry.fileType:
-                if entry.startBlock - previous > largestSpace:
-                    largestSpace = entry.startBlock - previous
-                directory.append((i,entry))
-                if entry.startBlock + entry.blocks > lastBlock:
-                    lastBlock = entry.startBlock + entry.blocks
-                previous = lastBlock
-                if not quiet:
-                    e = entry.format(verbose)
-                    if entry.fileType == 0xC001:
-                        comment = ''
-                        try:
-                            start = entry.startBlock
-                            comment = entry.unchunkedFile[4:4+26].decode().strip() 
-                            if verbose:
-                                comment += "\t" + entry.unchunkedFile[4+26:4+26+6].decode().strip()
-                        except:
-                            pass
-                        print("%-3u"%i,e,comment)                            
-                    else:
-                        print("%-3u"%i,e)
+        entry = DirEntry(diskData[offset:offset+DIR_ENTRY_SIZE])
+        if entry.fileType == 0xFFFF:
+            dirEndOffset = offset
+            break
+        if entry.fileType:
+            if entry.startBlock - previous > largestSpace:
+                largestSpace = entry.startBlock - previous
+            directory.append((i,entry))
+            if entry.startBlock + entry.blocks > usedBlocks:
+                usedBlocks = entry.startBlock + entry.blocks
+            previous = usedBlocks
+            if not quiet:
+                e = entry.format(verbose)
+                if entry.fileType == 0xC001:
+                    comment = ''
+                    try:
+                        start = entry.startBlock
+                        comment = entry.unchunkedFile[4:4+26].decode().strip() 
+                        if verbose:
+                            comment += "\t" + entry.unchunkedFile[4+26:4+26+6].decode().strip()
+                    except:
+                        pass
+                    print("%-3u"%i,e,comment)                            
+                else:
+                    print("%-3u"%i,e)
+    if dirEndOffset < 0:
+        dirEndOffset = dirStart + dirEntries * DIR_ENTRY_SIZE
     if totalBlocks - previous > largestSpace:
         largestSpace = totalBlocks - previous
     if not quiet:
-        print("Last block:",lastBlock)
+        print("Used blocks:",usedBlocks)
         print("Largest space:",largestSpace)
         
 def create(name):
+    global diskData
     print("Creating "+name)
     blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
-    if RESERVED_TRACK is not None:
-        tracks = RESERVED_TRACK + 1
-        totalBlocks = (tracks-1) * SIDES * blocksPerTrack
-    else:
-        tracks = DATA_TRACKS
-        totalBlocks = tracks * SIDES * blocksPerTrack
-    header=bytes.fromhex("800041313635582000000002100000000000001200000000%08x00000002%08x" % (DATA_TRACKS,blocksPerTrack))
+    tracks = DATA_TRACKS
+    totalBlocks = tracks * SIDES * blocksPerTrack
+    header=bytearray.fromhex("800041313635582000000002100000000000001200000000FFFFFFFF00000002FFFFFFFF")
+    header[24:28] = struct.pack(">I", tracks)
+    header[32:36] = struct.pack(">I", blocksPerTrack)
+    if 0 < MAGIC_TRACK and MAGIC_TRACK < tracks:
+        header[12:14] = struct.pack(">H", tracks)
     sides = 2
-    with open(name,"wb") as outf:
-        def writeReservedSector(data=b''):
-            outf.write(data)
-            outf.write(b'\xFF' * (1024-len(data)))
-        outf.write(header)
-        outf.write((BLOCK_SIZE-len(header)) * b'\x00')
-        outf.write((BLOCK_SIZE*(totalBlocks-1)) * b'\xFF')
-        if RESERVED_TRACK is not None:
-            for side in range(2):
-                writeReservedSector(bytes.fromhex("E60000"))
-                writeReservedSector(bytes.fromhex("500288%02x03010201A301A3E6321632" % SECTORS_PER_TRACK))
-                writeReservedSector()
-                writeReservedSector()
-                writeReservedSector()
+    diskData = bytearray()
+    diskData += header
+    diskData += (BLOCK_SIZE-len(header)) * b'\x00'
+    diskData += (BLOCK_SIZE*(totalBlocks-1)) * b'\xFF'
+    if MAGIC_TRACK >= 0 and MAGIC_TRACK < tracks:
+        diskData[magicBlock * BLOCK_SIZE : (magicBlock + 1) * BLOCK_SIZE] = magicData
+        diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = DirEntry.makeReserved().toBinary()
+
+def loadHeader():
+    global lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPerTrack
+    global dirEntries, BIGDISK, totalBlocks
+    lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPerTrack = struct.unpack(">H6sIH2xIH2x3I", diskData[:36])
+    dirEntries = dirBlocks * BLOCK_SIZE // DIR_ENTRY_SIZE
+    if tracks == 0:
+        print("assuming default geometry")
+        tracks = DATA_TRACKS
+        sides = 2
+        blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
+        diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)
+    if lifHeader != 0x8000:
+        print("Not a valid lif file")
+        sys.exit(2)
+    if GENERIC:
+        if lifId != 0x1000:
+            print("Invalid lif ID %04x" % lifId)
+            sys.exit(3)
+    else:
+        if tracks == 80 or tracks == 79:
+            tracks = DATA_TRACKS
+        if lifId == 254:
+            BIGDISK = True
+            tracks = 254
+            print("Big disk mode")
+    totalBlocks = tracks * sides * blocksPerTrack - 1
+    #if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
+    #    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1
+    print("Volume:",name.decode())
+    print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
+    print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))
+    readDir(cmd != "dir", verbose="-l" in options)
 
 while sys.argv[1].startswith("--"):
     if sys.argv[1] == "--raw":
         CHUNKING = False
         sys.argv = sys.argv[:1] + sys.argv[2:]
-    elif sys.argv[1] == "--sectors":
-        SECTORS_PER_TRACK = int(sys.argv[2])
-        sys.argv = sys.argv[:1] + sys.argv[3:]
-    elif sys.argv[1] == "--sectors":
+    elif sys.argv[1] == "--generic":
+        GENERIC = False
+        MAGIC_TRACK = -1
+        sys.argv = sys.argv[:1] + sys.argv[2:]
+    elif sys.argv[1] == "--nopack":
+        PACK = False
+        sys.argv = sys.argv[:1] + sys.argv[2:]
+    elif sys.argv[1] == "--bigdisk":
+        BIGDISK = True
+        DATA_TRACKS = 254
+        sys.argv = sys.argv[:1] + sys.argv[2:]
+    elif sys.argv[1] == "--tracks":
         DATA_TRACKS = int(sys.argv[2])
         sys.argv = sys.argv[:1] + sys.argv[3:]
     else:
@@ -337,7 +440,15 @@ while sys.argv[2][0] == "-":
 
 if cmd == "create":
     create(sys.argv[2])
-    cmd = "dir"
+    loadHeader()
+    if sys.argv[2].lower().endswith(".hfe"):
+        print("Converting to hfe")
+        writeHFE(sys.argv[2], diskData)
+    else:
+        with open(sys.argv[2],"wb") as outf:
+            outf.write(diskData)
+    readDir()
+    sys.exit(0)
 
 if sys.argv[2].lower().endswith(".hfe"):
     print("Converting from hfe")
@@ -346,31 +457,9 @@ else:
     with open(sys.argv[2],"rb") as inf:
         diskData = bytearray(inf.read())
 
-lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPerTrack = struct.unpack(">H6sIH2xIH2x3I", diskData[:36])
-dirEntries = dirBlocks * BLOCK_SIZE // DIR_ENTRY_SIZE
-if tracks == 0:
-    print("assuming default geometry")
-    tracks = DATA_TRACKS
-    sides = 2
-    blocksPerTrack = BLOCKS_PER_SECTOR * SECTORS_PER_TRACK
-    diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)
-if lifHeader != 0x8000:
-    print("Not a valid lif file")
-    sys.exit(2)
-if lifId != 0x1000:
-    print("Invalid lif ID %04x" % lifId)
-    sys.exit(3)
-if RESERVED_TRACK is not None and tracks > RESERVED_TRACK:
-    print("fixing track info to take into account reserved track")
-    tracks = RESERVED_TRACK
-    diskData[24:36] = struct.pack(">3I",tracks,sides,blocksPerTrack)    
-totalBlocks = tracks * sides * blocksPerTrack
-if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
-    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1
-print("Volume:",name.decode())
-print("Directory start: %u\nDirectory length: %u blocks\nDirectory version: %u" % (dirStart,dirBlocks,dirVersion))
-print("Tracks: %u\nSides: %u\nBlocks per track: %u\nTotal blocks: %u" % (tracks,sides,blocksPerTrack,totalBlocks))
-readDir(cmd != "dir", verbose="-l" in options)
+    
+loadHeader()    
+    
 if cmd == "rm" or cmd == "del":
     for f in sys.argv[3:]:
         if delete(f):
@@ -395,7 +484,11 @@ elif cmd == "put":
     else:
         inFile = sys.argv[3]
         outFile = os.path.basename(sys.argv[3])
-        fileType = int(sys.argv[4],16)
+        if len(sys.argv) >= 5:
+            fileType = int(sys.argv[4],16)
+        else:
+            print("Assuming file type 0001")
+            fileType = 1
     if put(inFile,outFile,fileType):
         rewrite = True
     else:
