@@ -41,6 +41,7 @@ _start:
 		move.w	%d1,(%a1)+
 		dbra	%d0,3b
 
+		bsr		bigDiskSupport
         jsr     main
 		
 		.globl  exit
@@ -94,7 +95,16 @@ _restore_original_int_handlers:
 		dbra	%d1,1b
 
 		rts
-	
+		
+		.globl bigDiskSupport
+bigDiskSupport:		
+		tst.b 0x984152+13
+		beq 4f
+		move.w #(254*20*2-1),0x9842a6
+		move.w #(254*20*2-1),0x9842a8
+		clr.b 0x984152+13
+	4:	
+		rts
 
 		.globl _posixCleanup
 _posixCleanup:

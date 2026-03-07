@@ -112,6 +112,7 @@ int readFile(int32_t fd, void* data, int32_t size) {
 }
 
 int refreshDir(void) {
+	bigDiskSupport();
 	if (*HARDWARE_STATUS & HARDWARE_STATUS_NO_DISK)
 		return -1;
 	if (*HARDWARE_STATUS & HARDWARE_STATUS_OLD_DISK)
