@@ -15,6 +15,7 @@ DIR_ENTRY_SIZE = 32
 MAGIC_TRACK = 79 # set to 0 to disable
 MAGIC_SIDE = 0
 MAGIC_SECTOR = 1 # 0-based
+MAGIC_BLOCKS = 4
 CHUNKING = True
 PACK = True
 CHUNK_FILLER = b'\xFF\xFF' + (BLOCK_SIZE-2)*b'\x00'
@@ -23,11 +24,12 @@ DIRECTORY = os.path.split(sys.argv[0])[0]
 HXCFE = os.path.join(DIRECTORY,"hxcfe.exe")
 RESERVED_TYPE = 0xFEEF
 RESERVED_MISC = b'\x80\x01RSVD'
+RESERVED_NAME = "*RESERVED*"
 BIG_DISK = False
 
 magicBlock = ((MAGIC_TRACK * SIDES + MAGIC_SIDE) * SECTORS_PER_TRACK + MAGIC_SECTOR) * BLOCKS_PER_SECTOR
-magicBlockCount = BLOCKS_PER_SECTOR
 magicData = bytes.fromhex("500288%02x03010201A301A3E6321632" % SECTORS_PER_TRACK)
+magicData += (BLOCK_SIZE * MAGIC_BLOCKS - len(magicData)) * b'\xFF'
 
 def readHFE(filename):
     f = NamedTemporaryFile(delete=False)
@@ -96,7 +98,10 @@ class DirEntry:
             name,self.fileType,self.startBlock,self.blocks,self.year,self.month,self.day,self.hour,self.minute,self.second,self.misc = struct.unpack(">10sHII6B6s", args[0])
             self.name = name.decode("cp437").strip()
             self.chunkedFile = diskData[self.startBlock*BLOCK_SIZE:(self.startBlock+self.blocks)*BLOCK_SIZE]
-            self.unchunkedFile = unchunkFile(self.chunkedFile)
+            if self.isReserved():
+                self.unchunkedFile = self.chunkedFile
+            else:
+                self.unchunkedFile = unchunkFile(self.chunkedFile)
      
     def __str__(self):
         return "%s %04X %u [%u %u] %02x/%02x/%02x %02x:%02x:%02x,%s" % (self.name,self.fileType,
@@ -109,15 +114,23 @@ class DirEntry:
             return str(self)
         return "%-11s %04X %6u [%4u %4u]" % (self.name,self.fileType,len(self.unchunkedFile),
                     self.startBlock,self.blocks)
+                    
+    def isReserved(self):
+        return ( self.fileType == RESERVED_TYPE and self.misc == RESERVED_MISC and
+            self.name == RESERVED_NAME )
+            
+    def isSystem(self):
+        return not GENERIC and self.fileType == 0xC001 and self.name == "SYSTEM_"
         
     @staticmethod
     def makeReserved():
         reservedEntry = DirEntry()
         reservedEntry.startBlock = magicBlock
-        reservedEntry.blocks = magicBlockCount
-        reservedEntry.name = "*RESERVED*"
+        reservedEntry.blocks = MAGIC_BLOCKS
+        reservedEntry.name = RESERVED_NAME
         reservedEntry.misc = RESERVED_MISC
         reservedEntry.fileType = RESERVED_TYPE    
+        reservedEntry.chunkedFile = magicData
         return reservedEntry
                     
     def put(self, pos):
@@ -129,7 +142,7 @@ class DirEntry:
         
 def chunkFile(unchunked):
     if not CHUNKING:
-        return unchunked
+        return unchunked + (256 - len(unchunked)%256) * '\x00'
     chunked = bytearray()
     pos = 0
     while pos < len(unchunked):
@@ -177,6 +190,8 @@ def rename(name, newName):
         if name == directory[i][1].name:
             directory[i][1].name = newName
             directory[i][1].put(directory[i][0])
+            if BIGDISK and directory[i][1].isSystem() and i != 0:
+                pack()
             return True
     return False
     
@@ -222,91 +237,62 @@ def disjoint(x,xcount,y,ycount):
         return x+xcount <= y
     else:
         return y+ycount <= x
-
-def pack():
-    filePos = dirStart + dirBlocks
-    usedBlocks = filePos
-    dirPos = 0
+        
+def packFiles(d):
+    global diskData
     
     fillFF( dirStart * BLOCK_SIZE, len(diskData) - dirStart * BLOCK_SIZE )
-    newDirectory = []
-    
-    for _,entry in directory:
-        if BIGDISK and entry.misc == RESERVED_MISC and entry.fileType == RESERVED_TYPE:
-            continue
-        if BIGDISK and not disjoint(filePos,entry.blocks,magicBlock,magicBlockCount):
-            newDirectory.append(DirEntry.makeReserved())
-            filePos = magicBlock+magicBlockCount
-        diskData[filePos*BLOCK_SIZE:filePos*BLOCK_SIZE + len(entry.chunkedFile)] = entry.chunkedFile
-        entry.startBlock = filePos
-        filePos += entry.blocks
-        usedBlocks = filePos
-        newDirectory.append(entry)
-        
     if BIGDISK:
-        if usedBlocks <= magicBlock:
-            usedBlocks = magicBlock + magicBlockCount
-            newDirectory.append(DirEntry.makeReserved())
-        diskData[magicBlock*BLOCK_SIZE:magicBlock*BLOCK_SIZE+len(magicData)] = magicData
-
-    directoryBin = b''.join(d.toBinary() for d in newDirectory)
-    diskData[dirStart * BLOCK_SIZE : dirStart * BLOCK_SIZE + len(directoryBin)] = directoryBin
-    
-def insertDirEntry(offset):
-    if dirEndOffset >= (dirStart + dirBlocks) * BLOCK_SIZE:
-        return False
-    diskData[dirStart*BLOCK_SIZE:(dirStart+dirBlocks)*BLOCK_SIZE] = (
-        diskData[dirStart*BLOCK_SIZE:offset] + 
-        bytes(DIR_ENTRY_SIZE) +
-        diskData[offset:(dirStart+dirBlocks)*BLOCK_SIZE-DIR_ENTRY_SIZE] )
-    return True
-    
-def insertFile(newEntry):
-    offset = dirStart*BLOCK_SIZE
-    lastVacantPos = -1
-    availableStartBlock = dirStart + dirBlocks
-    availableEndBlock = -1
-
-    while offset < dirEndOffset:
-        availableEndBlock = -1
-        e = DirEntry(diskData[offset:offset+DIR_ENTRY_SIZE])
-        if e.fileType == 0:
-            if lastVacantPos < 0:
-                lastVacantPos = offset
-        elif e.fileType == 0xFFFF:
-            break
-        else:
-            if e.startBlock - availableStartBlock >= newEntry.blocks:
-                availableEndBlock = e.startBlock
+        for i in range(len(d)-1,-1,-1):
+            if d[i].isReserved():
+                del d[i]
+        for i in range(1,len(d)):
+            if d[i].isSystem():
+                d = [ d[i], ] + d[:i] + d[i+1:]
                 break
-            else:
-                lastVacantPos = -1
-                availableStartBlock = e.startBlock + e.blocks
-        offset += DIR_ENTRY_SIZE
+        block = dirStart + dirBlocks
+        for i in range(len(d)):
+            if block + d[i].blocks > magicBlock:
+                e = DirEntry.makeReserved()
+                d = d[:i] + [ e, ] + d[i:]
+                break
+            block += d[i].blocks
+        else:
+            d.append(DirEntry.makeReserved())
+    if len(d) > dirEntries:
+        print("Too many directory entries!")
+        return False
+    block = dirStart + dirBlocks
+    for e in d:
+        if BIGDISK and e.isReserved():
+            block = e.startBlock + e.blocks
+        else:
+            e.startBlock = block
+            block += e.blocks
+        diskData[e.startBlock * BLOCK_SIZE : (e.startBlock + e.blocks) * BLOCK_SIZE] = e.chunkedFile
+    if block > totalBlocks:
+        print("Data does not fit!")
+        return False
+    binDir = b''.join((e.toBinary() for e in d))
+    diskData[dirStart*BLOCK_SIZE : dirStart*BLOCK_SIZE + len(binDir)] = binDir
 
-    if availableEndBlock < 0:
-        availableEndBlock = totalBlocks
-    if lastVacantPos < 0 and offset < dirEndOffset:
-        if not insertDirEntry(offset):
-            print("No room for directory entry")
-            return False
-    elif lastVacantPos < 0:
-        if offset >= (dirStart + dirBlocks) * BLOCK_SIZE:
-            print("No room for directory entry")
-            return False
-    else:
-        offset = lastVacantPos
-    newEntry.startBlock = availableStartBlock
-    diskData[offset:offset+DIR_ENTRY_SIZE] = newEntry.toBinary()
-    diskData[availableStartBlock*BLOCK_SIZE:(availableStartBlock+newEntry.blocks)*BLOCK_SIZE] = newEntry.chunkedData
-    return True    
+    return True
+
+def pack():
+    return packFiles([e for _,e in directory])
     
 def put(inFile, outFile, fileType):
     outFile = outFile[:10]
+    
+    newEntry = DirEntry()
+    newEntry.name = outFile
+    newEntry.fileType = fileType
+    
     with open(inFile, "rb") as inf:
         data = chunkFile(inf.read())
-    blocksNeeded = (len(data) + BLOCK_SIZE - 1) // BLOCK_SIZE
-    data += (blocksNeeded * BLOCK_SIZE - len(data)) * b'\xFF'
+    newEntry.blocks = len(data) // BLOCK_SIZE
+    newEntry.chunkedFile = data
+    
     for i in range(len(directory)):
         entry = directory[i][1]
         if entry.name == outFile and entry.blocks == blocksNeeded:
@@ -315,23 +301,16 @@ def put(inFile, outFile, fileType):
             entry.put(directory[i][0])
             diskData[entry.startBlock * BLOCK_SIZE : (entry.startBlock + blocksNeeded) * BLOCK_SIZE] = data
             return True
+
     if delete(outFile):
         print("Deleted original")
         readDir(True)
-    if PACK:
-        print("Packing directory and data")
-        pack()
-        readDir(True)
-    if blocksNeeded > largestSpace:
-        print("Need %d, have %d blocks" % (blocksNeeded,largestSpace))
+        
+    print("Packing directory and data")
+    if not packFiles([d for _,d in directory] + [ newEntry, ]):
         return False
-    previous = dirStart + dirBlocks
-    newEntry = DirEntry()
-    newEntry.name = outFile
-    newEntry.fileType = fileType
-    newEntry.blocks = blocksNeeded
-    newEntry.chunkedData = data
-    return insertFile(newEntry)
+    readDir(True)
+    return True
 
 def readDir(quiet=False,verbose=False):                
     global directory,usedBlocks,largestSpace,dirEndOffset
@@ -392,10 +371,7 @@ def create(name):
     diskData += (BLOCK_SIZE-len(header)) * b'\x00'
     diskData += (BLOCK_SIZE*(totalBlocks-1)) * b'\xFF'
     if MAGIC_TRACK >= 0 and MAGIC_TRACK < tracks:
-        offset = MAGIC_TRACK * SIDES * blocksPerTrack * BLOCK_SIZE
-        offset += MAGIC_SIDE * blocksPerTrack * BLOCK_SIZE
-        offset += MAGIC_SECTOR * BLOCKS_PER_SECTOR * BLOCK_SIZE
-        diskData[offset:offset+len(magicData)] = magicData
+        diskData[magicBlock * BLOCK_SIZE : (magicBlock + 1) * BLOCK_SIZE] = magicData
         diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = DirEntry.makeReserved().toBinary()
     with open(name,"wb") as outf:
         outf.write(diskData)
@@ -415,9 +391,6 @@ while sys.argv[1].startswith("--"):
         BIGDISK = True
         DATA_TRACKS = 254
         sys.argv = sys.argv[:1] + sys.argv[2:]
-    elif sys.argv[1] == "--sectors":
-        SECTORS_PER_TRACK = int(sys.argv[2])
-        sys.argv = sys.argv[:1] + sys.argv[3:]
     elif sys.argv[1] == "--tracks":
         DATA_TRACKS = int(sys.argv[2])
         sys.argv = sys.argv[:1] + sys.argv[3:]
