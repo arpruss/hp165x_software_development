@@ -4,7 +4,11 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <hp165x.h>
+#ifdef METAL
 #include <printf.h>
+#else
+#include <stdio.h>
+#endif
 
 #define MAX_FILES 64
 
@@ -18,7 +22,7 @@ int numNames = 0;
 #if 1
 #define BIG_DISK_PATCH_ADDRESS 0x00983000
 uint8_t bigDiskPatch[] = {
-#include "bigdisk.c"
+#include "bigdisk.inc"
 };
 #endif
 
