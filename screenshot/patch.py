@@ -1,20 +1,17 @@
 #
-# put an S-record file into a patch file that can be loaded onto an HP 165x logic analyzer as a _SYSTEM file
+# put an S-record file into a binary file that can be loaded onto an HP 165x logic analyzer as a _SYSTEM file
 #
 
 import os
 import sys
 import struct
 
-patch = bytearray()
-BASE  = 0xA09710
-START = BASE
-OLD_START_ADDRESS = 8 # relative to BASE
-ROM_GET_KEY_PATCH = BASE+0xC
+binary = bytearray()
+BASE = 0xA09710
 checkedPos = False
 
 replaceFrom = bytes.fromhex("4EB90000EB38")
-replaceTo = bytes.fromhex("4EB9%08X" % ROM_GET_KEY_PATCH)
+replaceTo = bytes.fromhex("4EB9%08X" % BASE)
 
 with open(sys.argv[1],"r") as s:
     while True:
@@ -35,35 +32,30 @@ with open(sys.argv[1],"r") as s:
             data = bytes.fromhex(line[10:10+2*count])
             if pos >= BASE:
                 pos -= BASE
-                if pos > len(patch):
-                    patch += (pos - len(patch)) * b'\x00'
-                assert(pos == len(patch))
-                patch += data
+                if pos > len(binary):
+                    binary += (pos - len(binary)) * b'\x00'
+                assert(pos == len(binary))
+                binary += data
                 
-extraLength = len(patch)
+extraLength = len(binary)
 
 with open(sys.argv[2],"rb") as f:
     header = f.read(0x2c)
     length,name,version,codeLength,base = struct.unpack(">I26s6sII", header)
     assert base == 0x984500
     assert codeLength + 0x984500 == BASE
-    code = bytearray(f.read(codeLength))
-    assert code[0:2] == b'\x4e\xf9'
+    code = f.read(codeLength)
     data = f.read()
-    dataAddress = struct.unpack(">I", data[0:4])[0]
-    print("Patch size: %d; space available: %d" % (len(patch), dataAddress-BASE))
-    assert dataAddress >= BASE+len(patch)
 
-patch[OLD_START_ADDRESS:OLD_START_ADDRESS+4] = code[2:6]
-code[2:6] = struct.pack(">I", START)
-assert replaceFrom in code
-code = code.replace(replaceFrom,replaceTo,-1)
+newcode = code.replace(replaceFrom,replaceTo,-1)
+assert code != newcode
+code = newcode
 codeLength += extraLength
 length += extraLength
 
 with open(sys.argv[3],"wb") as f:
     f.write(struct.pack(">I26s6sII", length,name,version,codeLength,base))
     f.write(code)
-    f.write(patch)
+    f.write(binary)
     f.write(data)
     

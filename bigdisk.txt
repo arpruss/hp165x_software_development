@@ -13,7 +13,7 @@ sector on the track, but weirdly renumbered) on track 79 side 0 of the floppy,
 with some floppy parameters on it, there is basically a one-sector (1024 byte) hole
 in the middle of the disk data. This is handled by lifutils.py creating a special
 1024 byte file that sits right over that sector, and should not be deleted or moved,
-named "*RESERVED*". Because of that file, you should not use the HP's system PACK
+named "|RESERVED|". Because of that file, you should not use the HP's system PACK
 function to defragment the storage. Instead use the lifutils.py pack function.
 If you do accidentally pack the disk with the HP's PACK function and the *RESERVED*
 file gets moved, the virtual disk will no longer be readable by the HP. Fortunately,
