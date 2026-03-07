@@ -318,6 +318,12 @@ cleanup:
 }
 
 int lifPack(char _progress) {
+	uint32_t totalBlocks;
+	if (diskSpace(&totalBlocks, NULL, NULL)<0)
+		return -1;
+	if (totalBlocks>=3200) 
+		return -1; // TODO: bigdisk mode is not yet implemented
+	
 	uint8_t progressBuffer[SCREEN_WIDTH/4];
 	progress = _progress;
 	initProgress(progressBuffer);

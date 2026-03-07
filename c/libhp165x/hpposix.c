@@ -178,7 +178,9 @@ int close(int fd) {
 				return -1;
 			}
 			if (size > available * 254) {
-				lifPack(1);
+				if (lifPack(1) < 0) {
+					return -1;
+				}
 			}
 		}
 #endif		
