@@ -20,7 +20,7 @@ char* names[MAX_FILES];
 int numNames = 0;
 
 #if 1
-#define BIG_DISK_PATCH_ADDRESS 0x00983000
+#define BIG_DISK_PATCH_ADDRESS 0x00A71700
 uint8_t bigDiskPatch[] = {
 #include "bigdisk.inc"
 };
