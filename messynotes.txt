@@ -483,7 +483,6 @@ one of them. The nth functions calls ECFA with the third argument being n.
  
  FUN_009c174a: some sort of big complicated file operation thingy
  
- 
 TIME
 
 A7005f: seconds

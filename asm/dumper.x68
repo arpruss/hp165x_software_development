@@ -15,6 +15,10 @@ START:                  ; first instruction of program
      pea TEXT_MODE_NORMAL
      jsr ROM_SET_TEXT_MODE
      add #4,SP
+     move.b #1,$98077a ; erase mode
+     move.w #8,$980776 ; window
+     move.w #8,$980778
+     
      bsr ResetBold
      clr.w LAST_KEY
 
@@ -202,6 +206,7 @@ continuous: dc.b $1
     
     include utilities.x68
     END    START        ; last line of source
+
 
 
 

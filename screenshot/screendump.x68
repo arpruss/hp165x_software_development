@@ -11,6 +11,15 @@
 file_type equ $C999
 START:                  ; first instruction of program
     jsr     ROM_GET_KEY
+
+;; big disk support patch
+;	tst.b $984152+13
+;	beq normalDisk
+;	move.w #(254*20*2-1),$9842a6
+;	move.w #(254*20*2-1),$9842a8
+;	clr.b $984152+13
+;normalDisk:    
+
     tst.w   triggered
     beq     maybePatch
 return:    
@@ -318,6 +327,7 @@ stack_size equ $800
 stack equ buffer+stack_size
     
     END    START        ; last line of source
+
 
 
 

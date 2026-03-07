@@ -49,8 +49,9 @@ with open(sys.argv[2],"rb") as f:
     code = f.read(codeLength)
     data = f.read()
     dataAddress = struct.unpack(">I", data[0:4])[0]
-    print("Patch size: %d; space available: %d" % (extraLength, dataAddress-BASE))
-    assert dataAddress >= BASE+extraLength
+    dataNeeded = BUFFER_SIZE + STACK_SIZE
+    print("Patch size: %d; space available: %d" % (extraLength+dataNeeded, dataAddress-BASE))
+    assert dataAddress >= BASE+extraLength+dataNeeded
 
 newcode = code.replace(replaceFrom,replaceTo,-1)
 assert code != newcode
