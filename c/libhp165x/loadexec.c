@@ -43,6 +43,11 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 		*originalCodeSizeP = codeSize; 
 	
 	initialScreen();
+	
+	setCoordinates(56,200);
+	setTextMode(0);
+	drawText("LOADING ");
+	drawText(filename);
 
 	asm volatile(
 			"  move.l %0,%%a0\n"
