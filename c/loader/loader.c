@@ -4,7 +4,6 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <hp165x.h>
-#include <printf.h>
 
 #define MAX_FILES 64
 

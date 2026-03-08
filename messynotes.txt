@@ -393,6 +393,8 @@ The following are from block 0:
 0x984162.l: number of blocks of directory
 0x9801ea.w: number of directory entries - 1 (maximum 0x8F)
 
+0x9800c6.w: retry count (default: 5)
+
 00981AB6-00982EB5: track buffer
 00982EB6-onward: file descriptions (0x21 bytes each)
 

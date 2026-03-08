@@ -15,6 +15,8 @@ int __attribute__((noinline,noclone)) loadAndRunForPatch(const char* filename, v
 	uint32_t runAddress;
 	uint8_t relocatableCode[RELOCATABLE_SIZE/* + 2048*/];
 	
+	refreshDir();
+	
 	if (overrideStart == NULL && originalStartP == NULL && originalCodeSizeP == NULL && 
 		(!strcmp(filename, "SYSTEM_") || !strcmp(filename, "SYSTEM_   "))) {
 		reload();

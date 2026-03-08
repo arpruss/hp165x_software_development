@@ -64,8 +64,7 @@ patch:
     move.w  D0,D2
     and.w   #8,D2    
     bne     patchError ; no disk
-    and.w   #1,D0
-    
+    and.w   #1,D0   
     bne     runPatch   ; disk hasn't been changed
     
     bsr     ShortBeep
@@ -116,7 +115,6 @@ screendump:
     
     cmp.l   #(pbmHeaderEnd-pbmHeader),D0
     bne     closeWithError
-
     
     move.l #SCREEN, A0 ; current position
     move.l #(SCREEN+(SCREEN_WIDTH/4)*2*SCREEN_HEIGHT),A1 ; end of screen
@@ -185,8 +183,10 @@ READ_LAST MACRO ; MODE, DEST, TEMP
     
     add.l   #12,SP
 
-    cmp.l   #buffer_size,D0
+ ;   move.l  D0, error ;; -0x15
 
+    cmp.l   #buffer_size,D0
+    
     movem.l (SP)+, D0-D7/A0-A6
     
     bne     closeWithError    
@@ -211,6 +211,13 @@ quickExitError:
     rts
     
 closeWithError:
+;    move.l  error,d1
+;    jsr     PrintDWord
+;    move.b  $9801f0,d1 ; 44
+;    jsr     PrintByte
+;    move.b  $20d003,d1 ; 03
+;    jsr     PrintByte
+    
     bsr     LongBeep
     bra     closeFile
 
@@ -310,6 +317,9 @@ statePosition:
     
 savedStack:
     dc.l 0    
+    
+error:
+    dc.l 0
 
 pbmHeader:
     dc.b 'P4',$0A,'592 384',$0A
@@ -327,6 +337,7 @@ stack_size equ $800
 stack equ buffer+stack_size
     
     END    START        ; last line of source
+
 
 
 

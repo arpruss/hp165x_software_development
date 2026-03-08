@@ -42,6 +42,8 @@ origLength = len(binary)
 binary += struct.pack(">I", 0x984500 + origLength)
 
 name = os.path.splitext(os.path.basename(sys.argv[2]))[0].encode('ascii')
+if name == b'bmbinary':
+    name = os.path.basename(os.getcwd()).encode('ascii')
     
 if len(name) > 26:
     name = name[:26]

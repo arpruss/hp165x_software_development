@@ -6,6 +6,7 @@ from pathlib import PurePath
 from tempfile import NamedTemporaryFile
 
 GENERIC = False # set to True for use with devices other than HP 1652B/53B; may want to use RAW with it
+BIGDISK_TRACKS = 254
 SIDES = 2
 BLOCK_SIZE = 256
 DATA_TRACKS = 77
@@ -396,9 +397,9 @@ def loadHeader():
     else:
         if tracks == 80 or tracks == 79:
             tracks = DATA_TRACKS
-        if lifId == 254:
+        if lifId == BIGDISK_TRACKS:
             BIGDISK = True
-            tracks = 254
+            tracks = BIGDISK_TRACKS
             print("Big disk mode")
     totalBlocks = tracks * sides * blocksPerTrack - 1
     #if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
@@ -421,7 +422,7 @@ while sys.argv[1].startswith("--"):
         sys.argv = sys.argv[:1] + sys.argv[2:]
     elif sys.argv[1] == "--bigdisk":
         BIGDISK = True
-        DATA_TRACKS = 254
+        DATA_TRACKS = BIGDISK_TRACKS
         sys.argv = sys.argv[:1] + sys.argv[2:]
     elif sys.argv[1] == "--tracks":
         DATA_TRACKS = int(sys.argv[2])

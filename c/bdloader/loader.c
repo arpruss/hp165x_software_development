@@ -19,12 +19,10 @@ char _names[MAX_FILES][MAX_FILENAME_LENGTH+1];
 char* names[MAX_FILES];
 int numNames = 0;
 
-#if 1
 #define BIG_DISK_PATCH_ADDRESS 0x00A71700
 uint8_t bigDiskPatch[] = {
 #include "bigdisk.inc"
 };
-#endif
 
 char SYSTEM[] = "SYSTEM_";
 char PVTEST[] = "PVTEST_";
@@ -199,14 +197,12 @@ void menu(void) {
 extern uint8_t _original_int1_handler[];
 
 int main(void) {
-#if 1
 	if (*(uint32_t*)((uint8_t*)BIG_DISK_PATCH_ADDRESS+2) != BIG_DISK_PATCH_ADDRESS) {
 		memcpy((void*)BIG_DISK_PATCH_ADDRESS,bigDiskPatch,sizeof(bigDiskPatch));
 		*(uint32_t*)(0x980002) = BIG_DISK_PATCH_ADDRESS;
 		*(uint32_t*)(_original_int1_handler+2) = BIG_DISK_PATCH_ADDRESS;
 		*(uint16_t*)(_original_int1_handler) = 0x4EF9;
 	}
-#endif	
 	
 	setTextReverse(0);
 	setTextColors(DRAW_FOREGROUND, DRAW_BACKGROUND);

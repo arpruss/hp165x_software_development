@@ -33,4 +33,4 @@ small memory resident VBL interrupt handler that removes the 77 track limit on B
 virtual floppies. You can then use bdloader to load the standard HP SYSTEM_ file by
 putting that somewhere on the same disk.
 
-CURRENTLY BIGDISK DOES NOT WORK WITH THE OS'S WRITING. UNKNOWN WHY.
+CURRENTLY BIGDISK DOES NOT WORK WITH THE OS'S WRITING, UNLESS REFRESH IS CALLED.

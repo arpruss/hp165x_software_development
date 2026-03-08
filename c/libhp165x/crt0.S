@@ -100,6 +100,7 @@ _restore_original_int_handlers:
 bigDiskSupport:		
 		tst.b 0x984152+13
 		beq 4f
+		/* TODO: maybe add a _refreshDir() call */
 		move.w #(254*20*2-1),0x9842a6
 		move.w #(254*20*2-1),0x9842a8
 		clr.b 0x984152+13
