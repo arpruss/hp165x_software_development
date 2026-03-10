@@ -9,19 +9,22 @@
     org    $A09710 ;; 984500
 
 file_type equ $C999
+
 START:                  ; first instruction of program    
+
+patch_recalibrate:
     cmp.l   #$b4ec,$22c4+2
     bne     unknownROM
     cmp.l   #$b4ec,$22ca+2
     bne     unknownROM
-    jsr     $22c4
+    jsr     $22c4 ; should have a call to recalibrate
     jmp     $eb68
 unknownROM:
     jsr     $eb68
     jsr     $eb68
     jmp     $eb68
 
-    org     START+$40
+patch_get_key:
     jsr     ROM_GET_KEY
 
 ;; big disk support patch
@@ -341,15 +344,18 @@ buffer_size equ $200
 buffer:
 stack_size equ $800
 stack equ buffer+stack_size
+
+PATCH_TABLE:
+    dc.l   0
+    dc.l   buffer_size+stack_size
+
+    dc.l   $eb68
+    dc.l   patch_recalibrate
+    
+    dc.l   ROM_GET_KEY
+    dc.l   patch_get_key
     
     END    START        ; last line of source
-
-
-
-
-
-    
-
 
 *~Font name~Courier New~
 *~Font size~10~

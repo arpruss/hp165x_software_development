@@ -143,10 +143,7 @@ The default interrupt handlers are at:
  1: 8f42 (=024E). 
 	- Calls the function whose address is at 0x980712.l, if this address isn't 0.
 	- Does keyboard updates at 8fe2
- 2?: 1024E (=024E)
- 3?:  B4BC (or B702 according to code)
-	 Main result seems to be to move a byte from 20d003 to 9801f0 and then another to 9801f4.
- 4?:  NONE (but maybe sometimes is B53E, which is disk related)
+ 3:  floppy disk
  6:  B904. interrupt 6 handler: Serial read/write
 	 
 	 9842fa
@@ -175,8 +172,7 @@ SPECIAL HARDWARE ADDRESSES
 0x20c001.b: MC6845. Write to set register address. 
 0x20c003.b: Write to set register value. Table of defaults is set at 8376.
 0x20d001.b: read. used in interrupt level 3 handler. likely disk controller status register.
-0x20d003.b: read/write. unknown. used in interrupt level 3 handler and connected with disk i/o.
-	Gemini thinks this is the NEC muPD72065 disk controller.
+0x20d003.b: read/write. NEC muPD72065 disk controller I/O.
 0x20e001: ?? write
 0x20f000.w:
 	bit 0: if clear, disk has been changed and data needs refresh; set by call to ebb0
