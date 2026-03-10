@@ -116,12 +116,13 @@ int refreshDir(void) {
 	if (*HARDWARE_STATUS & HARDWARE_STATUS_NO_DISK)
 		return -1;
 	_saveAsteriskArea();
-	bigDiskSupport();
 	if (*HARDWARE_STATUS & HARDWARE_STATUS_OLD_DISK) {
+		bigDiskSupport();
 		_restoreAsteriskArea();
 		return 0;
 	}
 	int retVal = _refreshDir();
+	bigDiskSupport();
 	_restoreAsteriskArea();
 	return retVal;
 }

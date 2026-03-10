@@ -27,6 +27,7 @@ RESERVED_TYPE = 0xFEEF
 RESERVED_MISC = b'\x80\x01RSVD'
 RESERVED_NAME = "|RESERVED|"
 BIGDISK = False
+SCOPE_MISC = bytes.fromhex("8001534f544f")
 
 magicBlock = ((MAGIC_TRACK * SIDES + MAGIC_SIDE) * SECTORS_PER_TRACK + MAGIC_SECTOR) * BLOCKS_PER_SECTOR
 magicData = bytes.fromhex("500288%02x03010201A301A3E6321632" % SECTORS_PER_TRACK)
@@ -92,7 +93,7 @@ class DirEntry:
             self.hour = 1
             self.minute = 1
             self.second = 1
-            self.misc = bytes.fromhex("8001534f544f")
+            self.misc = SCOPE_MISC
             self.unchunkedFile = bytearray()
             self.chunkedFile = bytearray()
         else:
@@ -122,6 +123,9 @@ class DirEntry:
             
     def isSystem(self):
         return not GENERIC and self.fileType == 0xC001 and self.name == "SYSTEM_"
+        
+    def isTest(self):
+        return not GENERIC and self.fileType == 0xC001 and self.name == "PVTEST_"
         
     @staticmethod
     def makeReserved():
@@ -248,6 +252,10 @@ def packFiles(d):
             if d[i].isReserved():
                 del d[i]
         for i in range(1,len(d)):
+            if d[i].isTest():
+                d = [ d[i], ] + d[:i] + d[i+1:]
+                break
+        for i in range(1,len(d)):
             if d[i].isSystem():
                 d = [ d[i], ] + d[:i] + d[i+1:]
                 break
@@ -288,6 +296,8 @@ def put(inFile, outFile, fileType):
     newEntry = DirEntry()
     newEntry.name = outFile
     newEntry.fileType = fileType
+    if GENERIC or fileType < 0xC001 or fileType > 0xC400:
+        newEntry.misc = bytes.fromhex("800000000000")
     
     with open(inFile, "rb") as inf:
         data = chunkFile(inf.read())
@@ -336,7 +346,7 @@ def readDir(quiet=False,verbose=False):
             previous = usedBlocks
             if not quiet:
                 e = entry.format(verbose)
-                if entry.fileType == 0xC001:
+                if entry.misc == SCOPE_MISC:
                     comment = ''
                     try:
                         start = entry.startBlock

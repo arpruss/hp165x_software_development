@@ -22,7 +22,7 @@ running the lifutils.py function on it.
 
 However, there is a second catch. The ROM sets a hard 77 track (minus the last 256
 byte block, probably due to an off-by-one bug) limit on floppies. To overcome this limit, 
-a software fix is needed. Currently (this will change) the software fix is provided in two 
+a software fix is needed. Currently (this may change) the software fix is provided in two 
 ways. First, if you use the libhp165x.a library for your own code, the code will incorporate
 the fix. As a result if you write something yourself that stores data on disk and use
 the library, as long as your code is on the first 77 tracks, the code will be able to access

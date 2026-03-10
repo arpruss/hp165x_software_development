@@ -3,7 +3,7 @@ import os
 
 WIDTH = 592
 SCREEN = 0x620000
-MOVEP = False
+MOVEP = True
 
 #
 # given a text image, generate assembly code

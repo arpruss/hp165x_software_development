@@ -266,6 +266,8 @@ eaf6: DrawText: print 0-terminated string
 eacc: 2,coordinates,coordinates :  
 ecd0: beep --> 0F70
 ece2: reload system!
+ece8: load PVTEST_
+ecb8: alternate reload system
 eb38: getkey --> D0w  [ actual code at 12F4 ] ; sometimes waits, sometimes doesn't ??!
 eb3e: get a character from a 64-byte circular buffer at 980048 (serial? HPIB? used by SYSTEM_ for inputs)
 eb32: put a character in this circular buffer
@@ -413,6 +415,8 @@ The following are from block 0:
 
 00981AB6-00982EB5: track buffer
 00982EB6-onward: file descriptions (0x21 bytes each)
+
+0x980718: executable load mode: 0=PVTEST_, 1=SYSTEM_ with test, 2=SYSTEM_ quietly
 
 ebe6: getFileDescriptions()
 eb62: some kind of directory refresh prep, taking one argument, which is the disk index (=0)

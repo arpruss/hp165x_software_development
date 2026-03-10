@@ -14,10 +14,10 @@
 		<sector_per_track>5</sector_per_track>
 		<sector_size>1024</sector_size>
 		<formatvalue>0xCB</formatvalue>
-		<gap3>255</gap3>
+		<gap3>50</gap3>
 		<bitrate>500000</bitrate>
-		<pregap>0</pregap>
-		<rpm>585</rpm>
+		<pregap>128</pregap>
+		<rpm>600</rpm>
 		<track_list>
 			<track track_number="77" side_number="0">
 				<format>IBM_MFM</format>
