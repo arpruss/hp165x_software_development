@@ -6,3 +6,5 @@ Add O_RDWR support for hpposix.
 Test lifPack() in close().
 
 Add bigdisk support to lifPack()
+
+Maybe add _refreshDir call to bigdisk support call in crt0.S

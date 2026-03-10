@@ -8,12 +8,23 @@ import struct
 
 binary = bytearray()
 BASE = 0xA09710
+RECALIBRATE_PATCH = BASE # set to None if you don't want it
+GET_KEY_PATCH = BASE+0x40 # set to None if you don't want it
+
 BUFFER_SIZE = 0x200
 STACK_SIZE = 0x800
 checkedPos = False
 
-replaceFrom = bytes.fromhex("4EB90000EB38")
-replaceTo = bytes.fromhex("4EB9%08X" % BASE)
+replaceFrom1 = bytes.fromhex("4EB90000EB38") # get key
+if GET_KEY_PATCH is not None:
+    replaceTo1 = bytes.fromhex("4EB9%08X" % GET_KEY_PATCH)
+else:
+    replaceTo1 = replaceFrom1
+replaceFrom2 = bytes.fromhex("4EB90000EB68")
+if RECALIBRATE_PATCH is not None:
+    replaceTo2 = bytes.fromhex("4EB9%08X" % BASE)
+else:      
+    replaceTo2 = replaceFrom2
 
 with open(sys.argv[1],"r") as s:
     while True:
@@ -53,9 +64,7 @@ with open(sys.argv[2],"rb") as f:
     print("Patch size: %d; space available: %d" % (extraLength+dataNeeded, dataAddress-BASE))
     assert dataAddress >= BASE+extraLength+dataNeeded
 
-newcode = code.replace(replaceFrom,replaceTo,-1)
-assert code != newcode
-code = newcode
+code = code.replace(replaceFrom1,replaceTo1,-1).replace(replaceFrom2,replaceTo2,-1)
 codeLength += extraLength
 length += extraLength
 

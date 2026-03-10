@@ -196,6 +196,15 @@ void menu(void) {
 
 extern uint8_t _original_int1_handler[];
 
+void specify() {
+	asm("  jsr 0xb422\n"
+		"  move.b #3,0x20d003\n"
+		"  jsr 0xb422\n"
+		"  move.b #0xAF,0x20d003\n"
+		"  jsr 0xb422\n"
+		"  move.b #0x03,0x20d003\n");
+}
+
 int main(void) {
 	if (*(uint32_t*)((uint8_t*)BIG_DISK_PATCH_ADDRESS+2) != BIG_DISK_PATCH_ADDRESS) {
 		memcpy((void*)BIG_DISK_PATCH_ADDRESS,bigDiskPatch,sizeof(bigDiskPatch));
@@ -210,6 +219,15 @@ int main(void) {
 	while(1) {
 		*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 		fillScreen();
+	asm(
+		"move.w #253,-(%sp)\n"
+		"jsr 0xb45e\n"
+		"addq.l #2,%sp\n"
+		"jsr 0xeb68\n"
+);
+		waitSeconds(5)
+		;
+	
 		
 		scan();
 		menu();

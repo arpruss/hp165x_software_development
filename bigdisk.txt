@@ -26,11 +26,10 @@ a software fix is needed. Currently (this will change) the software fix is provi
 ways. First, if you use the libhp165x.a library for your own code, the code will incorporate
 the fix. As a result if you write something yourself that stores data on disk and use
 the library, as long as your code is on the first 77 tracks, the code will be able to access
-the full disk.
+the full disk. 
 
 The other option is to use the bdloader program. If you run bdloader, it installs a very
 small memory resident VBL interrupt handler that removes the 77 track limit on BigDisk
 virtual floppies. You can then use bdloader to load the standard HP SYSTEM_ file by
-putting that somewhere on the same disk.
-
-CURRENTLY BIGDISK DOES NOT WORK WITH THE OS'S WRITING, UNLESS REFRESH IS CALLED.
+putting that somewhere on the same disk. Or you can just patch standard HP SYSTEM_ file.
+The screenshot patch includes a bigdisk patch.

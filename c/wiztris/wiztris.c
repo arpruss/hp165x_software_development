@@ -396,7 +396,7 @@ void drop()
                           droppedfrom=getlowestrow(row,piece,rot);
                       break;
                    case KEY_STOP:
-					  _exit(0);
+					  exit(0);
                       return;
                    case KEY_SELECT: {
 					  uint32_t tick = getVBLCounter();
@@ -653,6 +653,7 @@ int main()
 	  
 	  drawTextAt(0,15,"0-9:  start at given level [3=default]");
 	  drawTextAt(0,16,"Stop: exit");
+	  
 	  if(numhigh)
       {
 		uint16_t x = getTextColumns()/2+10;
@@ -726,4 +727,4 @@ int main()
    } while(k!=KEY_0 && k!=KEY_STOP);
    return 0;
 }
-  
+   

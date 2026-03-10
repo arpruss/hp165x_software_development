@@ -37,8 +37,7 @@ OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))
 DEPS=$(OBJS:.o=.d)
 
 
-all: bmbinary.s68
-
+all: wiztris.bin
 
 .PHONY: bmbinary release all clean rom dump dumps hexdump
 
@@ -75,9 +74,10 @@ clean:
 	rm -rf $(BUILDDIR)/*
 	rm -f bmbinary*
 
-bmbinary.s68: bmbinary
+wiztris.bin: bmbinary
 	$(OBJCOPY) -O binary bmbinary bmbinary.rom
 	$(OBJCOPY) -O srec bmbinary bmbinary.s68
+	python ../../buildbinary.py bmbinary.s68 wiztris.bin
 
 dump:
 	#$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary

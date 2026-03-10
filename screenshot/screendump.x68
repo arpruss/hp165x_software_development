@@ -2,23 +2,35 @@
 
 ;; ORG $A09710 (for insertion between end of SYSTEM_ code and beginning of SYSTEM_ data)
 
-;; th code relocates the stack because the call to ebb0 seems to do 
+;; the code relocates the stack because the call to ebb0 seems to do 
 ;; poorly with the standard stack position, probably because the ReadDiskHeader
 ;; call (423c) allocates 256 bytes on the stack
 
-    ORG    $A09710 ;; 984500
+    org    $A09710 ;; 984500
 
 file_type equ $C999
-START:                  ; first instruction of program
+START:                  ; first instruction of program    
+    cmp.l   #$b4ec,$22c4+2
+    bne     unknownROM
+    cmp.l   #$b4ec,$22ca+2
+    bne     unknownROM
+    jsr     $22c4
+    jmp     $eb68
+unknownROM:
+    jsr     $eb68
+    jsr     $eb68
+    jmp     $eb68
+
+    org     START+$40
     jsr     ROM_GET_KEY
 
 ;; big disk support patch
-;	tst.b $984152+13
-;	beq normalDisk
-;	move.w #(254*20*2-1),$9842a6
-;	move.w #(254*20*2-1),$9842a8
-;	clr.b $984152+13
-;normalDisk:    
+	tst.b $984152+13
+	beq normalDisk
+	move.w #(254*20*2-1),$9842a6
+	move.w #(254*20*2-1),$9842a8
+	clr.b $984152+13
+normalDisk:    
 
     tst.w   triggered
     beq     maybePatch
@@ -183,7 +195,7 @@ READ_LAST MACRO ; MODE, DEST, TEMP
     
     add.l   #12,SP
 
- ;   move.l  D0, error ;; -0x15
+;    move.l  D0, error ;; -0x15
 
     cmp.l   #buffer_size,D0
     
@@ -211,14 +223,8 @@ quickExitError:
     rts
     
 closeWithError:
-;    move.l  error,d1
-;    jsr     PrintDWord
-;    move.b  $9801f0,d1 ; 44
-;    jsr     PrintByte
-;    move.b  $20d003,d1 ; 03
-;    jsr     PrintByte
-    
     bsr     LongBeep
+    
     bra     closeFile
 
 getFilename:    
@@ -318,8 +324,8 @@ statePosition:
 savedStack:
     dc.l 0    
     
-error:
-    dc.l 0
+;error:
+;    dc.l 0
 
 pbmHeader:
     dc.b 'P4',$0A,'592 384',$0A
@@ -340,6 +346,9 @@ stack equ buffer+stack_size
 
 
 
+
+
+    
 
 
 *~Font name~Courier New~

@@ -43,6 +43,7 @@ int lifPack(char progress);
 int diskSpace(uint32_t* totalBlocksP, uint32_t* freeBlocksP, uint32_t* largestSpaceP);
 int _commitBlocks(void);
 void bigDiskSupport(void);
+void _initializeDriveSettings(void);
 
 #define ERROR_FILE_NOT_FOUND (-5)
 #endif

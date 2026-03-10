@@ -347,6 +347,10 @@ The maximum number of 256 byte blocks (including header, directory and file data
 on a disc appears to be 3079 (3059 data blocks), even though the discs have more
 tracks than that would account for.
 
+LIF format is documented here: https://www.finseth.com/hpdata/lif.php
+
+The disk is formatted with GAP3 = 50 (decimal).
+
 eb74 int OpenFile(char *filename,int filetype,int mode)
  Modes are either 1 (read) or 2 (write)
  E.g.: OpenFile(s_AUTOLOAD_000064da,0xc301,2);
@@ -377,7 +381,19 @@ eb98 FindDirEntry(char* filename,int16 type,char* direntry32bytes,uint32 searchS
 
 ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done; else, returns data 
 
-0x984166: some kind of open file info area, with entries of length 0x138?	   
+0x984166: some kind of open file info area, with entries of length 0x138, but on the 1653B only one entry is allowed
+   0x984166.w: file descriptor (index into the open file info area)
+   0x984168: open file dir entry
+   0x98418c.l: current block
+   0x98419c.w: current mode 
+   0x98419e: buffer start (probably until end of 0x138 byte area)
+   
+0x9801fe.w: track
+0x980200.w: sector number
+0x980202.w: side
+0x980204[0x100]: block buffer   
+   
+0x9801ec.l: last block for file?
 
 The following are obtained from the magic block in sector 98 of track 79 head 0:
 0x9842a0.b: sector size select (default: 3)
@@ -402,7 +418,8 @@ ebe6: getFileDescriptions()
 eb62: some kind of directory refresh prep, taking one argument, which is the disk index (=0)
 ebb0: directory refresh; 0=ok; afterwards, 0x00984154 has the start of the A165 label from the LIF header;
 	sets the old disk flag on 0x200f000
-ec10: does most of the work of ebb0, but I think it doesn't close files (!)	
+ec10: initialize and calibrate drive
+eb68: calibrate drive and go to track 78
 ebf2: SetAutoload(int dirEntryNumber, char? status);	
 ebc8: Rename(int dirEntryNumber, struct ROMDirEntry_t* newDirEntry);  
 	Use to delete by setting the type field to zero.
@@ -438,6 +455,13 @@ blocks in the LIF disk--it's a bit less.
 0x9808aa: disk index
 0x9842a2.b: disk sectors per track?
 0x9842a3.b: disk sectors per track*heads?
+
+Drive specify: AF / 03
+SRT = A (step rate)
+HUT = F (head unload time)
+HLT = 1 (head load time)
+ND = 1 (non-DMA)
+
 
 Some PVTEST_ functions:
 FUN_00993044: args: push string, push length 

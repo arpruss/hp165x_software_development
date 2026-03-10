@@ -16,6 +16,7 @@ int _writeBlocks(uint32_t blockNum, unsigned count, const void* data);
 int _readBlocks(uint32_t blockNum, unsigned count, void* data);
 int _commitBlocks(void);
 
+_WRAP_0(_initializeDiskSettings,0xec10);
 _WRAP_0(_commitBlocks,0xec0a);
 _WRAP_2(_writeBlock,0xebf8);
 _WRAP_3(_writeBlocks,0xebbc);
