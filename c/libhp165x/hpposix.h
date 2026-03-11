@@ -24,6 +24,10 @@ typedef struct {
 
 struct stat;
 
+/* if set, then files subsequently opened in O_RDONLY mode are NOT read
+   entirely into memory; they are opened and reclosed as needed to take
+   care of the ROM's one-file-at-a-time limit */
+void hpPosixSetUnbufferedReadOpen(uint16_t u); 
 int open(const char* name, int flags, ...);
 int close(int fd);
 int read(int fd, void* ptr, size_t size);

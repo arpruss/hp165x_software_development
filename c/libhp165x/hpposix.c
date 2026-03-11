@@ -26,6 +26,10 @@
 #define SEEK_END 2
 #endif
 
+#define MODE_BUFFERED_READ    0
+#define MODE_UNBUFFERED_READ  1
+#define MODE_WRITE            2
+
 /* The files are entirely stored in memory. 
    This is a kludge to get around the fact that I don't know how to seek
    within the HP's files, and the HP has a limit of one open file at a time. 
@@ -33,6 +37,7 @@
    
 extern void (*_posixCleanup)(void);
 static void posixCleanup(void);
+static uint16_t unbufferedRead = 0;
 
 struct chunk {
 	uint32_t offset;
@@ -48,17 +53,54 @@ typedef struct {
 } WriteData_t;
 
 typedef struct {
+	char filename[MAX_FILENAME_LENGTH+1];
+	uint16_t fileType;
+	int32_t  fd;
+	uint32_t fdPos;
+	char	 sizeIsExact;
+} UnbufferedReadData_t;
+
+typedef struct {
+	uint16_t mode;
 	uint32_t position;
 	uint32_t dataSize;
-	char write;
 	union {
 		WriteData_t* writeData;
+		UnbufferedReadData_t* unbufferedReadData;
 		char* readData;
 		void* data;
 	} rw;
 } HPFILE;
 
-static HPFILE files[MAX_FILES] = {};
+static HPFILE files[MAX_FILES] = { {0} };
+
+void hpPosixSetUnbufferedReadOpen(uint16_t u) {
+	unbufferedRead = u;
+}
+
+static void closeUnbuffered(void) {
+	for (uint16_t i = 0 ; i < MAX_FILES ; i++) {
+		if (files[i].rw.data != NULL && files[i].mode == MODE_UNBUFFERED_READ && files[i].rw.unbufferedReadData->fd >= 0) {
+			closeFile(files[i].rw.unbufferedReadData->fd);
+			files[i].rw.unbufferedReadData->fd = -1;			
+		}
+	}
+}
+
+static int ensureOpen(HPFILE* f) {
+	if (f->mode != MODE_UNBUFFERED_READ)
+		return 0;
+	UnbufferedReadData_t* u = f->rw.unbufferedReadData;
+	if (u->fd >= 0)
+		return 0;
+	closeUnbuffered();
+	u->fd = openFile(u->filename, u->fileType, READ_FILE);
+	if (u->fd < 0) {
+		return -1;
+	}
+	u->fdPos = 0;
+	return 0;
+}
 
 static uint16_t fromHex(const char* p) {
 	uint16_t out = 0;
@@ -110,7 +152,10 @@ int open(const char* name, int flags, ...) {
 	if (flags & O_RDWR) {
 		return -1; // TODO
 	}
-	else if (flags & O_WRONLY) {
+	
+	closeUnbuffered();
+	
+	if (flags & O_WRONLY) {
 		WriteData_t *w = malloc(sizeof(WriteData_t));
 		if (w == NULL) {
 			return -1;
@@ -122,7 +167,7 @@ int open(const char* name, int flags, ...) {
 		w->firstChunk.offset = 0;
 		w->currentChunk = &(w->firstChunk);
 		files[fd].position = 0;
-		files[fd].write = 1;
+		files[fd].mode = MODE_WRITE;
 		files[fd].dataSize = 0;
 		_posixCleanup = posixCleanup; /* close on _exit() */
 		return fd+FD_OFFSET;
@@ -139,24 +184,39 @@ int open(const char* name, int flags, ...) {
 			i++;
 		}		
 		uint32_t dataSize = 254*d.numBlocks;
-		char* data = malloc(dataSize);
+		void* data = malloc(unbufferedRead ? sizeof(UnbufferedReadData_t) : dataSize);
 		if (data == NULL)
 			return -1;
+		
 		int f = openFile(hpName, d.type, READ_FILE);
 		if (f < 0) {
 			free(data);
 			return -1;
 		}
-		int s = readFile(f, data, -1);
-		closeFile(f);
-		if (s < 0) {
-			free(data);
-			return -1;
+
+		if (unbufferedRead) {
+			UnbufferedReadData_t* u = data;
+			strcpy(u->filename, hpName);
+			u->fileType = d.type;
+			u->fd = f;
+			u->fdPos = 0;
+			u->sizeIsExact = 0;
+			files[fd].dataSize = dataSize;
+			files[fd].rw.unbufferedReadData = u;
+			files[fd].mode = MODE_UNBUFFERED_READ;
 		}
-		files[fd].dataSize = s;
-		files[fd].rw.readData = data;
+		else {		
+			int s = readFile(f, data, -1);
+			closeFile(f);
+			if (s < 0) {
+				free(data);
+				return -1;
+			}
+			files[fd].dataSize = s;
+			files[fd].rw.readData = data;
+			files[fd].mode = MODE_BUFFERED_READ;
+		}
 		files[fd].position = 0;
-		files[fd].write = 0;
 		return fd+FD_OFFSET;
 	}
 }
@@ -166,7 +226,9 @@ int close(int fd) {
 	
 	HPFILE*f = &files[fd-FD_OFFSET];
 	
-	if (f->write) {
+	if (f->mode == MODE_WRITE) {
+		closeUnbuffered();
+		
 		uint32_t size = f->dataSize;
 		
 #ifdef LIFPACK
@@ -219,6 +281,10 @@ int close(int fd) {
 		if (0 <= out)
 			closeFile(out);
 	}
+	else if (f->mode == MODE_UNBUFFERED_READ) {
+		if (f->rw.unbufferedReadData->fd >= 0) 
+			closeFile(f->rw.unbufferedReadData->fd);
+	}
 	if (f->rw.data != NULL)
 		free(f->rw.data);
 	files[fd-FD_OFFSET].rw.data = NULL;
@@ -233,19 +299,68 @@ static void posixCleanup(void) {
 	}
 }
 
+static int skipHPFile(int hpFD, uint32_t size) {
+	while(size > 0) {
+		int32_t toSkip = size <= 65536 ? size : 65536;
+		if (toSkip != readFile(hpFD, NULL, toSkip))
+			return -1;
+		size -= toSkip;
+	}
+	return 0;
+}
+
 int read(int fd, void* ptr, size_t size) {
 	HPFILE* f = &files[fd-FD_OFFSET];
-	if (f->write) {
+	if (f->mode == MODE_WRITE) {
 		return -1;
 	}
 	if (f->position >= f->dataSize)
 		return 0;
-	if (f->position + size >= f->dataSize)
-		size = f->dataSize - f->position;
-	memcpy(ptr, f->rw.readData + f->position, size);
-	f->position += size;
-	return size;
+	
+	if (f->mode == MODE_UNBUFFERED_READ) {
+		if (ensureOpen(f) < 0) 
+			return -1;
+		UnbufferedReadData_t* u = f->rw.unbufferedReadData;
+		if (f->position < u->fdPos) {
+			closeFile(u->fd);
+			u->fd = -1;
+			if (ensureOpen(f) < 0)
+				return -1;
+		}
+		if (u->fdPos < f->position &&
+			  skipHPFile(u->fd, f->position - u->fdPos) < 0) {
+			closeFile(u->fd);
+			u->fd = -1;
+			return -1;
+		}				
+		int n = readFile(u->fd, ptr, size);
+		if (n < 0)
+			return -1;
+		f->position += n;
+		u->fdPos = f->position;
+		return n;
+	}
+	else {	
+		if (f->position + size >= f->dataSize)
+			size = f->dataSize - f->position;
+		memcpy(ptr, f->rw.readData + f->position, size);
+		f->position += size;
+		return size;
+	}
 }
+
+static int getHPLength(int hpFD) {
+	uint32_t count = 0;
+	
+	int32_t n;
+	while( (n=readFile(hpFD, NULL, 65536)) == 65536) 
+		count += n;
+	if (n < 0)
+		return count;
+	else
+		return count + n;
+}
+
 
 off_t lseek(int fd, off_t offset, int origin) {
 	int32_t pos;
@@ -262,6 +377,18 @@ off_t lseek(int fd, off_t offset, int origin) {
 			pos = f->position + offset;
 			break;
 		case SEEK_END:
+			if (f->mode == MODE_UNBUFFERED_READ && ! f->rw.unbufferedReadData->sizeIsExact ) {
+				if (ensureOpen(f)<0)
+					return -1;
+				UnbufferedReadData_t* u = f->rw.unbufferedReadData;
+				int n = getHPLength(u->fd);
+				closeFile(u->fd);
+				u->fd = -1;
+				if (n < 0) 
+					return -1;
+				f->dataSize = u->fdPos + n;
+				u->sizeIsExact = 1;
+			}
 			pos = f->dataSize + offset;
 			break;
 		default:
@@ -279,10 +406,9 @@ off_t lseek(int fd, off_t offset, int origin) {
 }
 
 int write(int fd, const void* p, size_t size) {
-	
 	HPFILE* f = &files[fd-FD_OFFSET];
 
-	if (! f->write)
+	if (f->mode != MODE_WRITE)
 		return -1;
 
 	if (size == 0)

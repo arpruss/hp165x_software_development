@@ -17,7 +17,7 @@
  * stack space to prevent it overwriting the upper areas of the heap.
  */
 _program_base = 0x984500;
-_program_end = 0xA5FFFA;
+_program_end = DEFINED(_program_end) ? _program_end : 0xA5FFFA;
 _stack_start = 0x00A79000; /* there should be about 30K here */
 _program_sz = _program_end - _program_base;
 
