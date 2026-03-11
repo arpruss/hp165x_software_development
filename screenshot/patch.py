@@ -41,6 +41,7 @@ with open(sys.argv[2],"rb") as f:
     assert endCode <= PATCH_BASE
     code = f.read(codeLength)
     if codeLength + codeStart < PATCH_BASE:
+        print("Inserting nulls.")
         code += (PATCH_BASE-endCode) * b'\x00'
     data = f.read()
     
@@ -68,7 +69,7 @@ codeLength += len(patch)
 length += len(patch)
 
 with open(sys.argv[3],"wb") as f:
-    f.write(struct.pack(">I26s6sII", length,name,version,codeLength,PATCH_BASE))
+    f.write(struct.pack(">I26s6sII", length,name,version,codeLength,codeStart))
     f.write(code)
     f.write(patch)
     f.write(data)
