@@ -37,7 +37,7 @@
    
 extern void (*_posixCleanup)(void);
 static void posixCleanup(void);
-static uint16_t unbufferedRead = 0;
+static uint32_t bufferedReadMaximum = 150000;
 
 struct chunk {
 	uint32_t offset;
@@ -74,8 +74,8 @@ typedef struct {
 
 static HPFILE files[MAX_FILES] = { {0} };
 
-void hpPosixSetUnbufferedReadOpen(uint16_t u) {
-	unbufferedRead = u;
+void hpPosixSetBufferedReadMaximum(uint32_t m) {
+	bufferedReadMaximum = m;
 }
 
 static void closeUnbuffered(void) {
@@ -184,9 +184,23 @@ int open(const char* name, int flags, ...) {
 			i++;
 		}		
 		uint32_t dataSize = 254*d.numBlocks;
-		void* data = malloc(unbufferedRead ? sizeof(UnbufferedReadData_t) : dataSize);
-		if (data == NULL)
-			return -1;
+		
+		uint16_t unbuffered = dataSize > bufferedReadMaximum;
+		
+		void* data = NULL;
+		
+		if (!unbuffered) {
+			data = malloc(dataSize);
+			if (data == NULL)
+				unbuffered = 1;
+		}
+		
+		if (data == NULL) {
+			data = malloc(sizeof(UnbufferedReadData_t));
+			
+			if (data == NULL)
+				return -1;
+		}
 		
 		int f = openFile(hpName, d.type, READ_FILE);
 		if (f < 0) {
@@ -194,7 +208,7 @@ int open(const char* name, int flags, ...) {
 			return -1;
 		}
 
-		if (unbufferedRead) {
+		if (unbuffered) {
 			UnbufferedReadData_t* u = data;
 			strcpy(u->filename, hpName);
 			u->fileType = d.type;
