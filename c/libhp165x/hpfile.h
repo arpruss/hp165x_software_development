@@ -5,6 +5,7 @@
 #define OPEN_WRITE 2
 #define MAX_FILENAME_LENGTH 10
 #define LIF_BLOCK_SIZE 256
+#define ID_SIZE (('S'<<8)|('z')) // put this at the start of the misc field in direntry and put filesize in as the rest of the field
 
 typedef struct {
 	char name[MAX_FILENAME_LENGTH]; // space padded

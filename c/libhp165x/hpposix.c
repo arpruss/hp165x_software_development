@@ -39,8 +39,6 @@ extern void (*_posixCleanup)(void);
 static void posixCleanup(void);
 static uint32_t bufferedReadMaximum = 150000;
 
-#define ID_SIZE (('S'<<8)|('z'))
-
 struct filesize {
 	uint16_t id; // 'sz'
 	uint32_t size;
@@ -590,7 +588,12 @@ int stat(const char *path, struct stat *buf) {
 		if ((fileType == 0 || d.type == fileType) && !strcmp(d.name, hpName)) {
 			memset(buf, 0, sizeof(struct stat));
 			buf->st_mode = 0100000 /* S_IFREG */ | 0644;
-			buf->st_size = 254*d.numBlocks; // TODO: consider reading to find the actual size
+			struct filesize* fs = (struct filesize*)&d.misc;
+			uint32_t approxSize = 254*d.numBlocks;
+			if (fs->id == ID_SIZE && fs->size <= approxSize && approxSize < fs->size+254)
+				buf->st_size = fs->size;
+			else
+				buf->st_size = approxSize; // TODO: consider reading to find the actual size
 			return 0;
 		}				
 		i++;
