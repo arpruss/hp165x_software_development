@@ -28,11 +28,11 @@ patch_get_key:
     jsr     ROM_GET_KEY
 
 ;; big disk support patch
-	tst.b $984152+13
+	cmp.b #'B',$984152+12
 	beq normalDisk
 	move.w #(254*20*2-1),$9842a6
 	move.w #(254*20*2-1),$9842a8
-	clr.b $984152+13
+	move.b #'b',$984152+12
 normalDisk:    
 
     tst.w   triggered
@@ -356,6 +356,7 @@ PATCH_TABLE:
     dc.l   patch_get_key
     
     END    START        ; last line of source
+
 
 *~Font name~Courier New~
 *~Font size~10~

@@ -388,7 +388,7 @@ def create(name):
     header[24:28] = struct.pack(">I", tracks)
     header[32:36] = struct.pack(">I", blocksPerTrack)
     if 0 < MAGIC_TRACK and MAGIC_TRACK < tracks:
-        header[12:14] = struct.pack(">H", tracks)
+        header[12:14] = struct.pack(">H", tracks|(ord('B')<<8))
     sides = 2
     diskData = bytearray()
     diskData += header
@@ -419,10 +419,10 @@ def loadHeader():
     else:
         if tracks == 80 or tracks == 79:
             tracks = DATA_TRACKS
-        if 0 <= MAGIC_TRACK and MAGIC_TRACK < lifId and lifId <= 255:
+        if lifId >> 8 == ord('B'):
+            print("BigDisk mode")
             BIGDISK = True
-            tracks = lifId
-            print("Big disk mode")
+            tracks = lifId & 0xFF
     totalBlocks = tracks * sides * blocksPerTrack - 1
     #if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
     #    totalBlocks = DATA_TRACKS * sides * blocksPerTrack - 1

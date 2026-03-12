@@ -1,6 +1,7 @@
 BigDisk mode lets you have virtual .hfe floppies that are 2.5mb in capacity,
 by putting 254 tracks on them--with the catch that some software support is
-needed.
+needed. BigDisk files are marked by a 'B' at offset 12 of the first block of
+the disk, followed by the numebr of tracks at offset 13.
 
 You create the image with:
 	python lifutils.py --bigdisk create disk.lif
@@ -15,7 +16,7 @@ in the middle of the disk data. This is handled by lifutils.py creating a specia
 1024 byte file that sits right over that sector, and should not be deleted or moved,
 named "|RESERVED|". Because of that file, you should not use the HP's system PACK
 function to defragment the storage. Instead use the lifutils.py pack function.
-If you do accidentally pack the disk with the HP's PACK function and the *RESERVED*
+If you do accidentally pack the disk with the HP's PACK function and the |RESERVED|
 file gets moved, the virtual disk will no longer be readable by the HP. Fortunately,
 it will still be readable by lifutils.py, and you can restore full functionality by
 running the lifutils.py function on it.

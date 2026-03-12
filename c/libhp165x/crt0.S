@@ -97,13 +97,13 @@ _restore_original_int_handlers:
 		rts
 		
 		.globl bigDiskSupport
-bigDiskSupport:		
-		tst.b 0x984152+13
-		beq 4f
+bigDiskSupport:
+		cmp.b #'B',0x984152+12
+		bne 4f
 		/* TODO: maybe add a _refreshDir() call */
 		move.w #(254*20*2-1),0x9842a6
 		move.w #(254*20*2-1),0x9842a8
-		clr.b 0x984152+13
+		move.b #'b',0x984152+12
 	4:	
 		rts
 
