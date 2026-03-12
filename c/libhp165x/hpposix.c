@@ -39,6 +39,13 @@ extern void (*_posixCleanup)(void);
 static void posixCleanup(void);
 static uint32_t bufferedReadMaximum = 150000;
 
+#define ID_SIZE (('S'<<8)|('z'))
+
+struct filesize {
+	uint16_t id; // 'sz'
+	uint32_t size;
+};
+
 struct chunk {
 	uint32_t offset;
 	struct chunk* next;
@@ -209,12 +216,21 @@ int open(const char* name, int flags, ...) {
 		}
 
 		if (unbuffered) {
+			struct filesize fs;
 			UnbufferedReadData_t* u = data;
+
+			u->sizeIsExact = 0;
+
+			if (getFileMisc(hpName, d.type, &fs) >= 0 && 
+					fs.id == ID_SIZE && fs.size <= dataSize && dataSize < fs.size+254) {
+						
+				dataSize = fs.size;
+				u->sizeIsExact = 1;
+			}
 			strcpy(u->filename, hpName);
 			u->fileType = d.type;
 			u->fd = f;
 			u->fdPos = 0;
-			u->sizeIsExact = 0;
 			files[fd].dataSize = dataSize;
 			files[fd].rw.unbufferedReadData = u;
 			files[fd].mode = MODE_UNBUFFERED_READ;
@@ -268,6 +284,7 @@ int close(int fd) {
 		if (foundType > 0 && foundType != w->fileType)
 			deleteByNameAndType(w->filename, foundType);
 		int out = openFile(w->filename, w->fileType, WRITE_FILE);
+		uint32_t wrote = 0;
 		do {
 			struct chunk* next = chunkP->next;
 			if (0 <= out) 
@@ -281,6 +298,9 @@ int close(int fd) {
 						closeFile(out);
 						out = -1;
 					}
+					else {
+						wrote += s;
+					}
 				}
 				size -= s;
 			}
@@ -292,8 +312,13 @@ int close(int fd) {
 			}
 			chunkP = next;
 		} while(chunkP != NULL);
-		if (0 <= out)
+		if (0 <= out) {
 			closeFile(out);
+			if (w->fileType < 0xC001 || w->fileType > 0xC400) {
+				struct filesize fs = { ID_SIZE, wrote };
+				setFileMisc(w->filename, w->fileType, &fs);
+			}
+		}
 	}
 	else if (f->mode == MODE_UNBUFFERED_READ) {
 		if (f->rw.unbufferedReadData->fd >= 0) 

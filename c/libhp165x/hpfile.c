@@ -216,6 +216,52 @@ int renameFile(const char* name, uint16_t fileType, const char* newName, int32_t
 	}
 }
 
+int setFileMisc(const char* name, uint16_t fileType, const void* misc) {
+	if (refreshDir() < 0)
+		return -1;
+	char paddedName[MAX_FILENAME_LENGTH];
+	padFilename(paddedName, name);
+	ROMDirEntry_t d;
+	int i = 0;
+	_saveAsteriskArea();
+	while(1) {
+		if ( -1 == _getDirEntry(i, &d) ) {
+			_restoreAsteriskArea();
+			return -1;
+		}
+		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
+			memcpy(d.misc, misc, sizeof(d.misc));
+			_renameDirEntry(i, &d);
+			int r = _commitDir();
+			_restoreAsteriskArea();
+			return r;
+		}
+		i++;
+	}
+}
+
+int getFileMisc(const char* name, uint16_t fileType, void* misc) {
+	if (refreshDir() < 0)
+		return -1;
+	char paddedName[MAX_FILENAME_LENGTH];
+	padFilename(paddedName, name);
+	ROMDirEntry_t d;
+	int i = 0;
+	_saveAsteriskArea();
+	while(1) {
+		if ( -1 == _getDirEntry(i, &d) ) {
+			_restoreAsteriskArea();
+			return -1;
+		}
+		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
+			memcpy(misc, d.misc, sizeof(d.misc));
+			_restoreAsteriskArea();
+			return 0;
+		}
+		i++;
+	}
+}
+
 int deleteByNameAndType(const char* name, uint16_t fileType) {
 	return renameFile(name, fileType, name, 0);
 }

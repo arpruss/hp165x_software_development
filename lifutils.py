@@ -26,6 +26,7 @@ HXCFE = os.path.join(DIRECTORY,"hxcfe.exe")
 RESERVED_TYPE = 0xFEEF
 RESERVED_MISC = b'\x80\x01RSVD'
 RESERVED_NAME = "|RESERVED|"
+ID_SIZE = b'Sz';
 BIGDISK = False
 SCOPE_MISC = bytes.fromhex("8001534f544f")
 
@@ -104,6 +105,11 @@ class DirEntry:
                 self.unchunkedFile = self.chunkedFile
             else:
                 self.unchunkedFile = unchunkFile(self.chunkedFile)
+            if CHUNKING and not GENERIC and self.misc[:2] == ID_SIZE:
+                actual = len(self.unchunkedFile)
+                expected = struct.unpack(">I", self.misc[2:6])[0]
+                if actual != expected:
+                    print("Length mismatch in %s: expected=%u, actual=%u" % (self.name,expected,actual))
      
     def __str__(self):
         return "%s %04X %u [%u %u] %02x/%02x/%02x %02x:%02x:%02x,%s" % (self.name,self.fileType,
@@ -296,11 +302,16 @@ def put(inFile, outFile, fileType):
     newEntry = DirEntry()
     newEntry.name = outFile
     newEntry.fileType = fileType
-    if GENERIC or fileType < 0xC001 or fileType > 0xC400:
-        newEntry.misc = bytes.fromhex("800000000000")
-    
+
     with open(inFile, "rb") as inf:
-        data = chunkFile(inf.read())
+        unchunked = inf.read()
+    data = chunkFile(unchunked)
+
+    if GENERIC:
+        newEntry.misc = bytes.fromhex("800100000000")
+    elif fileType < 0xC001 or fileType > 0xC400:
+        newEntry.misc = ID_SIZE + struct.pack(">I", len(unchunked))
+    
     newEntry.blocks = len(data) // BLOCK_SIZE
     newEntry.chunkedFile = data
     

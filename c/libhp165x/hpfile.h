@@ -44,6 +44,8 @@ int diskSpace(uint32_t* totalBlocksP, uint32_t* freeBlocksP, uint32_t* largestSp
 int _commitBlocks(void);
 void bigDiskSupport(void);
 void _initializeDriveSettings(void);
+int getFileMisc(const char* name, uint16_t fileType, void* misc);
+int setFileMisc(const char* name, uint16_t fileType, const void* misc);
 
 #define ERROR_FILE_NOT_FOUND (-5)
 #endif
