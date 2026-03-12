@@ -419,9 +419,9 @@ def loadHeader():
     else:
         if tracks == 80 or tracks == 79:
             tracks = DATA_TRACKS
-        if lifId == BIGDISK_TRACKS:
+        if 0 <= MAGIC_TRACK and MAGIC_TRACK < lifId and lifId <= 255:
             BIGDISK = True
-            tracks = BIGDISK_TRACKS
+            tracks = lifId
             print("Big disk mode")
     totalBlocks = tracks * sides * blocksPerTrack - 1
     #if totalBlocks > DATA_TRACKS * sides * blocksPerTrack - 1:
