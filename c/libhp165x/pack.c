@@ -10,6 +10,9 @@
 
 #define BLOCK_SIZE 256
 #define RETRY 4
+#define MAGIC_BLOCK (((79 * 2 + 0) * 5 + 1) * 4)
+#define MAGIC_BLOCKS 4
+#define MAGIC_TYPE 0xFEEF
 
 #ifdef TEST
 #include <stdio.h>
@@ -67,12 +70,25 @@ int writeBlocks(uint32_t startBlock, uint32_t count, const void* p) {
 
 #define FIX16(x) ((x))
 #define FIX32(x) ((x))
+
+
+
+
 #endif
+
+static const ROMDirEntry_t magicEntry = {
+	"|RESERVED|",
+	MAGIC_TYPE,
+	FIX32(MAGIC_BLOCK),
+	FIX32(MAGIC_BLOCKS),
+	"\x90\x01\x01\x01\x01\x01",
+	"\x80\x01RSVD"
+};
 
 static uint32_t bufferSize;
 static uint32_t bufferBlocks;
 static char* buffer;
-static uint32_t dirStart;
+static uint32_t dirStartBlock;
 static uint32_t dirBlocks;
 static uint32_t totalBlocks;
 static uint32_t lastUsedBlock;
@@ -80,6 +96,8 @@ static char progress;
 static ROMDirEntry_t* dir;
 static ROMDirEntry_t* endDir;
 static uint16_t progressX;
+static char bigDisk;
+static int32_t magicDirPosition;
 
 #define MIN_BUFFER_SIZE 2048
 #define MAX_BUFFER_SIZE 65536
@@ -132,7 +150,7 @@ static void updateProgress(uint16_t block) {
 	if (!progress)
 		return;
 	uint16_t total = totalBlocks;
-	uint16_t dataStart = dirStart + dirBlocks;
+	uint16_t dataStart = dirStartBlock + dirBlocks;
 	uint16_t dirPortion = dataStart * (SCREEN_WIDTH - 1) / total;
 	uint16_t dataPortion = SCREEN_WIDTH - 1 - dirPortion;
 	uint16_t x;
@@ -166,41 +184,73 @@ static void initProgress(uint8_t* buffer) {
 	drawPixel(0,screenHeight-1);
 }
 
+static char isMagicFile(ROMDirEntry_t* d, char deleted) {
+	if (!bigDisk)
+		return 0;
+	if (deleted && d->type != 0)
+		return 0;
+	if (!deleted && d->type != 0xFEEF)
+		return 0;
+	return 0==memcmp(d->misc, magicEntry.misc, 6);
+}
+
 static int16_t cleanupDir(void) {
-	uint32_t lastChangedBlock = 0;
 	ROMDirEntry_t* src = dir;
 	ROMDirEntry_t* dest = dir;
 	
 	lastUsedBlock = 0;
 	
+	uint16_t changed = 0;
+	uint32_t projectedBlockPos = dirStartBlock + dirBlocks;
+	uint32_t entryCount = 0;
+	magicDirPosition = -1;
+	
 	while (src < endDir) {
-		if (src->name[0] != (char)0xFF && src->type != 0) {
-			lastUsedBlock = src->startBlock + src->numBlocks;
+		if (src->name[0] != (char)0xFF && src->type != 0 && !isMagicFile(src, 0)) {
+			lastUsedBlock = FIX32(src->startBlock) + FIX32(src->numBlocks);
+			projectedBlockPos += FIX32(src->numBlocks);
+			if (bigDisk && magicDirPosition < 0 && projectedBlockPos >= MAGIC_BLOCK) {
+				magicDirPosition = entryCount;
+			}
+			entryCount++;
 			if (dest != src) {
 				*dest = *src;
-				lastChangedBlock = (src-dir) / (BLOCK_SIZE / sizeof(ROMDirEntry_t));
-				memset(src, 0xFF, sizeof(ROMDirEntry_t));
+				memset(src, 0xFF, sizeof(ROMDirEntry_t));				
+				changed = 1;
 			}
 			dest++;
 		}
 		else if (!allFF(src)) {
-			lastChangedBlock = (src-dir) / (BLOCK_SIZE / sizeof(ROMDirEntry_t));
 			memset(src, 0xFF, sizeof(ROMDirEntry_t));
+			changed = 1;
 		}
 		src++;
 	}
 	
-	endDir = dest;
+	if (bigDisk) {
+		if (magicDirPosition < 0) {
+			magicDirPosition = entryCount;
+		}
+		if ((entryCount + 1) * sizeof(ROMDirEntry_t) > dirBlocks)
+			return -1;
+		memmove(dir+magicDirPosition, dir+magicDirPosition+1, entryCount-magicDirPosition);
+		dir[magicDirPosition] = magicEntry;
+		dir[magicDirPosition].type = 0; // temporarily marked as deleted
+		changed = 1;
+		endDir = dir+entryCount+1;
+	}
+	else {
+		endDir = dest;
+	}
+	
 #ifdef TEST
 	printf("dir has %u entries\n", (endDir-dir));
 #endif	
 	
-//	uint32_t blocksToWrite = (((char*)endDir - (char*)dir) + BLOCK_SIZE - 1 ) / BLOCK_SIZE;
-	
-	if (writeBlocksRetry(dirStart, lastChangedBlock + 1, dir) < 0)
+	if (changed && writeBlocksRetry(dirStartBlock, dirBlocks, dir) < 0)
 		return -1;
 	
-	updateProgress(dirStart+dirBlocks);
+	updateProgress(dirStartBlock+dirBlocks);
 	
 	return 0;
 }
@@ -226,31 +276,42 @@ int moveData(uint32_t destBlock, uint32_t srcBlock, uint32_t numBlocks) {
 }
 
 static int packDiskData(void) {
-	uint32_t dest = dirStart + dirBlocks;
+	uint32_t dest = dirStartBlock + dirBlocks;
 	
 	ROMDirEntry_t* d = dir;
 	
 	while (d < endDir) {
+		char updateDirEntry = 0;
 #ifdef TEST
 		printf("packing %.10s\n", d->name);
-#endif		
-		uint32_t start = FIX32(d->startBlock);
-		uint32_t num = FIX32(d->numBlocks);
-		if (start != dest) {
-			if (moveData(dest, start, num) < 0)
-				return -1;
-#ifdef TEST			
-			printf("moved %u blocks from %u to %u\n", num, start, dest);
-#endif			
-			d->startBlock = FIX32(dest);
-			uint32_t dirBlock = ((char*)d - (char*)dir) / BLOCK_SIZE;
-			if (writeBlocksRetry(dirStart + dirBlock, 1, (char*)dir + dirBlock * BLOCK_SIZE) < 0)
-				return -1;
+#endif
+		if (isMagicFile(d, 1)) {
+			dest = MAGIC_BLOCK + MAGIC_BLOCKS;
+			d->type = MAGIC_TYPE;
+			updateDirEntry = 1;
 		}
 		else {
-			updateProgress(start + num);
+			uint32_t start = FIX32(d->startBlock);
+			uint32_t num = FIX32(d->numBlocks);		
+			if (start != dest) {
+				if (moveData(dest, start, num) < 0)
+					return -1;
+#ifdef TEST			
+				printf("moved %u blocks from %u to %u\n", num, start, dest);
+#endif			
+				d->startBlock = FIX32(dest);
+				updateDirEntry = 1;
+			}
+			else {
+				updateProgress(start + num);
+			}
+			dest += num;
 		}
-		dest += num;
+		if (updateDirEntry) {
+			uint32_t dirBlock = ((char*)d - (char*)dir) / BLOCK_SIZE;
+			if (writeBlocksRetry(dirStartBlock + dirBlock, 1, (char*)dir + dirBlock * BLOCK_SIZE) < 0)
+				return -1;
+		}
 		d++;
 	}
 	
@@ -261,6 +322,7 @@ static int _lifPack(void) {
 	if (refreshDir()<0)
 		return -1;
 	
+	bigDisk = (*(volatile char*)(0x984152+12) == 'b');
 	uint8_t* blockZero = malloc(BLOCK_SIZE);
 	char success = 0;
 	
@@ -270,7 +332,7 @@ static int _lifPack(void) {
 		free(blockZero);
 		return -1;
 	}
-	dirStart = FIX32(*(uint32_t*)(blockZero+8));
+	dirStartBlock = FIX32(*(uint32_t*)(blockZero+8));
 	dirBlocks = FIX32(*(uint32_t*)(blockZero+16));
 	/* sides * tracks * blocksPerTrack */
 	totalBlocks = FIX32(*(uint32_t*)(blockZero+24)) * FIX32(*(uint32_t*)(blockZero+28)) * FIX32(*(uint32_t*)(blockZero+32));
@@ -282,7 +344,7 @@ static int _lifPack(void) {
 	if (dir == NULL)
 		return -1;
 	
-	if (readBlocksRetry(dirStart, dirBlocks, dir) < 0)
+	if (readBlocksRetry(dirStartBlock, dirBlocks, dir) < 0)
 		goto cleanup;
 	
 	endDir = dir + dirBlocks * (BLOCK_SIZE / sizeof(ROMDirEntry_t));
