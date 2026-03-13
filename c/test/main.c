@@ -155,11 +155,9 @@ void pack(void) {
 #endif
 	diskInfo();
 	printf("Packing\n");
-	lifPack(1);
-	printf("Packed\nPress a key\n");
+	int x = lifPack(1);
+	printf("Packed %d\nPress a key\n",x );
 	getKey(1);
-	*(volatile uint16_t*)0x00980200 = 0xFFFF;
-	printf("%d\n", refreshDir());
 	diskInfo();
 }
 

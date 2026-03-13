@@ -14,6 +14,8 @@
 #define MAGIC_BLOCKS 4
 #define MAGIC_TYPE 0xFEEF
 
+#define DEBUG(fmt, ...) 
+
 #ifdef TEST
 #include <stdio.h>
 
@@ -75,6 +77,8 @@ int writeBlocks(uint32_t startBlock, uint32_t count, const void* p) {
 
 
 #endif
+
+#define DIRENTRIES_PER_BLOCK (BLOCK_SIZE / sizeof(ROMDirEntry_t))
 
 static const ROMDirEntry_t magicEntry = {
 	"|RESERVED|",
@@ -194,7 +198,7 @@ static char isMagicFile(ROMDirEntry_t* d, char deleted) {
 	return 0==memcmp(d->misc, magicEntry.misc, 6);
 }
 
-static int16_t cleanupDir(void) {
+static int16_t prepareDir(void) {
 	ROMDirEntry_t* src = dir;
 	ROMDirEntry_t* dest = dir;
 	
@@ -207,10 +211,16 @@ static int16_t cleanupDir(void) {
 	
 	while (src < endDir) {
 		if (src->name[0] != (char)0xFF && src->type != 0 && !isMagicFile(src, 0)) {
+			DEBUG("ARP src=%d [%.10s] dest=%d\n", src-dir, src->name, dest-dir);
 			lastUsedBlock = FIX32(src->startBlock) + FIX32(src->numBlocks);
 			projectedBlockPos += FIX32(src->numBlocks);
-			if (bigDisk && magicDirPosition < 0 && projectedBlockPos >= MAGIC_BLOCK) {
-				magicDirPosition = entryCount;
+			if (bigDisk) {
+				if (magicDirPosition < 0 && projectedBlockPos >= MAGIC_BLOCK) {
+					magicDirPosition = entryCount;
+				}
+				// corrupt disk: non-magic file overlaps magic
+				if (lastUsedBlock > MAGIC_BLOCK && FIX32(src->startBlock) < MAGIC_BLOCK + MAGIC_BLOCKS)
+					return -1;
 			}
 			entryCount++;
 			if (dest != src) {
@@ -221,6 +231,7 @@ static int16_t cleanupDir(void) {
 			dest++;
 		}
 		else if (!allFF(src)) {
+			DEBUG("ARP src=%d erasing\n", src-dir);
 			memset(src, 0xFF, sizeof(ROMDirEntry_t));
 			changed = 1;
 		}
@@ -228,36 +239,41 @@ static int16_t cleanupDir(void) {
 	}
 	
 	if (bigDisk) {
+		DEBUG("Before insertion:count=%d", entryCount);
 		if (magicDirPosition < 0) {
 			magicDirPosition = entryCount;
 		}
-		if ((entryCount + 1) * sizeof(ROMDirEntry_t) > dirBlocks)
+		DEBUG("ARP magicDirPosition=%d\n", magicDirPosition);
+		if (entryCount >= dirBlocks * DIRENTRIES_PER_BLOCK)
 			return -1;
-		memmove(dir+magicDirPosition, dir+magicDirPosition+1, entryCount-magicDirPosition);
+		DEBUG("ARP inserting\n");
+		memmove(dir+magicDirPosition+1, dir+magicDirPosition, (entryCount-magicDirPosition)*sizeof(ROMDirEntry_t));
 		dir[magicDirPosition] = magicEntry;
 		dir[magicDirPosition].type = 0; // temporarily marked as deleted
 		changed = 1;
-		endDir = dir+entryCount+1;
+		endDir = dest+1;
+		DEBUG("AFter insertion:count=%d", endDir-dir);
 	}
 	else {
 		endDir = dest;
 	}
 	
-#ifdef TEST
-	printf("dir has %u entries\n", (endDir-dir));
-#endif	
+	DEBUG("ARP dir has %u entries\n", (endDir-dir));
+	DEBUG("ARP changed %d\n", changed);
 	
-	if (changed && writeBlocksRetry(dirStartBlock, dirBlocks, dir) < 0)
+	if (changed && writeBlocksRetry(dirStartBlock, dirBlocks, dir) < 0) {
+		DEBUG("dir failed\n");
 		return -1;
+	}
 	
 	updateProgress(dirStartBlock+dirBlocks);
 	
 	return 0;
-}
+} 
 
 int moveData(uint32_t destBlock, uint32_t srcBlock, uint32_t numBlocks) {
 #ifdef TEST	
-	printf("moveData %u %u %u\n",destBlock,srcBlock,numBlocks);
+	DEBUG("moveData %u %u %u\n",destBlock,srcBlock,numBlocks);
 #endif	
 	while (numBlocks > 0) {
 		uint16_t toCopy = numBlocks;
@@ -282,10 +298,9 @@ static int packDiskData(void) {
 	
 	while (d < endDir) {
 		char updateDirEntry = 0;
-#ifdef TEST
-		printf("packing %.10s\n", d->name);
-#endif
+		DEBUG("packing %d %d <%.10s>\n", d-dir, endDir-d, d->name);
 		if (isMagicFile(d, 1)) {
+			DEBUG("magic!\n");
 			dest = MAGIC_BLOCK + MAGIC_BLOCKS;
 			d->type = MAGIC_TYPE;
 			updateDirEntry = 1;
@@ -297,7 +312,7 @@ static int packDiskData(void) {
 				if (moveData(dest, start, num) < 0)
 					return -1;
 #ifdef TEST			
-				printf("moved %u blocks from %u to %u\n", num, start, dest);
+				DEBUG("moved %u blocks from %u to %u\n", num, start, dest);
 #endif			
 				d->startBlock = FIX32(dest);
 				updateDirEntry = 1;
@@ -309,6 +324,7 @@ static int packDiskData(void) {
 		}
 		if (updateDirEntry) {
 			uint32_t dirBlock = ((char*)d - (char*)dir) / BLOCK_SIZE;
+			DEBUG("ARP Writing one block at %u", dirStartBlock + dirBlock);
 			if (writeBlocksRetry(dirStartBlock + dirBlock, 1, (char*)dir + dirBlock * BLOCK_SIZE) < 0)
 				return -1;
 		}
@@ -319,15 +335,18 @@ static int packDiskData(void) {
 }
 
 static int _lifPack(void) {
+	DEBUG("ARP: lifpack\n");
 	if (refreshDir()<0)
 		return -1;
 	
 	bigDisk = (*(volatile char*)(0x984152+12) == 'b');
+	DEBUG("ARP: bigDisk=%d\n", bigDisk);
 	uint8_t* blockZero = malloc(BLOCK_SIZE);
 	char success = 0;
 	
 	if (blockZero == NULL)
 		return -1;
+
 	if (readBlocksRetry(0, 1, blockZero) < 0) {
 		free(blockZero);
 		return -1;
@@ -349,7 +368,7 @@ static int _lifPack(void) {
 	
 	endDir = dir + dirBlocks * (BLOCK_SIZE / sizeof(ROMDirEntry_t));
 	
-	if (cleanupDir() < 0)
+	if (prepareDir() < 0)
 		goto cleanup;
 	
 	bufferSize = MAX_BUFFER_SIZE;
@@ -383,8 +402,8 @@ int lifPack(char _progress) {
 	uint32_t totalBlocks;
 	if (diskSpace(&totalBlocks, NULL, NULL)<0)
 		return -1;
-	if (totalBlocks>=3200) 
-		return -1; // TODO: bigdisk mode is not yet implemented
+//	if (totalBlocks>=3200) 
+//		return -1; // TODO: bigdisk mode is not yet implemented
 	
 	uint8_t progressBuffer[SCREEN_WIDTH/4];
 	progress = _progress;
@@ -401,7 +420,7 @@ int lifPack(char _progress) {
 main(int argc, char** argv) {
 	testFile = fopen(argv[1], "r+");
 	if (_lifPack()<0)
-		printf("Fail!\n");
+		DEBUG("Fail!\n");
 	fclose(testFile);
 }
 #endif
