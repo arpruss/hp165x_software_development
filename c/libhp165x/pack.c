@@ -287,17 +287,13 @@ int moveData(uint32_t destBlock, uint32_t srcBlock, uint32_t numBlocks) {
 			toCopy = bufferBlocks;
 		if (readBlocksRetry(srcBlock, toCopy, buffer) < 0)
 			return -1;
-		char* b = buffer;
-		while (toCopy > 0) {
-			if (writeBlockRetry(destBlock, b) < 0)
-				return -1;
-			b += BLOCK_SIZE;
-			toCopy--;
-			srcBlock++;
-			destBlock++;
-			numBlocks--;
-			updateProgress(destBlock);
-		}
+		updateProgress(destBlock+toCopy/2);
+		if (writeBlocksRetry(destBlock, toCopy, buffer) < 0)
+			return -1;
+		numBlocks -= toCopy;
+		srcBlock += toCopy;
+		destBlock += toCopy;
+		updateProgress(destBlock);
 	}
 	return 0;
 }
