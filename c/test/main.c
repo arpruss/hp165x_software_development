@@ -218,6 +218,19 @@ void goodbye(void) {
 	reload();
 }
 
+void line(void) {
+	uint16_t x=0;
+	uint16_t y=0;
+	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+	for (uint16_t i = 0 ; i < 50 ; i++) {
+		uint16_t x2 = rand()%screenWidth;
+		uint16_t y2 = rand()%screenHeight;
+		drawLine(x,y,x2,y2);
+		x = x2;
+		y = y2;
+	} 
+}
+
 main(int argc, char** argv) {
 	(void)argc;
 	(void)argv;
@@ -239,7 +252,7 @@ main(int argc, char** argv) {
 //	putText("7 - scope\n");
 	putText("8 - file test\n");
 	putText("9 - info\n");
-//	putText("A - eb02\n");
+	putText("A - line\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -259,7 +272,7 @@ main(int argc, char** argv) {
 //		case KEY_7: scope(); break;
 		case KEY_8: fileTest(); break;
 		case KEY_9: diskInfo(); break;
-//		case KEY_A: _eb02(); break;
+		case KEY_A: line(); break;
 		default:
 			reload();
 	}

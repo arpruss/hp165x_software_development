@@ -1,9 +1,3 @@
-*-----------------------------------------------------------
-* Title      :
-* Written by :
-* Date       :
-* Description:
-*-----------------------------------------------------------
     ORG    $984500
     
 SCREEN equ $620000
@@ -43,7 +37,7 @@ START:                  ; first instruction of program
     jsr line
 z:  bra z    
     
-;; clobbers D0-D6,A0
+;; clobbers D0-D5,A0
 line: ; draw line from (D0,D1) to (D2,D3)
     cmp.w  D0,D2
     bhs    leftToRight
@@ -54,14 +48,14 @@ leftToRight:
     sub.w  D0,D2
 ; D2=x2-x1 (non-negative)
     move.w D3,D5
-    move.l #SCREEN_WIDTH_BYTES,D6
+    move.l #SCREEN_WIDTH_BYTES,D4
     sub.w  D1,D5
     bhs    notNeg1
     neg.w  D5
-    move.l #(-SCREEN_WIDTH_BYTES),D6
+    move.l #(-SCREEN_WIDTH_BYTES),D4
 notNeg1:
 ; D5=|y2-y1|
-; D6=ychange
+; D4=ychange
 ; D3 is now free
     move.l #SCREEN,A0
     move.w D0,D3
@@ -85,7 +79,7 @@ notNeg1:
 ;; D3=bitmask
 ;; D2=dx
 ;; D5=dy
-;; D6=incy
+;; D4=incy
     tst.w   D5
     beq     horizontal
     move.w  D5,D0
@@ -107,7 +101,7 @@ notZero1:
     tst.w   D1
     blt     notPosError1
     ;; error>0
-    add     D6,A0
+    add     D4,A0
     add     D5,D1 ; error += 2(dy-dx)
     dbra    D2,loop1 ; dec dx   
     rts
@@ -130,7 +124,7 @@ moreVertical:
 ;; D3=bitmask
 ;; D2=dx
 ;; D5=dy
-;; D6=incy
+;; D4=incy
     tst.w   D2
     beq     vertical
     move.w  D2,D0
@@ -144,7 +138,7 @@ moreVertical:
 ;; D2=2(dx-dy)
 loop2:
     eor.w   D3,(A0) ;; TODO: for real device, change to move
-    add.l   D6,A0
+    add.l   D4,A0
     
     tst.w   D1
     blt     notPosError2
@@ -163,7 +157,7 @@ notPosError2:
     rts            
 vertical:
     eor.w   D3,(A0) ;; TODO: for real device, change to move
-    add.l   D6,A0
+    add.l   D4,A0
     dbra    D5,vertical
     rts
 

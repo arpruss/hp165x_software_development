@@ -12,7 +12,7 @@
 #define LINE_BYTES (SCREEN_WIDTH/4*2)
 #define LINE_WORDS (SCREEN_WIDTH/4)
 #define LINE_DWORDS (SCREEN_WIDTH/8)
-#define SCREEN 0x600000	
+#define SCREEN 0x620000	
 #define SCREEN_MEMORY_CONTROL 0x00201000
 
 #define ARGL(saved,n) ((saved)*4+4+4*(n))(%sp)
