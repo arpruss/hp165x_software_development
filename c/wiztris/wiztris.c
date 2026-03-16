@@ -284,17 +284,12 @@ void help()
 	drawTextAt(0,0,"HELP");
 }
 
-void fr(short x1,short y1,short x2,short y2) {
-	for (; y1<y2 ; y1++)
-		drawHorizontalLine(x1,y1,x2-1);
-}
-
 void drawbox() {
 	*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
 	for (int i=0;i<2;i++) {
-		drawVerticalLine(boardX-2-i,0,GHEIGHT*SQUARE_HEIGHT);
-		drawVerticalLine(boardX+GWIDTH*SQUARE_WIDTH+i,0,GHEIGHT*SQUARE_HEIGHT);
-		drawHorizontalLine(boardX-3,GHEIGHT*SQUARE_HEIGHT+i,boardX+GWIDTH*SQUARE_WIDTH+1);
+		drawLine(boardX-2-i,0,boardX-2-i,GHEIGHT*SQUARE_HEIGHT);
+		drawLine(boardX+GWIDTH*SQUARE_WIDTH+i,0,boardX+GWIDTH*SQUARE_WIDTH+i,GHEIGHT*SQUARE_HEIGHT);
+		drawLine(boardX-3,GHEIGHT*SQUARE_HEIGHT+i,boardX+GWIDTH*SQUARE_WIDTH+1,GHEIGHT*SQUARE_HEIGHT+i);
 	}
 	*SCREEN_MEMORY_CONTROL = DRAW_BOARD;
 	fillRectangle(boardX-1,0,boardX+GWIDTH*SQUARE_WIDTH,GHEIGHT*SQUARE_HEIGHT);
@@ -451,10 +446,10 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 	uint16_t y = row * h;
 	
 	*SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
-	drawHorizontalLine(x-2,y-2,x+w*length);
-	drawHorizontalLine(x-2,y+h+1,x+w*length);
-	drawVerticalLine(x-2,y-2,y+h+1);
-	drawVerticalLine(x+w*length+1,y-2,y+h+1);
+	drawLine(x-2,y-2,x+w*length,y-2);
+	drawLine(x-2,y+h+1,x+w*length,y+h+1);
+	drawLine(x-2,y-2,x-2,y+h+1);
+	drawLine(x+w*length+1,y-2,x+w*length+1,y+h+1);
 	
 	memset(out, 0, length+1);
 	strcpy(out, last_initials);	

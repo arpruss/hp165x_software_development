@@ -104,54 +104,6 @@ asm(
     "  bge 1b\n" : : : "d2", "d3", "d4", "d5", "d6", "d7", "a2", "a3", "a4", "a5" ); 
 }
 
-void drawVerticalLine(uint16_t x, uint16_t y1, uint16_t y2) {
-	uint16_t yCount;
-	volatile uint16_t* pos;
-	uint16_t mask = 8>>(x%4);
-	if (y1 <= y2) {
-		pos = SCREEN + (SCREEN_WIDTH/4) * y1 + (x/4);
-		yCount = y2 - y1 + 1;
-	}
-	else {
-		pos = SCREEN + (SCREEN_WIDTH/4) * y2 + (x/4);
-		yCount = y1 - y2 + 1;
-	}
-	for (uint16_t i = 0 ; i < yCount ; i++) {
-		*pos = mask;
-		pos += SCREEN_WIDTH/4;
-	}
-}
-
-/* TODO: very inefficient */
-void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2) {
-	uint16_t xCount;
-	volatile uint16_t* pos = SCREEN + (SCREEN_WIDTH/4) * y;
-	uint16_t mask;
-	
-	if (x1 <= x2) {
-		mask = 8>>(x1%4);
-		pos += (x1/4);
-		xCount = x2 - x1 + 1;
-	}
-	else {
-		mask = 8>>(x2%4);
-		pos += (x2/4);
-		xCount = x1 - x2 + 1;
-	}
-	uint8_t value = 0;
-	for (uint16_t i = 0 ; i < xCount ; i++) {
-		value |= mask;
-		mask >>= 1;
-		if (mask == 0) {
-			*pos++ |= value;
-			mask = 8;
-			value = 0;
-		}
-	}
-	if (value)
-		*pos = value;
-}
-
 /* draws a frame around a fillRectangle() */
 void frameRectangle(uint16_t topLeftX, uint16_t topLeftY, uint16_t bottomRightX, uint16_t bottomRightY, uint16_t thickness){
 	int16_t left = topLeftX - thickness;
