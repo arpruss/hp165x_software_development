@@ -1,7 +1,3 @@
-//
-// NOT WORKING ON ACTUAL DEVICE: cannot write dir
-//
-
 //#define TEST
 
 #include <stdint.h>
@@ -13,10 +9,12 @@
 #define MAGIC_BLOCK (((79 * 2 + 0) * 5 + 1) * 4)
 #define MAGIC_BLOCKS 4
 #define MAGIC_TYPE 0xFEEF
+#undef GET_INFO_FROM_DISK
 
 #define DEBUG(fmt, ...) 
 
 #ifdef TEST
+#define GET_INFO_FROM_DISK
 #include <stdio.h>
 
 #define MAX_FILENAME_LENGTH 10
@@ -66,6 +64,10 @@ int writeBlocks(uint32_t startBlock, uint32_t count, const void* p) {
 	return 0;
 }
 
+int writeBlock(uint32_t startBlock, const void* p) {
+	return writeBlocks(startBlock, 1, p);
+}
+
 #else
 #include "hp165x.h"
 #include "screensize.h"
@@ -112,6 +114,10 @@ static int writeBlocksRetry(uint32_t startBlock, uint32_t count, const void* p) 
 			return 0;
 	}
 	return -1;
+}
+
+static int writeBlockRetry(uint32_t startBlock, const void* p) {
+	return writeBlocksRetry(startBlock, 1, p);
 }
 
 static int readBlocksRetry(uint32_t startBlock, uint32_t count, void* p) {
@@ -281,12 +287,17 @@ int moveData(uint32_t destBlock, uint32_t srcBlock, uint32_t numBlocks) {
 			toCopy = bufferBlocks;
 		if (readBlocksRetry(srcBlock, toCopy, buffer) < 0)
 			return -1;
-		if (writeBlocksRetry(destBlock, toCopy, buffer) < 0)
-			return -1;
-		updateProgress(destBlock+toCopy);
-		srcBlock += toCopy;
-		destBlock += toCopy;
-		numBlocks -= toCopy;
+		char* b = buffer;
+		while (toCopy > 0) {
+			if (writeBlockRetry(destBlock, b) < 0)
+				return -1;
+			b += BLOCK_SIZE;
+			toCopy--;
+			srcBlock++;
+			destBlock++;
+			numBlocks--;
+			updateProgress(destBlock);
+		}
 	}
 	return 0;
 }
@@ -339,11 +350,14 @@ static int _lifPack(void) {
 	if (refreshDir()<0)
 		return -1;
 	
-	bigDisk = (*(volatile char*)(0x984152+12) == 'b');
-	DEBUG("ARP: bigDisk=%d\n", bigDisk);
-	uint8_t* blockZero = malloc(BLOCK_SIZE);
+//	bigDisk = (*(volatile char*)(0x984152+12) == 'b');
+//	DEBUG("ARP: bigDisk=%d\n", bigDisk);
+
 	char success = 0;
-	
+
+#ifdef GET_INFO_FROM_DISK
+	uint8_t* blockZero = malloc(BLOCK_SIZE);
+
 	if (blockZero == NULL)
 		return -1;
 
@@ -357,6 +371,13 @@ static int _lifPack(void) {
 	totalBlocks = FIX32(*(uint32_t*)(blockZero+24)) * FIX32(*(uint32_t*)(blockZero+28)) * FIX32(*(uint32_t*)(blockZero+32));
 	
 	free(blockZero);
+#else
+	dirStartBlock = 2; // TODO
+	dirBlocks = *(volatile uint32_t*)0x984162;
+	totalBlocks = 1+*(uint16_t*)0x9842a8;
+#endif	
+
+	bigDisk = totalBlocks > 2*80*20;
 	
 	dir = malloc(dirBlocks * BLOCK_SIZE);
 	
