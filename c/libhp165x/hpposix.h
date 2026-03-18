@@ -3,6 +3,8 @@
 
 #include <stddef.h>
 
+#define DEFAULT_BUFFERED_READ_MAXIMUM 150000
+
 typedef __uint64_t ino_t;
 
 struct dirent {

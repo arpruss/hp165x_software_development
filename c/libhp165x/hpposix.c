@@ -37,7 +37,7 @@
    
 extern void (*_posixCleanup)(void);
 static void posixCleanup(void);
-static uint32_t bufferedReadMaximum = 150000;
+static uint32_t bufferedReadMaximum = DEFAULT_BUFFERED_READ_MAXIMUM;
 
 struct filesize {
 	uint16_t id; // 'sz'
