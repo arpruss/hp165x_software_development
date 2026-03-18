@@ -219,16 +219,24 @@ void goodbye(void) {
 }
 
 void line(void) {
-	uint16_t x=0;
-	uint16_t y=0;
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+	/*uint16_t x=0;
+	uint16_t y=0;
 	for (uint16_t i = 0 ; i < 50 ; i++) {
 		uint16_t x2 = rand()%screenWidth;
 		uint16_t y2 = rand()%screenHeight;
 		drawLine(x,y,x2,y2);
 		x = x2;
 		y = y2;
-	} 
+	} */
+	uint32_t t = getVBLCounter();
+	for (uint16_t i = 0 ; i < 300; i++) {
+		uint16_t y = rand() % screenHeight;
+		uint16_t x1 = rand() % screenWidth;
+		uint16_t x2 = rand() % screenWidth;
+		drawLine(x1,y,x2,y);
+	}
+	printf("Time: %lu\n", getVBLCounter()-t);
 }
 
 main(int argc, char** argv) {

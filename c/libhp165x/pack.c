@@ -174,7 +174,7 @@ static void updateProgress(uint16_t block) {
 	}
 	if (x > progressX) {
 		*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
-		drawHorizontalLine(progressX+1,screenHeight-1,x);
+		drawLine(progressX+1,screenHeight-1,x,screenHeight-1);
 		progressX = x;
 	}
 }
@@ -187,7 +187,7 @@ static void initProgress(uint8_t* buffer) {
 	for (uint16_t i=SCREEN_WIDTH_WORDS ; i > 0 ; i--) {
 		*buffer++ = (uint8_t)*pos++;
 	}
-	drawHorizontalLine(0,screenHeight-1,SCREEN_WIDTH-1);
+	drawLine(0,screenHeight-1,SCREEN_WIDTH-1,screenHeight-1);
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 	progressX = 0;
 	*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;

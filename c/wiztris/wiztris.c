@@ -398,9 +398,11 @@ void drop()
 					  drawgrid(1);
 					  dopiece(row,col,piece,rot,0,DRAW_BOARD);
 					  doshownext(nextpiece,nextrot,0);
+					  setTextColors(DRAW_FOREGROUND,DRAW_BOARD);
 				      drawTextAt(34,10,"PAUSED");
                       getKey(1);
 				      drawTextAt(34,10,"      ");
+					  setTextColors(DRAW_FOREGROUND,DRAW_BACKGROUND);
 					  drawgrid(0);
 					  dopiece(row,col,piece,rot,1,DRAW_BOARD);
 					  doshownext(nextpiece,nextrot,shownext);

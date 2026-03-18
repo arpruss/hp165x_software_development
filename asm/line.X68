@@ -7,33 +7,18 @@ SCREEN_WIDTH_BYTES equ (SCREEN_WIDTH/2)
 START:                  ; first instruction of program
     move.w #0,D0
     move.w #0,D1
-    move.w #591,D2
-    move.w #383,D3
+    move.w #47,D2
+    move.w #0,D3
     jsr line
-    move.w #591,D0
-    move.w #0,D1
+    move.w #0,D0
+    move.w #1,D1
     move.w #0,D2
-    move.w #383,D3
+    move.w #50,D3
     jsr line
-    move.w #10,D0
-    move.w #0,D1
-    move.w #20,D2
-    move.w #384,D3
-    jsr line
-    move.w #300,D0
-    move.w #0,D1
-    move.w #0,D2
-    move.w #384,D3
-    jsr line
-    move.w #30,D0
-    move.w #200,D1
-    move.w #500,D2
-    move.w #200,D3
-    jsr line
-    move.w #400,D0
-    move.w #10,D1
-    move.w #400,D2
-    move.w #90,D3
+    move.w #47,D0
+    move.w #1,D1
+    move.w #47,D2
+    move.w #50,D3
     jsr line
 z:  bra z    
     
@@ -110,13 +95,26 @@ notPosError1:
     dbra    D2,loop1
     rts   
 horizontal:
-; TODO: optimization         
+; D2=dx
+; D3=mask
+; A0=address
+    move.w  #8,D1
+    moveq.l #2,D0    
 loop3:
-    eor.w   D3,(A0) ;; TODO: for real device, change to move
+    eor.w   D3,(A0) ; TODO: for real device, change to move
     lsr.w   #1,D3
     bne     notZero3
-    move.w  #8,D3
-    addq.l  #2,A0
+    add.l   D0,A0
+    move.w  D1,D3    ; D1=8: reset bitmask
+    cmp.w   D1,D2
+    blo     lessThan8
+    move.l  #$000F000F,D4 
+fastLoop:    
+    eor.l   D4,(A0)+
+    sub.w   D1,D2    ; D1=8
+    cmp.w   D1,D2
+    bhs     fastLoop
+lessThan8:
 notZero3:    
     dbra    D2,loop3 ; dec dx   
     rts        
@@ -162,6 +160,9 @@ vertical:
     rts
 
     END    START        
+
+
+
 
 
 *~Font name~Courier New~
