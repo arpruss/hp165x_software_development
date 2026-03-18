@@ -3,10 +3,4 @@ hardware evolves.
 
 Add O_RDWR support for hpposix.
 
-Test lifPack() in close().
-
-Add bigdisk support to lifPack()
-
-In hpposix, make unbuffered read automatic for large files.
-
 Test file size detection and seeking forward for unbuffered read.
