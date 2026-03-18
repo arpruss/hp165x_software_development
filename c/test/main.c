@@ -235,6 +235,11 @@ void line(void) {
 		uint16_t x1 = rand() % screenWidth;
 		uint16_t x2 = rand() % screenWidth;
 		drawLine(x1,y,x2,y);
+		y--;
+		if (x1<x2) 
+			for (uint16_t x=x1;x<=x2;x++) drawPixel(x,y);
+		else
+			for (uint16_t x=x2;x<=x1;x++) drawPixel(x,y);
 	}
 	printf("Time: %lu\n", getVBLCounter()-t);
 }

@@ -53,12 +53,6 @@ void initialScreen() {
 	}
 }
 
-// TODO: assembly
-void drawPixel(uint16_t x, uint16_t y) {
-	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH/4) + x/4;
-	*pos = 8>>(x%4);
-}
-
 // TODO: readPixelAllPlanes()
 void drawPixelAllPlanes(uint16_t x, uint16_t y, uint8_t value) {
 	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH/4) + x/4;

@@ -1,4 +1,5 @@
     .globl drawLine
+    .globl drawPixel
 
 #ifndef SCREEN_WIDTH
 # define SCREEN_WIDTH 592
@@ -20,6 +21,27 @@
 	
     .text
     .align 2
+
+    .type drawPixel, @function 
+	.section	.text.drawPixel,"ax",@progbits
+drawPixel:  /* void drawPixel(uint16_t x, uint16_t y) */
+#define PIXEL_SAVED 0
+    move.l #SCREEN,%A0
+    move.w ARGW(PIXEL_SAVED,1),%D0 // y
+    mulu   #LINE_BYTES,%D0
+    add.l  %D0,%A0
+	move.w ARGW(PIXEL_SAVED,0),%D0 // x
+    move.w %D0,%D1
+    and.w  #3,%D0
+	sub.w  %D0,%D1
+    lsr.w  #1,%D1  // %D1=(x&~3)/2
+    ext.l  %D1
+    add.l  %D1,%A0 // %A0=address
+    moveq.l #8,%D1 
+    lsr.w   %D0,%D1 // %D0=x&3
+	move.w	%D1,(%A0)
+	rts	
+
     .type drawLine, @function 
 	.section	.text.drawLine,"ax",@progbits
 drawLine:  /* void drawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) */
@@ -52,8 +74,8 @@ notNeg1:
 // %D3 is now free
     move.l #SCREEN,%A0
     move.w %D0,%D3
-    lsr.w  #2,%D3 // %D3=x1/4
-    lsl.w  #1,%D3 // byte offset for x
+    lsr.w  #2,%D3  // %D3=x1/4
+	add.w  %D3,%D3 
     ext.l  %D3
     add.l  %D3,%A0
     move.w %D1,%D3 // y1
@@ -172,4 +194,4 @@ vertical:
     dbra    %D5,vertical
 	movem.l (%sp)+, LINE_SAVE_REGS
     rts
-	
+	 
