@@ -135,6 +135,8 @@ void menu(void) {
 			return;
 		if (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS )
 			return;
+		if (0 == ( HARDWARE_STATUS_OLD_DISK & *HARDWARE_STATUS ))
+			return;
 		int c = parseKey(k);
 		if ('0' <= c && c <= '9') {
 			c -= '0';

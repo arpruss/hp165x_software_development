@@ -89,6 +89,7 @@ void patchVBL(void);
 void setVBLCounter(uint32_t value);
 void initialScreen();
 char parseKey(uint16_t key);
+void setDialHorizontal(uint8_t h);
 int loadAndRunForPatch(const char* filename, void (*overrideStart)(void), void (**originalStartP)(), uint32_t* originalCodeSizeP);
 int loadAndRun(const char* filename);
 int refreshDir(void);

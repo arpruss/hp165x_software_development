@@ -10,6 +10,8 @@
 void highlightText(uint16_t n, uint8_t highlightState);
 void setScrollBitplanes(uint8_t b);
 void setTextColors(uint16_t f, uint16_t b);
+uint16_t getTextForeground(void);
+uint16_t getTextBackground(void);
 void setTextReverse(char reverse);
 uint16_t getTextX(void);
 uint16_t getTextY(void);
@@ -33,11 +35,11 @@ void setTextWindow(uint16_t topLeftX,uint16_t topLeftY,int16_t bottomRightX,int1
 void scrollTextUp(uint16_t rows);
 void scrollTextDown(uint16_t rows);
 void setScrollMode(uint8_t active);
-uint16_t getTextForeground(void);
-uint16_t getTextBackground(void);
 extern uint8_t font8x14[];
 void setTextCursorXY(uint16_t x, uint16_t y);
 void updateTextCursor(char visible);
 void showTextCursor(char value);
+uint16_t textToPixelX(uint16_t x);
+uint16_t textToPixelY(uint16_t y);
 
 #endif

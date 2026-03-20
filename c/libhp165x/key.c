@@ -5,6 +5,7 @@
 static uint8_t click = 1;
 static uint16_t repeatDelay = 20;
 static uint16_t repeatRate = 8;
+static uint8_t dialHorizontal = 1;
 
 void setKeyClick(uint8_t _click) {
 	click = _click;
@@ -50,8 +51,6 @@ static const struct {
 	{ KEY_CHS, '-' },
 	{ KEY_DECIMAL, '.' },
 	{ KEY_STOP, KEYBOARD_BREAK }, // ctrl-c
-	{ KEY_TURN_CW, KEYBOARD_RIGHT },
-	{ KEY_TURN_CCW, KEYBOARD_LEFT },
 };
 
 static uint16_t lastKey = 0;
@@ -171,6 +170,12 @@ uint16_t peekKey(void) {
 }
 
 char parseKey(uint16_t k) {
+	if (k == KEY_TURN_CCW) {
+		return dialHorizontal ? KEYBOARD_LEFT : KEYBOARD_UP;
+	}
+	else if (k == KEY_TURN_CW) {
+		return dialHorizontal ? KEYBOARD_RIGHT : KEYBOARD_DOWN;
+	}
 	for (unsigned i=0; i<sizeof(keyToASCII)/sizeof(*keyToASCII); i++) {
 		if (k == keyToASCII[i].key)
 			return keyToASCII[i].ascii;
@@ -178,3 +183,6 @@ char parseKey(uint16_t k) {
 	return 0;
 }
 
+void setDialHorizontal(uint8_t h) {
+	dialHorizontal = h;
+}

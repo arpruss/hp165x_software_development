@@ -155,6 +155,14 @@ uint16_t getTextY(void) {
 	return currentY-winY;
 }
 
+uint16_t textToPixelX(uint16_t x) {
+	return (x-winX) / FONT_WIDTH;
+}
+
+uint16_t textToPixelY(uint16_t y) {
+	return (y-winY) / fontHeight;
+}
+
 void setTextXY(uint16_t x, uint16_t y) {
 	currentX = winX+x;
 	currentY = winY+y;
