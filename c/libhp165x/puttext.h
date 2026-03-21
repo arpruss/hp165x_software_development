@@ -38,6 +38,7 @@ void setScrollMode(uint8_t active);
 extern uint8_t font8x14[];
 void setTextCursorXY(uint16_t x, uint16_t y);
 void updateTextCursor(char visible);
+uint8_t getScrollBitplanes(void);
 void showTextCursor(char value);
 uint16_t textToPixelX(uint16_t x);
 uint16_t textToPixelY(uint16_t y);

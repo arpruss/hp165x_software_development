@@ -1,7 +1,5 @@
-#include <hp165x.h>
-
-typedef char* (*ChooserItemNamer_t)(uint16_t item);
-typedef uint16_t (*ChooserItemLoader_t)(void);
+#include "chooser.h"
+#include <string.h>
 
 static uint16_t foreground;
 static uint16_t background;
@@ -18,36 +16,74 @@ static short maxWidth;
 static ChooserItemNamer_t namer;
 
 static void moveCursorToCurrent() {
-	int x = (currentItem - topItem) % columns;
-	int y = (currentItem - topItem) / columns;
-	setTextXY(topLeftX + x * (columns + spacing), topLeftY + y);
+	short x = (currentItem - topItem) % columns;
+	short y = (currentItem - topItem) / columns;
+	setTextXY(topLeftX + x * (maxWidth + spacing), topLeftY + y);
 }
 
 static void drawName(const char* name) {
-	int n = strlen(name);
+	short n = strlen(name);
 	if (n > maxWidth) {
 		putTextN(name, maxWidth);
 		return;
 	}
-	putText(name);
-	n -= maxWidth;
+	putText(name);	
+	n = maxWidth - n;
 	while(n--)
 		putChar(' ');
+}
+
+static void drawItems(short startY, short endY) {
+	for (short i = topItem ; i < numItems && i - topItem < columns * height ; i++) {
+		short y = (i - topItem) / columns;
+		if (startY <= y && y < endY) {
+			short x = (i - topItem) % columns;
+			setTextXY(topLeftX + x * (maxWidth + spacing), topLeftY + y);
+			drawName(namer(i));
+		}
+	}
 }
 
 static void move(short delta) {
 	if (numItems == 0)
 		return;
-	moveCursorToCurrent();
+	short oldX = (currentItem - topItem) % columns;
+	short oldY = (currentItem - topItem) / columns;
+	setTextXY(topLeftX + oldX * (maxWidth + spacing), topLeftY + oldY);
 	setTextReverse(0);
 	drawName(namer(currentItem));
-	// do I need to scroll?
+	currentItem += delta;
+	short newX = (currentItem - topItem) % columns;
+	short newY = (currentItem - topItem) / columns;
+	short lastY = (numItems - 1 - topItem) / columns;
+	short firstY = (- topItem) / columns;
+	if (delta > 0 && ( newY == height || ( newY == height - 1 && newY < lastY ) ) ) {
+		scrollUp(getFontHeight(), textToPixelX(topLeftX), textToPixelY(topLeftY), 
+			textToPixelX(topLeftX+width), textToPixelY(topLeftY+height), 
+			background, getScrollBitplanes());
+		topItem += columns;
+		newY--;
+		drawItems(height-1, height);
+	}
+	else if (delta < 0 && ( newY == -1 || ( newY == 0 && newY > firstY ) ) ) {
+		scrollDown(getFontHeight(), textToPixelX(topLeftX), textToPixelY(topLeftY), 
+			textToPixelX(topLeftX+width), textToPixelY(topLeftY+height), 
+			background, getScrollBitplanes());
+		topItem -= columns;
+		newY++;
+		drawItems(0,1);
+	}
+	setTextXY(topLeftX + newX * (maxWidth + spacing), topLeftY + newY);
+	setTextReverse(1);
+	drawName(namer(currentItem));
+	setTextReverse(0);
 }
 
 // refresher is called when 
 int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY, 
 		uint16_t _width, uint16_t _height,
-		uint16_t _spacing, uint16_t _maxWidth, uint8_t diskBased,
+		uint16_t _spacing, uint16_t _maxWidth, 
+		uint8_t diskBased,
 		ChooserItemLoader_t loader, ChooserItemNamer_t _namer) {
 			
 	namer = _namer;
@@ -62,7 +98,8 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 	
 	*SCREEN_MEMORY_CONTROL = background;
 	
-	columns = (width + horizontalSpacing) / (maxWidth + horizontalSpacing);
+	columns = (width + spacing) / (maxWidth + spacing);
+	
 	
 	while(1) {
 		*SCREEN_MEMORY_CONTROL = background;
@@ -75,12 +112,14 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 			}
 			while ( (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS ) ) {
 				if (kbhit()) {
-					if (getch() == KEY_ESC)
+					short k = getch();
+					if (k == 27 || k == KEYBOARD_BREAK)
 						return -1;
 				}
 			}
 			setTextXY(topLeftX,topLeftY);
 			putText("Scanning files...  ");
+			refreshDir();
 			numItems = loader();
 			setTextXY(topLeftX,topLeftY);
 			putText("                 ");
@@ -90,11 +129,17 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 		}
 		
 		topItem = currentItem = 0;
-		drawInitialItems();
+		*SCREEN_MEMORY_CONTROL = background;
+		fillRectangle(textToPixelX(topLeftX), textToPixelY(topLeftY), 
+			textToPixelX(topLeftX+width), textToPixelY(topLeftY+height));
+
+		drawItems(0, height);
+
 		if (numItems > 0) {
 			moveCursorToCurrent();
 			setTextReverse(1);
 			drawName(namer(currentItem));
+			setTextReverse(0);
 		}
 		
 		while (1) {
@@ -144,10 +189,5 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 				}
 			}
 		}
-	}
-	
-	while(1) {
-		columns = (bottomRightX - topLeftX) / maxWidth + 
-		
 	}
 }

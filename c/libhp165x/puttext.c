@@ -156,11 +156,11 @@ uint16_t getTextY(void) {
 }
 
 uint16_t textToPixelX(uint16_t x) {
-	return (x-winX) / FONT_WIDTH;
+	return (x+winX) * FONT_WIDTH;
 }
 
 uint16_t textToPixelY(uint16_t y) {
-	return (y-winY) / fontHeight;
+	return (y+winY) * fontHeight;
 }
 
 void setTextXY(uint16_t x, uint16_t y) {
@@ -448,6 +448,10 @@ void putChar(char c) {
 void putchar_(int c) {
 	/* ASSUME BIG ENDIAN */
 	putTextN(3+(char*)&c,1);
+}
+
+uint8_t getScrollBitplanes(void) {
+	return scrollBitplanes;
 }
 
 void scrollTextUp(uint16_t rows) {

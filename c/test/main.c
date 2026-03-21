@@ -90,6 +90,21 @@ void testJmp(void) {
 		jumpBack();	
 }
 
+char* getItemName(short i) {
+	static char n[10];
+	sprintf(n, "item:%hd", i);
+	return n;
+}
+
+unsigned short loader(void) {
+	return 150;
+}
+
+void choose(void) {
+	short i = hpChooser(0, 0, 40, 15, 2, 8, 1, loader, getItemName);	
+	printf("chose %hd\n", i);
+}
+
 extern uint32_t _bitplanes;
 
 void scrolling(void) { /* 760 */
@@ -266,6 +281,7 @@ main(int argc, char** argv) {
 	putText("8 - file test\n");
 	putText("9 - info\n");
 	putText("A - line\n");
+	putText("B - choose\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -286,6 +302,7 @@ main(int argc, char** argv) {
 		case KEY_8: fileTest(); break;
 		case KEY_9: diskInfo(); break;
 		case KEY_A: line(); break;
+		case KEY_B: choose(); break;
 		default:
 			reload();
 	}
