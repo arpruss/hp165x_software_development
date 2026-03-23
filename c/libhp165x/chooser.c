@@ -155,12 +155,14 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 						*SCREEN_MEMORY_CONTROL = background;
 						fillRectangle(textToPixelX(topLeftX), textToPixelY(topLeftY), 
 							textToPixelX(topLeftX+width), textToPixelY(topLeftY+height));
+						setTextXY(textToPixelX(topLeftX), textToPixelY(topLeftY));
 						return numItems == 0 ? -1 : currentItem;
 					case KEYBOARD_BREAK:
 					case 27:
 						*SCREEN_MEMORY_CONTROL = background;
 						fillRectangle(textToPixelX(topLeftX), textToPixelY(topLeftY), 
 							textToPixelX(topLeftX+width), textToPixelY(topLeftY+height));
+						setTextXY(textToPixelX(topLeftX), textToPixelY(topLeftY));
 						return -1;
 					case KEYBOARD_RIGHT:
 						if (currentItem + 1 < numItems)

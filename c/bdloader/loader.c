@@ -219,15 +219,6 @@ int main(void) {
 	while(1) {
 		*SCREEN_MEMORY_CONTROL = DRAW_BACKGROUND;
 		fillScreen();
-	asm(
-		"move.w #253,-(%sp)\n"
-		"jsr 0xb45e\n"
-		"addq.l #2,%sp\n"
-		"jsr 0xeb68\n"
-);
-		waitSeconds(5)
-		;
-	
 		
 		scan();
 		menu();

@@ -23,13 +23,24 @@ unknownROM:
     jsr     $eb68
     jsr     $eb68
     jmp     $eb68
-
+    
+patch_refresh:
+;; big disk support patch
+    jsr     $ebb0
+	cmp.b #'B',$984152+12
+	bne normalDisk0
+	move.w #(254*20*2-1),$9842a6
+	move.w #(254*20*2-1),$9842a8
+	move.b #'b',$984152+12
+normalDisk0:    
+	rts    
+	
 patch_get_key:
     jsr     ROM_GET_KEY
 
 ;; big disk support patch
 	cmp.b #'B',$984152+12
-	beq normalDisk
+	bne normalDisk
 	move.w #(254*20*2-1),$9842a6
 	move.w #(254*20*2-1),$9842a8
 	move.b #'b',$984152+12
@@ -348,14 +359,19 @@ stack equ buffer+stack_size
 PATCH_TABLE:
     dc.l   0
     dc.l   buffer_size+stack_size
-
+    
     dc.l   $eb68
     dc.l   patch_recalibrate
+    
+    dc.l   $ebb0
+    dc.l   patch_refresh
     
     dc.l   ROM_GET_KEY
     dc.l   patch_get_key
     
     END    START        ; last line of source
+
+
 
 
 *~Font name~Courier New~

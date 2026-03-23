@@ -194,5 +194,6 @@ void padFilename(char* paddedName, const char* name);
 #include "mc6845.h"
 #include "hpfile.h"
 #include "screen.h"
+#include "chooser.h"
 
 #endif

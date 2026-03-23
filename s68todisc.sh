@@ -1,3 +1,8 @@
+if [ -e e:/HXCSDFE.CFG ] ; then
+ drive=e:
+else
+ drive=d:
+fi
 if [ -f c/$1/bmbinary.s68 ] ; then
   python buildbinary.py c/$1/bmbinary.s68 $1.bin
 else
@@ -13,5 +18,5 @@ else
 	python lifutils.py put software.lif $1.bin $1 c001
 fi
 ./lif2hfe.sh software
-cp software.hfe e:/DSKA0004.HFE # if appropriate
-echo DSKA0004.HFE
+cp software.hfe $drive/DSKA0004-Soft.hfe 
+echo $drive/DSKA0004-Soft.hfe
