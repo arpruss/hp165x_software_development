@@ -41,11 +41,11 @@ all: wiztris.bin
 
 .PHONY: bmbinary release all clean rom dump dumps hexdump
 
-graysquare.S: imagetoassembly.py graysquare.txt
-	python imagetoassembly.py graysquare.txt > graysquare.S
+graysquare.S: ../libhp165x/imagetoassembly.py graysquare.txt
+	python ../libhp165x/imagetoassembly.py graysquare.txt > graysquare.S
 
-blacksquare.S: imagetoassembly.py blacksquare.txt
-	python imagetoassembly.py blacksquare.txt > blacksquare.S
+blacksquare.S: ../libhp165x/imagetoassembly.py blacksquare.txt
+	python ../libhp165x/imagetoassembly.py blacksquare.txt > blacksquare.S
 
 bmbinary: $(OBJS)
 	$(LD) -o $@ $(OBJS) $(LFLAGS)

@@ -1,19 +1,21 @@
 import sys
 import os
 
-WIDTH = 592
 SCREEN = 0x620000
 MOVEP = True
+
+DEFAULT_WIDTH = 592
+
+if sys.argv[1] == "--width":
+    DEFAULT_WIDTH = int(sys.argv[2])
+    sys.argv = sys.argv[:1] + sys.argv[3:]
+    
 
 #
 # given a text image, generate assembly code
 # blanks are .
 #
 
-if sys.argv[1] == "--width":
-    WIDTH = int(sys.argv[2])
-    sys.argv = sys.argv[:1] + sys.argv[3:]
-    
 filename = sys.argv[1]
 basename,_ = os.path.splitext(filename)
 image = []
@@ -30,6 +32,23 @@ with open(filename,"r") as f:
             image.append(line)
             imageHeight += 1            
             
+class Position:
+    def __init__(self,xpos,y):
+        self.xpos = xpos
+        self.y = y
+        
+    def __eq__(self,p):
+        return self.xpos == p.xpos and self.y == p.y
+        
+    def __add__(self,dx):
+        return Position(self.xpos+dx,self.y)
+        
+    def __sub__(self,dx):
+        return Position(self.xpos-dx,self.y)
+        
+    def __str__(self):
+        return "%d+%d*(SCREEN_WIDTH/2)" % (self.xpos,self.y)
+            
 def makeImage(img,width,height,startOffset):
     code = "/* image %d */\n" % startOffset
     words = []
@@ -39,13 +58,13 @@ def makeImage(img,width,height,startOffset):
     def addValue(xpos,y,value):
         if value == 0:
             return
-        pos = xpos + y * (WIDTH//2)
+        pos = Position(xpos,y)
         if words and words[-1][0] == pos-2:
             dw = words[-1][1] << 16 | value
             dwords.append( (pos-2, dw) )
             words.pop()
         else:
-            words.append( ( pos, value ) )
+            words.append( (pos, value ) )
     
     for y in range(height):
         value = 0
@@ -93,10 +112,10 @@ def makeImage(img,width,height,startOffset):
     dwordDict = toDict(dwords)
     wordDict = toDict(words)
     def dest(p):
-        if p == 0:
+        if p == Position(0,0):
             return "(%a0)"
         else:
-            return f"0x{p:04x}(%a0)"
+            return "("+str(p)+")(%a0)"
     lastD0L = -1
     for dword in qwordDict:
         # movep takes a dword and spreads it out to write a qword
@@ -136,7 +155,7 @@ def makeImage(img,width,height,startOffset):
     for word in wordDict:
         positions = wordDict[word]
         if len(positions) == 1:
-            code += f"    move.w #0x{word:%04x},{dest(positions[0])}\n"
+            code += f"    move.w #0x{word:04x},{dest(positions[0])}\n"
         else:
             if word < 128:
                 code += f"    moveq #0x{word:02x},%d0\n" 
@@ -147,25 +166,29 @@ def makeImage(img,width,height,startOffset):
     return code
 
 print("""    .text
+#ifndef SCREEN_WIDTH
+# define SCREEN_WIDTH %u
+#endif
+#define SCREEN 0x%x
     .align 2
     .globl %s
     .type %s, @function 
 %s:  /* void %s(uint16_t x,uint16_t y) */
-""" % (basename,basename,basename,basename))
+""" % (DEFAULT_WIDTH,SCREEN,basename,basename,basename,basename))
 
 
 print(f"""
 	movem.l %d0-%d2/%a0,-(%sp)
     move.w 26(%sp),%d0 /* y */
-    mulu.w #({WIDTH:d}/4),%d0     /* d0.w = y*(WIDTH/4) */
+    mulu.w #(SCREEN_WIDTH/4),%d0     /* d0.w = y*(SCREEN_WIDTH/4) */
     move.w 22(%sp),%d1      /* x */
     move.w %d1,%d2
     lsr.w #2,%d1           /* d1 = x/4 */
     add.w %d1,%d0          /* d0 = y*(WIDTH/4) + x/4 */
     and.w #0xFFFF,%d0      
     add.l %d0,%d0          /* this may exceed 64k */
-	move.l #{SCREEN:x},%a0
-    add.l %d0,%a0          /* a0 = 0x600000 + (y*WIDTH/4+x/4)*2 */
+	move.l #(SCREEN),%a0
+    add.l %d0,%a0          /* a0 = SCREEN + (y*SCREEN_WIDTH/4+x/4)*2 */
     btst #0,%d2
     beq .even
     btst #1,%d2
