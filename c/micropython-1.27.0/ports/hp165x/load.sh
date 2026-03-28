@@ -7,5 +7,5 @@ if [ -e e:/HXCSDFE.CFG ] ; then
 else
 	drive=d:
 fi
-cp python.hfe $drive/Python.hfe
-echo $drive/Python.hfe
+cp python.hfe $drive/DSKA0006-Python.hfe
+echo $drive/DSKA0006-Python.hfe

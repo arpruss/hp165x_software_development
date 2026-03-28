@@ -261,6 +261,23 @@ void line(void) {
 	printf("Time: %lu\n", getVBLCounter()-t);
 }
 
+void inputEvents(void) {
+	initKeyboard(1);
+	while(1) {
+		InputEvent_t e;
+		if (getInputEvent(&e)) {
+			if (e.type == INPUT_KEY) {
+				printf("key: %x %x\n", e.data.key.character, e.data.key.nativeKey);
+				if (e.data.key.nativeKey == KEY_STOP)
+					return;
+			}
+			else if (e.type == INPUT_MOUSE) {
+				printf("mouse: (%d,%d) %x %x\n", e.data.mouse.x, e.data.mouse.y, e.data.mouse.buttons, e.data.mouse.doubleClick);
+			}
+		}
+	}
+}
+
 main(int argc, char** argv) {
 	(void)argc;
 	(void)argv;
@@ -284,6 +301,7 @@ main(int argc, char** argv) {
 	putText("9 - info\n");
 	putText("A - line\n");
 	putText("B - choose\n");
+	putText("C - inputEvents\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -305,6 +323,7 @@ main(int argc, char** argv) {
 		case KEY_9: diskInfo(); break;
 		case KEY_A: line(); break;
 		case KEY_B: choose(); break;
+		case KEY_C: inputEvents(); break;
 		default:
 			reload();
 	}

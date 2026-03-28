@@ -35,6 +35,13 @@ patch_refresh:
 normalDisk0:    
 	rts    
 	
+;patch_load_test:
+;    clr.l   -(SP)
+;    clr.l   -(SP)
+;    jsr     $ebfe ; read block zero to ROM -- i.e., seek to first track
+;    addq    #8,SP
+;    jmp     $ece8
+	
 patch_get_key:
     jsr     ROM_GET_KEY
 
@@ -360,6 +367,9 @@ PATCH_TABLE:
     dc.l   0
     dc.l   buffer_size+stack_size
     
+;    dc.l   $ece8
+;    dc.l   patch_load_test
+    
     dc.l   $eb68
     dc.l   patch_recalibrate
     
@@ -370,6 +380,7 @@ PATCH_TABLE:
     dc.l   patch_get_key
     
     END    START        ; last line of source
+
 
 
 

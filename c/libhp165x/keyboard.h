@@ -16,9 +16,34 @@
 #define KEYBOARD_END  0xD5
 #define KEYBOARD_F1   0xC2
 #define KEYBOARD_ALT_ALPHA(x) ((x)-'a'+0x88)
+#define KEYBOARD_MOUSE 0xFF
 
-void initKeyboard(char useSerial);
+#define INPUT_MOUSE    0x01
+#define INPUT_KEY      0x02
+#define MOUSE_DATA     0xF0
+
+void initKeyboard(uint8_t useSerial);
+void initInput(uint8_t useSerial);
 char kbhit(void);
 char getch(void);
+
+typedef struct {
+	uint8_t type;
+	union {
+		struct {
+			uint16_t character;
+			uint16_t nativeKey;
+		} key;
+		struct {
+			int8_t x;
+			int8_t y;
+			uint8_t buttons;
+			uint8_t doubleClick;
+		} mouse;
+	} data;
+} InputEvent_t;
+
+// do not mix kbhit()/getch() and getInputEvent()
+uint8_t getInputEvent(InputEvent_t* e);
 
 #endif
