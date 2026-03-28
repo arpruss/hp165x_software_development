@@ -35,8 +35,8 @@ typedef struct {
 			uint16_t nativeKey;
 		} key;
 		struct {
-			int8_t x;
-			int8_t y;
+			uint16_t x;
+			uint16_t y;
 			uint8_t buttons;
 			uint8_t doubleClick;
 		} mouse;

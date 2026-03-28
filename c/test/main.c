@@ -278,6 +278,38 @@ void inputEvents(void) {
 	}
 }
 
+void mouse(void) {
+	uint16_t x = 0;
+	uint16_t y = 0;
+
+	initKeyboard(1);
+	*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
+	drawMouseCursor(0,0);
+	
+	while(1) {
+		InputEvent_t e;
+		if (getInputEvent(&e)) {
+			if (e.type == INPUT_KEY) {
+				if (e.data.key.nativeKey == KEY_STOP)
+					return;
+			}
+			else if (e.type == INPUT_MOUSE) {
+				*SCREEN_MEMORY_CONTROL = WRITE_CLEAR_ATTR;
+				drawMouseCursor(x,y);
+				x = e.data.mouse.x;
+				y = e.data.mouse.y;
+				*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
+				drawMouseCursor(x,y);
+				if (e.data.mouse.buttons) {
+					*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+					drawPixel(x,y);
+				}
+				*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
+			}
+		}
+	}
+}
+
 main(int argc, char** argv) {
 	(void)argc;
 	(void)argv;
@@ -302,6 +334,7 @@ main(int argc, char** argv) {
 	putText("A - line\n");
 	putText("B - choose\n");
 	putText("C - inputEvents\n");
+	putText("D - mouse\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -324,6 +357,7 @@ main(int argc, char** argv) {
 		case KEY_A: line(); break;
 		case KEY_B: choose(); break;
 		case KEY_C: inputEvents(); break;
+		case KEY_D: mouse(); break;
 		default:
 			reload();
 	}

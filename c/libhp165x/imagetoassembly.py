@@ -6,10 +6,18 @@ MOVEP = True
 
 DEFAULT_WIDTH = 592
 
-if sys.argv[1] == "--width":
-    DEFAULT_WIDTH = int(sys.argv[2])
-    sys.argv = sys.argv[:1] + sys.argv[3:]
-    
+clipx = False
+
+while sys.argv[1].startswith("--"):
+    if sys.argv[1] == "--width":
+        DEFAULT_WIDTH = int(sys.argv[2])
+        sys.argv = sys.argv[:1] + sys.argv[3:]
+    elif sys.argv[1] == "--clipx":
+        clipx = True
+        sys.argv = sys.argv[:1] + sys.argv[2:]
+    else:
+        print("Unknown option", sys.argv[1])
+        sys.exit(1)
 
 #
 # given a text image, generate assembly code
@@ -49,7 +57,7 @@ class Position:
     def __str__(self):
         return "%d+%d*(SCREEN_WIDTH/2)" % (self.xpos,self.y)
             
-def makeImage(img,width,height,startOffset):
+def makeImage(img,width,height,startOffset,clipWidth=None):
     code = "/* image %d */\n" % startOffset
     words = []
     dwords = []
@@ -71,7 +79,7 @@ def makeImage(img,width,height,startOffset):
         mask = 8>>startOffset
         pos = 0
         for x in range(width):
-            if img[y][x] != '.' and img[y][x] != ' ':
+            if img[y][x] != '.' and img[y][x] != ' ' and (clipWidth is None or x < clipWidth):
                 value |= mask
             mask >>= 1
             if mask == 0:
@@ -139,7 +147,7 @@ def makeImage(img,width,height,startOffset):
         positions = dwordDict[dword]
         lowWord = dword & 0xFFFF
         if len(positions) == 1 and lowWord not in wordDict:
-            if positions[0] == 0:
+            if positions[0] == Position(0,0):
                 code += f"    move.l #0x{dword:08x},{dest(positions[0])}\n"
         else:
             if dword < 128:
@@ -177,23 +185,28 @@ print("""    .text
 """ % (DEFAULT_WIDTH,SCREEN,basename,basename,basename,basename))
 
 
-print(f"""
+print("""
 	movem.l %d0-%d2/%a0,-(%sp)
     move.w 26(%sp),%d0 /* y */
     mulu.w #(SCREEN_WIDTH/4),%d0     /* d0.w = y*(SCREEN_WIDTH/4) */
     move.w 22(%sp),%d1      /* x */
-    move.w %d1,%d2
+    move.w %d1,%d2          
     lsr.w #2,%d1           /* d1 = x/4 */
     add.w %d1,%d0          /* d0 = y*(WIDTH/4) + x/4 */
     and.w #0xFFFF,%d0      
     add.l %d0,%d0          /* this may exceed 64k */
 	move.l #(SCREEN),%a0
     add.l %d0,%a0          /* a0 = SCREEN + (y*SCREEN_WIDTH/4+x/4)*2 */
-    btst #0,%d2
+                           /* d2 = x */""")
+
+if clipx:
+    print(f"""    cmp.w #(SCREEN_WIDTH-{imageWidth}),%d2
+    bhi .clip""")
+
+print("""    btst #0,%d2
     beq .even
     btst #1,%d2
-    beq .image1
-""")
+    beq .image1""")
 print(makeImage(image,imageWidth,imageHeight,3))
 print("""    movem.l (%sp)+,%d0-%d2/%a0
     rts
@@ -211,3 +224,27 @@ print("""    movem.l (%sp)+,%d0-%d2/%a0
 print(makeImage(image,imageWidth,imageHeight,1))
 print("""    movem.l (%sp)+,%d0-%d2/%a0
     rts""")
+if clipx:
+    print(f""".clip:
+    sub.w #(SCREEN_WIDTH-1),%d2\n
+    bhi .done
+    neg.w %d2 /* %d2 = SCREEN_WIDTH-1-x */
+    add %d2,%d2
+    add %d2,%d2
+    move.l #.jumpTable,%a1
+    move.l (0,%a1,%d2.l),%a1
+    jmp (%a1)
+    """)
+    for x in range(1,imageWidth):
+        print(f".clipped{x:d}:")
+        print(makeImage(image,imageWidth,imageHeight,(0x1000-x)%4,x))
+        print("""    movem.l (%sp)+,%d0-%d2/%a0
+    rts""")
+    print(".jumpTable:")
+    for x in range(1,imageWidth):
+        print(f"    .long .clipped{x:d}")
+        
+    print(""".done:
+    movem.l (%sp)+,%d0-%d2/%a0
+    rts""")
+    

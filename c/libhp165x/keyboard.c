@@ -3,11 +3,16 @@
 static uint8_t useSerial = 0;
 static uint8_t mouseEventPos = 0;
 static int8_t mouseData[2];
+static int16_t mouseX = 0;
+static int16_t mouseY = 0;
 
 void initKeyboard(uint8_t s) {
 	useSerial = s;
-	if (useSerial)
+	if (useSerial) {
 		simple_serial_init(BAUD_19200);
+		mouseX = 0;
+		mouseY = 0;
+	}
 	else
 		simple_serial_close();
 }
@@ -36,12 +41,24 @@ uint8_t getInputEvent(InputEvent_t* e) {
 		if (mouseEventPos == 2) {
 			e->type = INPUT_MOUSE;
 			e->data.mouse.buttons = mouseData[0] & ~MOUSE_DATA;
-			e->data.mouse.x = mouseData[1] & 0x7F;
+			int16_t dx = mouseData[1] & 0x7F;
 			if (mouseData[1] & 0x40)
-				e->data.mouse.x |= 0x80;
-			e->data.mouse.y = serialChar & 0x7F;
-			if (serialChar & 0x40)
-				e->data.mouse.y |= 0x80;
+				dx |= 0xFF80;
+			int16_t dy = serialChar & 0x7F;
+			if (dy & 0x40)
+				dy |= 0xFF80;
+			mouseX += dx;
+			mouseY += dy;
+			if (mouseX < 0)
+				mouseX = 0;
+			else if (mouseX >= screenWidth)
+				mouseX = screenWidth-1;
+			if (mouseY < 0)
+				mouseY = 0;
+			else if (mouseY >= screenHeight)
+				mouseY = screenHeight-1;
+			e->data.mouse.x = mouseX;
+			e->data.mouse.y = mouseY;
 				
 			e->data.mouse.doubleClick = (serialChar & 0x80) ? 1 : 0;
 			mouseEventPos = 0;
