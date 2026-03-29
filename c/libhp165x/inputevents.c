@@ -2,11 +2,59 @@
 
 static uint8_t useSerial = 0;
 static uint8_t mouseEventPos = 0;
+static uint8_t oldMouseButtons = 0;
 static int8_t mouseData[2];
 static int16_t mouseX = 0;
 static int16_t mouseY = 0;
+static uint16_t mouseDrawMode;
+static uint16_t mouseEraseMode;
+static ImageDrawer_t drawMouse = NULL;
+static uint32_t mouseCursorTimeoutTicks = 0;
+static uint32_t lastMouseCursorTicks;
+#define NO_CURSOR -1000
+static int16_t mouseCursorX=NO_CURSOR;
+static int16_t mouseCursorY;
 
 #define IS_MOUSE(c) ( mouseEventPos > 0 || ( ((c) & MOUSE_DATA) == MOUSE_DATA ) )
+
+void clearMouseCursor(void) {
+	if (mouseCursorX != NO_CURSOR) {
+		if (drawMouse != NULL) {
+			*SCREEN_MEMORY_CONTROL = mouseEraseMode;
+			drawMouse(mouseCursorX, mouseCursorY);
+		}
+		mouseCursorX = NO_CURSOR;
+	}
+}
+
+void drawMouseCursor(void) {
+	lastMouseCursorTicks = getVBLCounter();
+
+	if (mouseCursorX == mouseX && mouseCursorY == mouseY) 
+		return;
+	
+	clearMouseCursor();
+	
+	if (drawMouse != NULL) {
+		mouseCursorX = mouseX;
+		mouseCursorY = mouseY;
+		*SCREEN_MEMORY_CONTROL = mouseDrawMode;
+		drawMouse(mouseCursorX, mouseCursorY);
+	}
+}
+
+static void mouseTimeoutCheck(void) {
+	if (mouseCursorTimeoutTicks != 0 && getVBLCounter() - lastMouseCursorTicks > mouseCursorTimeoutTicks) 
+		clearMouseCursor();
+}
+
+void setMouseCursor(ImageDrawer_t drawer, uint16_t drawMode, uint16_t eraseMode, uint32_t timeoutSeconds) {
+	clearMouseCursor();
+	drawMouse = drawer;
+	mouseDrawMode = drawMode;
+	mouseEraseMode = eraseMode;
+	mouseCursorTimeoutTicks = timeoutSeconds * ticksPerSecond();
+}
 
 void initInputEvents(uint8_t s) {
 	useSerial = s;
@@ -17,6 +65,7 @@ void initInputEvents(uint8_t s) {
 	}
 	else
 		simple_serial_close();
+	oldMouseButtons = 0;
 }
 
 static uint8_t updateMouse(uint8_t serialChar, InputEvent_t* e) {
@@ -27,6 +76,7 @@ static uint8_t updateMouse(uint8_t serialChar, InputEvent_t* e) {
 		int16_t dy = serialChar & 0x7F;
 		if (dy & 0x40)
 			dy |= 0xFF80;
+		uint8_t changed = dx != 0 || dy != 0; // register as a movement even if off-screen
 		mouseX += dx;
 		mouseY += dy;
 		if (mouseX < 0)
@@ -39,15 +89,30 @@ static uint8_t updateMouse(uint8_t serialChar, InputEvent_t* e) {
 			mouseY = screenHeight-1;
 
 		mouseEventPos = 0;
+		
+		uint8_t buttons = mouseData[0] & ~MOUSE_DATA;
+		uint8_t buttonDifference = 0;
+
+		if (serialChar & 0x80) 
+			buttons |= MOUSE_DOUBLE_CLICK;
+		if (buttons != oldMouseButtons) {
+			changed = 1;
+			buttonDifference = buttons ^ oldMouseButtons;
+		}
+
+		oldMouseButtons = buttons;
 
 		if (e != NULL) {
 			e->type = INPUT_MOUSE;
-			e->data.mouse.buttons = mouseData[0] & ~MOUSE_DATA;
+			e->data.mouse.buttons = buttons;
+			e->data.mouse.buttonDifference = buttonDifference;
 			e->data.mouse.x = mouseX;
 			e->data.mouse.y = mouseY;
-			e->data.mouse.doubleClick = (serialChar & 0x80) ? 1 : 0;
 		}
 
+		if (changed) 
+			drawMouseCursor();
+		
 		return 1;
 	}
 	else if (mouseEventPos == 1) {
@@ -62,6 +127,8 @@ static uint8_t updateMouse(uint8_t serialChar, InputEvent_t* e) {
 }
 
 char kbhit(void) {
+	mouseTimeoutCheck();
+	
 	if (peekKey())
 		return 1;
 	if (useSerial) {
@@ -84,6 +151,8 @@ char kbhit(void) {
 
 char getch(void) {
 	while(1) {	
+		mouseTimeoutCheck();
+
 		uint16_t k = getKey(0);
 		
 		if (k != 0)
@@ -103,7 +172,10 @@ char getch(void) {
 }
 
 uint8_t getInputEvent(InputEvent_t* e) {
+	mouseTimeoutCheck();
+
 	uint16_t k = getKey(0);
+	
 	if (k != 0) {
 		e->type = INPUT_KEY;
 		e->data.key.character = parseKey(k);

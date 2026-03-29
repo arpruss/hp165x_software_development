@@ -1,6 +1,6 @@
 SRCS=hp165x.c puttext.c loadexec.c key.c hpfile.c serial.c scroll.S simple_serial.c \
 	inputevents.c input.c mc6845.c screen.c crt0.S atexit.S picostubs.c hpposix.c setjmp.S pack.c \
-	pixel.S chooser.c drawMouseCursor.S 
+	pixel.S chooser.c mouseArrow.S 
 
 PREFIX=m68k-elf
 
@@ -67,11 +67,8 @@ libhp165x.a: $(OBJS) platform.ld
 libhp165x640.a: $(OBJS640) platform.ld 
 	cd $(BUILDDIR640) && $(AR) rcs ../libhp165x640.a *.o
 	
-drawMouseCursor.S: drawMouseCursor.txt imagetoassembly.py
-	python imagetoassembly.py --clipx drawMouseCursor.txt > drawMouseCursor.S
-
-eraseMouseCursor.S: eraseMouseCursor.txt imagetoassembly.py
-	python imagetoassembly.py --clipx eraseMouseCursor.txt > eraseMouseCursor.S
+mouseArrow.S: mouseArrow.txt imagetoassembly.py
+	python imagetoassembly.py --clipx mouseArrow.txt > mouseArrow.S
 
 -include $(DEPS)
 

@@ -17,6 +17,10 @@
 #define KEYBOARD_F1   0xC2
 #define KEYBOARD_ALT_ALPHA(x) ((x)-'a'+0x88)
 #define KEYBOARD_MOUSE 0xFF
+#define KEYBOARD_INSERT      0xD1
+//#define KEYBOARD_DELETE      0xD4
+#define KEYBOARD_PAGE_UP     0xD3
+#define KEYBOARD_PAGE_DOWN   0xD6
 
 #define INPUT_MOUSE    0x01
 #define INPUT_KEY      0x02
@@ -37,13 +41,21 @@ typedef struct {
 			uint16_t x;
 			uint16_t y;
 			uint8_t buttons;
-			uint8_t doubleClick;
+			uint8_t buttonDifference;
 		} mouse;
 	} data;
 } InputEvent_t;
 
+#define MOUSE_BUTTON_LEFT 		 0x01
+#define MOUSE_DOUBLE_CLICK 		 0x80
+
 uint8_t getInputEvent(InputEvent_t* e);
 void initInputEvents(uint8_t useSerial);
+void mouseArrow(uint16_t x, uint16_t y);
 #define initKeyboard initInputEvents
+typedef void (*ImageDrawer_t)(uint16_t x, uint16_t y);
+void setMouseCursor(ImageDrawer_t drawer, uint16_t drawMode, uint16_t eraseMode, uint32_t timeoutSeconds);
+void clearMouseCursor(void);
+void drawMouseCursor(void);
 
 #endif

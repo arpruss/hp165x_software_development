@@ -272,7 +272,7 @@ void inputEvents(void) {
 					return;
 			}
 			else if (e.type == INPUT_MOUSE) {
-				printf("mouse: (%d,%d) %x %x\n", e.data.mouse.x, e.data.mouse.y, e.data.mouse.buttons, e.data.mouse.doubleClick);
+				printf("mouse: (%d,%d) %x\n", e.data.mouse.x, e.data.mouse.y, e.data.mouse.buttons);
 			}
 		}
 	}
@@ -283,8 +283,7 @@ void mouse(void) {
 	uint16_t y = 0;
 
 	initKeyboard(1);
-	*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
-	drawMouseCursor(0,0);
+	setMouseCursor(mouseArrow, WRITE_SET_ATTR, WRITE_CLEAR_ATTR, 10);
 	
 	while(1) {
 		InputEvent_t e;
@@ -298,17 +297,10 @@ void mouse(void) {
 				}
 			}
 			else if (e.type == INPUT_MOUSE) {
-				*SCREEN_MEMORY_CONTROL = WRITE_CLEAR_ATTR;
-				drawMouseCursor(x,y);
-				x = e.data.mouse.x;
-				y = e.data.mouse.y;
-				*SCREEN_MEMORY_CONTROL = WRITE_SET_ATTR;
-				drawMouseCursor(x,y);
 				if (e.data.mouse.buttons) {
 					*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
-					drawPixel(x,y);
+					drawPixel(e.data.mouse.x,e.data.mouse.y);
 				}
-				*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 			}
 		}
 	}
