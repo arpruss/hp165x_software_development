@@ -3,15 +3,9 @@
 #include "hp165x.h"
 #define INITIAL_MARGIN 8
 
-asm(
-"_vbl_counter_code:\n"
-"  addq.l #1,vblCounterValue\n"
-"  jmp _original_int1_handler\n"); 
-
-volatile uint32_t vblCounterValue = -1;
-extern void _vbl_counter_code(void);
-extern void _vbl_counter_jmp(void);
 extern void _original_int1_handler(void);
+extern volatile uint32_t vblCounterValue;
+extern void _vbl_counter_code(void);
 void _final_cleanup_with_atexit_support(void);
 
 uint32_t getVBLCounter(void) {
@@ -33,11 +27,6 @@ void unpatchInt(uint16_t level) {
 	volatile uint8_t* orig = ((volatile uint8_t*)_original_int1_handler)+6*(level-1);
 	*(volatile uint32_t*)(current+2) = *(volatile uint32_t*)(orig+2);
 	*(volatile uint16_t*)(current) = *(volatile uint16_t*)(orig);
-}
-
-void patchVBL() {
-	vblCounterValue = 0;
-	patchInt(INT_VBL, _vbl_counter_code);
 }
 
 void reload(void) {

@@ -292,6 +292,10 @@ void mouse(void) {
 			if (e.type == INPUT_KEY) {
 				if (e.data.key.nativeKey == KEY_STOP)
 					return;
+				else {
+					setTextXY(x/getFontWidth(),y/getFontHeight());
+					putChar(e.data.key.character);
+				}
 			}
 			else if (e.type == INPUT_MOUSE) {
 				*SCREEN_MEMORY_CONTROL = WRITE_CLEAR_ATTR;
@@ -318,7 +322,6 @@ main(int argc, char** argv) {
 	
 	initScreen(400, WRITE_BLACK);
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
-	patchVBL();
 
 	setTextColors(WRITE_WHITE,WRITE_BLACK);
 	putText("0 - scrolling\n");

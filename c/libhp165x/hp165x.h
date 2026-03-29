@@ -85,7 +85,6 @@ typedef void (*Reload_t)(void);
 void setKeyWait(uint8_t w);
 void waitSeconds(uint16_t n); 
 uint32_t getVBLCounter(void);
-void patchVBL(void);
 void setVBLCounter(uint32_t value);
 void initialScreen();
 char parseKey(uint16_t key);
@@ -190,7 +189,7 @@ void padFilename(char* paddedName, const char* name);
 #include "puttext.h"
 #include "serial.h"
 #include "simple_serial.h"
-#include "keyboard.h"
+#include "inputevents.h"
 #include "mc6845.h"
 #include "hpfile.h"
 #include "screen.h"

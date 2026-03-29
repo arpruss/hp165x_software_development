@@ -40,6 +40,9 @@ _start:
 		move.w  (%a0)+,%d1
 		move.w	%d1,(%a1)+
 		dbra	%d0,3b
+		
+	/* install VBL counter */
+		move.l  #vbl_count, 0x980712 /* VBL callback */
 
 		bsr		bigDiskSupport
         jsr     main
@@ -74,6 +77,8 @@ _final_cleanup:
 		move.w  #0xF,0x9077e 
 		move.w	#0x4,0x9800b2 /* black on white */
 		move.w	#0,0x9800b0 /* not bold */
+		clr.l	0x980712 /* VBL callback */
+
 #if defined(DEFAULT_SCREEN_HEIGHT) || defined(SCREEN_WIDTH)
 		jsr	resetMC6845
 #else
@@ -106,6 +111,14 @@ bigDiskSupport:
 		move.b #'b',0x984152+12
 	4:	
 		rts
+
+vbl_count:
+		addq.l #1, vblCounterValue
+		rts
+
+		.globl vblCounterValue
+vblCounterValue:
+		.long 0
 
 		.globl _posixCleanup
 _posixCleanup:

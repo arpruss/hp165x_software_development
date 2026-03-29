@@ -191,8 +191,9 @@ blacksquare:  /* void blacksquare(uint16_t x,uint16_t y) */
     neg.w %d2 /* %d2 = SCREEN_WIDTH-1-x */
     add %d2,%d2
     add %d2,%d2
-    move.l %a1,.jumpTable
-    jmp (%a1,%d2.l)    
+    move.l #.jumpTable,%a1
+    move.l (0,%a1,%d2.l),%a1
+    jmp (%a1)
     
 .clipped1:
 /* image 3 */
@@ -649,24 +650,64 @@ blacksquare:  /* void blacksquare(uint16_t x,uint16_t y) */
 
     movem.l (%sp)+,%d0-%d2/%a0
     rts
+.clipped18:
+/* image 2 */
+    move.l #0x030f0f0f,%d0
+    movep.l %d0,(1+0*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+1*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+2*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+3*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+4*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+5*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+6*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+7*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+8*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+9*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+10*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+11*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+12*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+13*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+14*(SCREEN_WIDTH/2))(%a0)
+    movep.l %d0,(1+15*(SCREEN_WIDTH/2))(%a0)
+    moveq #0x0f,%d0
+    move.w %d0,(8+0*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+1*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+2*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+3*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+4*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+5*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+6*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+7*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+8*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+9*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+10*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+11*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+12*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+13*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+14*(SCREEN_WIDTH/2))(%a0)
+    move.w %d0,(8+15*(SCREEN_WIDTH/2))(%a0)
+
+    movem.l (%sp)+,%d0-%d2/%a0
+    rts
 .jumpTable:
-.long .clipped1
-.long .clipped2
-.long .clipped3
-.long .clipped4
-.long .clipped5
-.long .clipped6
-.long .clipped7
-.long .clipped8
-.long .clipped9
-.long .clipped10
-.long .clipped11
-.long .clipped12
-.long .clipped13
-.long .clipped14
-.long .clipped15
-.long .clipped16
-.long .clipped17
+    .long .clipped1
+    .long .clipped2
+    .long .clipped3
+    .long .clipped4
+    .long .clipped5
+    .long .clipped6
+    .long .clipped7
+    .long .clipped8
+    .long .clipped9
+    .long .clipped10
+    .long .clipped11
+    .long .clipped12
+    .long .clipped13
+    .long .clipped14
+    .long .clipped15
+    .long .clipped16
+    .long .clipped17
+    .long .clipped18
 .done:
     movem.l (%sp)+,%d0-%d2/%a0
     rts

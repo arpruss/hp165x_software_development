@@ -283,6 +283,8 @@ trap #0 with D7=1C and D0=argument: pause for 16.9ms times argument (number of d
 trap #0 with D7=1D? 
 	At d80
 trap #0 handler starts at #6B52
+	it calls a callback void (*f)(void) using the pointer at 0x980712 if this pointer is not null
+
 
 trap #2 handler starts at #6b0e (called from VBL)
 

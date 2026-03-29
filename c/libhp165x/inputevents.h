@@ -22,8 +22,7 @@
 #define INPUT_KEY      0x02
 #define MOUSE_DATA     0xF0
 
-void initKeyboard(uint8_t useSerial);
-void initInput(uint8_t useSerial);
+// if you're using kbhit() or getch(), mouse events will get skipped
 char kbhit(void);
 char getch(void);
 
@@ -43,7 +42,8 @@ typedef struct {
 	} data;
 } InputEvent_t;
 
-// do not mix kbhit()/getch() and getInputEvent()
 uint8_t getInputEvent(InputEvent_t* e);
+void initInputEvents(uint8_t useSerial);
+#define initKeyboard initInputEvents
 
 #endif

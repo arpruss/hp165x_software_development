@@ -628,7 +628,6 @@ int main()
 	
 	*LAST_KEY = 0;
 
-	patchVBL();	
 	atexit(reload);
 	setKeyRepeat(20,8);
 	load_scores();

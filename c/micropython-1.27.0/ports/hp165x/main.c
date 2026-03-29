@@ -20,7 +20,6 @@ int __errno;
 
 int main(int argc, char **argv) {
 	initScreen(392,WRITE_BLACK);
-	patchVBL();
 	_ticksPerSecond = ticksPerSecond();
 	initKeyboard(1);
     // Initialise the MicroPython runtime.

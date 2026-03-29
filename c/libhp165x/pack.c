@@ -116,10 +116,6 @@ static int writeBlocksRetry(uint32_t startBlock, uint32_t count, const void* p) 
 	return -1;
 }
 
-static int writeBlockRetry(uint32_t startBlock, const void* p) {
-	return writeBlocksRetry(startBlock, 1, p);
-}
-
 static int readBlocksRetry(uint32_t startBlock, uint32_t count, void* p) {
 	for (int i=0; i<RETRY; i++) {
 		if (readBlocks(startBlock, count, p) >= 0)

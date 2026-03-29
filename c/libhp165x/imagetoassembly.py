@@ -130,8 +130,7 @@ def makeImage(img,width,height,startOffset,clipWidth=None):
         positions = qwordDict[dword]
         lowWord = dword & 0xFFFF
         if len(positions) == 1 and lowWord not in wordDict:
-            if positions[0] == 0:
-                code += f"    movep.l #0x{dword:08x},{dest(positions[0])}\n"
+            code += f"    movep.l #0x{dword:08x},{dest(positions[0])}\n"
         else:
             if dword < 128:
                 code += f"    moveq #0x{dword:02x},%d0\n"
@@ -147,8 +146,7 @@ def makeImage(img,width,height,startOffset,clipWidth=None):
         positions = dwordDict[dword]
         lowWord = dword & 0xFFFF
         if len(positions) == 1 and lowWord not in wordDict:
-            if positions[0] == Position(0,0):
-                code += f"    move.l #0x{dword:08x},{dest(positions[0])}\n"
+            code += f"    move.l #0x{dword:08x},{dest(positions[0])}\n"
         else:
             if dword < 128:
                 code += f"    moveq #0x{dword:02x},%d0\n"

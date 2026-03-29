@@ -67,8 +67,6 @@ int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {
 	uint32_t endTime;
 	
 	if (0<timeoutTicks) {
-		if (getVBLCounter()==(uint32_t)(-1))
-			patchVBL();
 		endTime = getVBLCounter() + timeoutTicks;
 	}
 	

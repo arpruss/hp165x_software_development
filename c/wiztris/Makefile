@@ -45,7 +45,7 @@ graysquare.S: ../libhp165x/imagetoassembly.py graysquare.txt
 	python ../libhp165x/imagetoassembly.py graysquare.txt > graysquare.S
 
 blacksquare.S: ../libhp165x/imagetoassembly.py blacksquare.txt
-	python ../libhp165x/imagetoassembly.py --clipx blacksquare.txt > blacksquare.S
+	python ../libhp165x/imagetoassembly.py blacksquare.txt > blacksquare.S
 
 bmbinary: $(OBJS)
 	$(LD) -o $@ $(OBJS) $(LFLAGS)
