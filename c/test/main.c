@@ -6,6 +6,8 @@
 #include <hpposix.h>
 #include <hpsetjmp.h>
 
+extern uint32_t _original_stack_pointer;
+
 uint32_t bottom; // 764,923
 
 /*
@@ -30,32 +32,44 @@ void fileTest(void) {
 	int fd = open("TESTFILE", O_WRONLY|O_CREAT);
 	printf("Opened %d\n", fd);
 	if (fd < 0) {
-		printf("Error opening file");
+		printf("Error opening file\n");
 		return;
 	}
 	if (sizeof(testBuffer) != write(fd, testBuffer, sizeof(testBuffer))) {
-		printf("Error writing file");
+		printf("Error writing file\n");
 		close(fd);
 		return;
 	}
 	if (close(fd)<0) {
-		printf("Error closing file");
+		printf("Error closing file\n");
 		return;
 	}
 	memset(testBuffer, 0, sizeof(testBuffer));
 	fd = open("TESTFILE", O_RDONLY);
-	printf("Opened %d\n", fd);
 	if (fd < 0) {
-		printf("reError opening file");
+		printf("Error opening file\n");
 		return;
 	}
-	if (sizeof(testBuffer) != read(fd, testBuffer, sizeof(testBuffer))) {
-		printf("Error reading file");
+	printf("Opened %d\n", fd);
+	off_t z = lseek(fd, 0, SEEK_END);
+	printf("size %Ld\n", z);
+	lseek(fd, 0, SEEK_SET);
+	printf("reading part 1\n");
+	if (1234 != read(fd, testBuffer, 1234)) {
+		printf("Error reading file\n");
+		close(fd);
+		return;
+	}
+	printf("Press a key to continue\n");
+	getKey(1);
+	printf("reading part 2\n");
+	if (sizeof(testBuffer)-1234 != read(fd, testBuffer+1234, sizeof(testBuffer)-1234)) {
+		printf("Error reading file\n");
 		close(fd);
 		return;
 	}
 	if (close(fd)<0) {
-		printf("Error reclosing file");
+		printf("Error reclosing file\n");
 		return;
 	}
 	for (uint16_t i = 0 ; i < sizeof(testBuffer) ; i++) {
@@ -64,12 +78,13 @@ void fileTest(void) {
 			return;
 		}
 	}
+	printf("Verified file\n");
 	if (unlink("TESTFILE") < 0) {
-		printf("Error unlinking");
+		printf("Error unlinking\n");
 		return;
 	} 
 	else {
-		printf("Success unlinking");
+		printf("Success unlinking\n");
 	}
 	if (unlink("TESTFILE") < 0) {
 		printf("can't unlink a second time (GOOD)");
@@ -90,7 +105,7 @@ void testJmp(void) {
 		jumpBack();	
 }
 
-char* getItemName(short i) {
+char* getItemName(unsigned short i) {
 	static char n[10];
 	sprintf(n, "item:%hd", i);
 	return n;
@@ -157,6 +172,18 @@ void lut(void) {
 	getKey(1);
 }
 
+void diskInfo(void) {
+	uint32_t totalBlocks,freeBlocks,space;
+	if (diskSpace(&totalBlocks, &freeBlocks, &space) < 0) {
+		putText("Cannot read disk space\n");
+	}
+	else {
+		printf("Total: %u; free: %u; max space: %u\n", (unsigned)totalBlocks, (unsigned)freeBlocks, (unsigned)space);
+	}
+	printf("BTW, the original stack was %lx\n", _original_stack_pointer);
+}
+
+
 void pack(void) {
 #if 0
 	char buffer[256];
@@ -208,19 +235,6 @@ void scroll(void) {
 	*SCREEN_MEMORY_CONTROL = WRITE_CLEAR_ATTR;
 	fillScreen();
 	showTextCursor(0);
-}
-
-extern uint32_t _original_stack_pointer;
-
-void diskInfo(void) {
-	uint32_t totalBlocks,freeBlocks,space;
-	if (diskSpace(&totalBlocks, &freeBlocks, &space) < 0) {
-		putText("Cannot read disk space\n");
-	}
-	else {
-		printf("Total: %u; free: %u; max space: %u\n", (unsigned)totalBlocks, (unsigned)freeBlocks, (unsigned)space);
-	}
-	printf("BTW, the original stack was %lx\n", _original_stack_pointer);
 }
 
 //void acquire(int param_1);

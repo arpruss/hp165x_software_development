@@ -384,6 +384,9 @@ ebce int GetDirEntry(int32 index,char* direntry32bytes);  returns -1 when done; 
 0x984166: some kind of open file info area, with entries of length 0x138, but on the 1653B only one entry is allowed
    0x984166.w: file descriptor (index into the open file info area)
    0x984168: open file dir entry
+   0x984178.l: num blocks?
+   0x984188.l: offset in current block
+   0x984190.l: read byte count
    0x98418c.l: current block
    0x98419c.w: current mode 
    0x98419e: buffer start (probably until end of 0x138 byte area)
@@ -446,6 +449,7 @@ ebbc: write blocks (unsigned blockNum, unsigned count, char* data)
 ebf8: write block(unsigned blockNum, char* data)
 ec0a: commit written blocks
 
+0x984154: start of partial disk header record
 0x9842a6.w: total size in blocks (3079)
 0x98415a.l: directory start block number
 0x984162.l: directory size in blocks

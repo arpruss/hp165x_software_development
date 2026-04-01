@@ -148,6 +148,15 @@ void unpadFilename(char* unpaddedName, const char* name) {
 	}
 }
 
+static void romDirEntryToDirEntry(ROMDirEntry_t* d, DirEntry_t* dirEntry) {
+	unpadFilename(dirEntry->name, d->name);
+	dirEntry->type = d->type;
+	dirEntry->startBlock = d->startBlock;
+	dirEntry->numBlocks = d->numBlocks;
+	memcpy(&dirEntry->dateAndTime, &d->dateAndTime, sizeof(d->dateAndTime));
+	memcpy(&dirEntry->misc, &d->misc, sizeof(d->misc));
+}
+
 int __attribute__((noinline)) getDirEntry(int index, DirEntry_t* dirEntry) {
 	ROMDirEntry_t d;
 	if (index == 0 && refreshDir() < 0)
@@ -158,12 +167,7 @@ int __attribute__((noinline)) getDirEntry(int index, DirEntry_t* dirEntry) {
 	if (type == -1) {
 		return -1;
 	}
-	unpadFilename(dirEntry->name, d.name);
-	dirEntry->type = d.type;
-	dirEntry->startBlock = d.startBlock;
-	dirEntry->numBlocks = d.numBlocks;
-	memcpy(&dirEntry->dateAndTime, &d.dateAndTime, sizeof(d.dateAndTime));
-	memcpy(&dirEntry->misc, &d.misc, sizeof(d.misc));
+	romDirEntryToDirEntry(&d, dirEntry);
 	return type & 0xFFFF;
 }
 
@@ -257,6 +261,28 @@ int getFileMisc(const char* name, uint16_t fileType, void* misc) {
 			memcpy(misc, d.misc, sizeof(d.misc));
 			_restoreAsteriskArea();
 			return 0;
+		}
+		i++;
+	}
+}
+
+int findDirEntry(const char* name, uint16_t fileType, DirEntry_t* dirEntry) {
+	if (refreshDir() < 0)
+		return -1;
+	char paddedName[MAX_FILENAME_LENGTH];
+	padFilename(paddedName, name);
+	ROMDirEntry_t d;
+	int i = 0;
+	_saveAsteriskArea();
+	while(1) {
+		if ( -1 == _getDirEntry(i, &d) ) {
+			_restoreAsteriskArea();
+			return -1;
+		}
+		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
+			_restoreAsteriskArea();
+			romDirEntryToDirEntry(&d, dirEntry);
+			return d.type & 0xFFFF;
 		}
 		i++;
 	}

@@ -16,6 +16,8 @@
 
 #define CHUNK_SIZE 4096
 
+#define LIF_BLOCK_DATA_SIZE (LIF_BLOCK_SIZE - 2)
+
 #define MAX_FILES 6
 #define DEFAULT_FILE_TYPE 1
 #define FD_OFFSET 3
@@ -26,8 +28,9 @@
 #define SEEK_END 2
 #endif
 
-#define MODE_BUFFERED_READ    0
-#define MODE_UNBUFFERED_READ  1
+#define DISK_UNCHANGED        0x9107
+
+#define MODE_READ    		  0
 #define MODE_WRITE            2
 
 /* The files are entirely stored in memory. 
@@ -37,7 +40,6 @@
    
 extern void (*_posixCleanup)(void);
 static void posixCleanup(void);
-static uint32_t bufferedReadMaximum = DEFAULT_BUFFERED_READ_MAXIMUM;
 
 struct filesize {
 	uint16_t id; // 'sz'
@@ -58,12 +60,19 @@ typedef struct {
 } WriteData_t;
 
 typedef struct {
-	char filename[MAX_FILENAME_LENGTH+1];
+	uint32_t startBlock;
+	uint32_t numBlocks;
+	uint32_t currentBlock;
+	uint32_t blockOffset;
+	uint32_t fileSize;
+	struct {
+		uint16_t size;
+		char     data[LIF_BLOCK_DATA_SIZE];
+	} buffer;
 	uint16_t fileType;
-	int32_t  fd;
-	uint32_t fdPos;
+	char     filename[MAX_FILENAME_LENGTH+1];
 	char	 sizeIsExact;
-} UnbufferedReadData_t;
+} ReadData_t;
 
 typedef struct {
 	uint16_t mode;
@@ -71,41 +80,12 @@ typedef struct {
 	uint32_t dataSize;
 	union {
 		WriteData_t* writeData;
-		UnbufferedReadData_t* unbufferedReadData;
-		char* readData;
+		ReadData_t* readData;
 		void* data;
 	} rw;
 } HPFILE;
 
 static HPFILE files[MAX_FILES] = { {0} };
-
-void hpPosixSetBufferedReadMaximum(uint32_t m) {
-	bufferedReadMaximum = m;
-}
-
-static void closeUnbuffered(void) {
-	for (uint16_t i = 0 ; i < MAX_FILES ; i++) {
-		if (files[i].rw.data != NULL && files[i].mode == MODE_UNBUFFERED_READ && files[i].rw.unbufferedReadData->fd >= 0) {
-			closeFile(files[i].rw.unbufferedReadData->fd);
-			files[i].rw.unbufferedReadData->fd = -1;			
-		}
-	}
-}
-
-static int ensureOpen(HPFILE* f) {
-	if (f->mode != MODE_UNBUFFERED_READ)
-		return 0;
-	UnbufferedReadData_t* u = f->rw.unbufferedReadData;
-	if (u->fd >= 0)
-		return 0;
-	closeUnbuffered();
-	u->fd = openFile(u->filename, u->fileType, READ_FILE);
-	if (u->fd < 0) {
-		return -1;
-	}
-	u->fdPos = 0;
-	return 0;
-}
 
 static uint16_t fromHex(const char* p) {
 	uint16_t out = 0;
@@ -140,6 +120,31 @@ static uint16_t getHpName(char* hpName, const char* name) {
 	return fileType;
 }
 
+static int checkDiskChange(HPFILE* f) {
+	DirEntry_t d;
+	refreshDir();
+	if (*(volatile uint16_t*)0x984154 != DISK_UNCHANGED) {
+		for (int i=0;i<MAX_FILES;i++) {
+			if (files[i].rw.data != NULL && files[i].mode == MODE_READ) {
+				files[i].rw.readData->startBlock = (uint32_t)(-1);
+			}
+		}
+		*(volatile uint16_t*)0x984154 = DISK_UNCHANGED;
+	}
+	if (f == NULL || f->mode != MODE_READ)
+		return 0;
+	ReadData_t* r = f->rw.readData;
+	if (r->startBlock != (uint32_t)(-1))
+		return 0;
+	if (findDirEntry(r->filename, r->fileType, &d) < 0)
+		return -1;
+	if (d.numBlocks != r->numBlocks) // different disk with same file?
+		return -1;
+	r->currentBlock = (uint32_t)(-1);
+	r->startBlock = d.startBlock;
+	return 0;
+}
+
 int open(const char* name, int flags, ...) {
 	DirEntry_t d;
 	
@@ -157,8 +162,6 @@ int open(const char* name, int flags, ...) {
 	if (flags & O_RDWR) {
 		return -1; // TODO
 	}
-	
-	closeUnbuffered();
 	
 	if (flags & O_WRONLY) {
 		WriteData_t *w = malloc(sizeof(WriteData_t));
@@ -178,73 +181,26 @@ int open(const char* name, int flags, ...) {
 		return fd+FD_OFFSET;
 	}
 	else { // O_RDONLY
-		int16_t i = 0;
-		while(1) {
-			if ( -1 == getDirEntry(i, &d) ) {
-				return -1;
-			}
-			if ((fileType == 0 || d.type == fileType) && !strcmp(d.name, hpName)) {
-				break;
-			}				
-			i++;
-		}		
-		uint32_t dataSize = 254*d.numBlocks;
-		
-		uint16_t unbuffered = dataSize > bufferedReadMaximum;
-		
-		void* data = NULL;
-		
-		if (!unbuffered) {
-			data = malloc(dataSize);
-			if (data == NULL)
-				unbuffered = 1;
-		}
-		
-		if (data == NULL) {
-			data = malloc(sizeof(UnbufferedReadData_t));
-			
-			if (data == NULL)
-				return -1;
-		}
-		
-		int f = openFile(hpName, d.type, READ_FILE);
-		if (f < 0) {
-			free(data);
+		checkDiskChange(NULL);
+	
+		if (findDirEntry(hpName, fileType, &d) < 0)
 			return -1;
-		}
-
-		if (unbuffered) {
-			struct filesize fs;
-			UnbufferedReadData_t* u = data;
-
-			u->sizeIsExact = 0;
-
-			if (getFileMisc(hpName, d.type, &fs) >= 0 && 
-					fs.id == ID_SIZE && fs.size <= dataSize && dataSize < fs.size+254) {
-						
-				dataSize = fs.size;
-				u->sizeIsExact = 1;
-			}
-			strcpy(u->filename, hpName);
-			u->fileType = d.type;
-			u->fd = f;
-			u->fdPos = 0;
-			files[fd].dataSize = dataSize;
-			files[fd].rw.unbufferedReadData = u;
-			files[fd].mode = MODE_UNBUFFERED_READ;
-		}
-		else {		
-			int s = readFile(f, data, -1);
-			closeFile(f);
-			if (s < 0) {
-				free(data);
-				return -1;
-			}
-			files[fd].dataSize = s;
-			files[fd].rw.readData = data;
-			files[fd].mode = MODE_BUFFERED_READ;
-		}
+		
+		ReadData_t* r = malloc(sizeof(ReadData_t));
+		
+		if (r == NULL)
+			return -1;
+		
+		r->startBlock = d.startBlock;
+		r->numBlocks = d.numBlocks;
+		r->currentBlock = (uint32_t)(-1);
+		r->sizeIsExact = 0;
+		r->fileType = d.type;
+		strcpy(r->filename, hpName);
+		files[fd].dataSize = d.numBlocks * LIF_BLOCK_DATA_SIZE;
+		files[fd].mode = MODE_READ;
 		files[fd].position = 0;
+		files[fd].rw.readData = r;
 		return fd+FD_OFFSET;
 	}
 }
@@ -255,8 +211,6 @@ int close(int fd) {
 	HPFILE*f = &files[fd-FD_OFFSET];
 	
 	if (f->mode == MODE_WRITE) {
-		closeUnbuffered();
-		
 		uint32_t size = f->dataSize;
 		
 #ifdef LIFPACK
@@ -312,15 +266,7 @@ int close(int fd) {
 		} while(chunkP != NULL);
 		if (0 <= out) {
 			closeFile(out);
-			if (w->fileType < 0xC001 || w->fileType > 0xC400) {
-				struct filesize fs = { ID_SIZE, wrote };
-				setFileMisc(w->filename, w->fileType, &fs);
-			}
 		}
-	}
-	else if (f->mode == MODE_UNBUFFERED_READ) {
-		if (f->rw.unbufferedReadData->fd >= 0) 
-			closeFile(f->rw.unbufferedReadData->fd);
 	}
 	if (f->rw.data != NULL)
 		free(f->rw.data);
@@ -336,66 +282,86 @@ static void posixCleanup(void) {
 	}
 }
 
-static int skipHPFile(int hpFD, uint32_t size) {
-	while(size > 0) {
-		int32_t toSkip = size <= 65536 ? size : 65536;
-		if (toSkip != readFile(hpFD, NULL, toSkip))
-			return -1;
-		size -= toSkip;
-	}
-	return 0;
-}
-
 int read(int fd, void* ptr, size_t size) {
 	HPFILE* f = &files[fd-FD_OFFSET];
-	if (f->mode == MODE_WRITE) {
+
+	if (f->mode != MODE_READ) 
 		return -1;
-	}
-	if (f->position >= f->dataSize)
+
+	if (checkDiskChange(f) < 0)
+		return 0;
+
+	ReadData_t* r = f->rw.readData;
+	
+	if (r->numBlocks == 0)
 		return 0;
 	
-	if (f->mode == MODE_UNBUFFERED_READ) {
-		if (ensureOpen(f) < 0) 
-			return -1;
-		UnbufferedReadData_t* u = f->rw.unbufferedReadData;
-		if (f->position < u->fdPos) {
-			closeFile(u->fd);
-			u->fd = -1;
-			if (ensureOpen(f) < 0)
-				return -1;
-		}
-		if (u->fdPos < f->position &&
-			  skipHPFile(u->fd, f->position - u->fdPos) < 0) {
-			closeFile(u->fd);
-			u->fd = -1;
-			return -1;
-		}				
-		int n = readFile(u->fd, ptr, size);
-		if (n < 0)
-			return -1;
-		f->position += n;
-		u->fdPos = f->position;
-		return n;
-	}
-	else {	
-		if (f->position + size >= f->dataSize)
+	int didRead = 0;
+	
+	while (size > 0) {
+		if (f->position >= f->dataSize)
+			return didRead;
+		
+		if (f->position + size > f->dataSize)
 			size = f->dataSize - f->position;
-		memcpy(ptr, f->rw.readData + f->position, size);
-		f->position += size;
-		return size;
+
+		if (r->currentBlock == (uint32_t)(-1) ||
+			 f->position < r->blockOffset ||
+			 r->blockOffset + LIF_BLOCK_DATA_SIZE <= f->position) {
+			
+			r->currentBlock = f->position / LIF_BLOCK_DATA_SIZE;
+			r->blockOffset = r->currentBlock * LIF_BLOCK_DATA_SIZE;
+			
+			if (readBlocks(r->startBlock+r->currentBlock, 1, &r->buffer) < 0) {
+				return 0;
+			}
+			if ( r->buffer.size < LIF_BLOCK_DATA_SIZE ) {
+				f->dataSize = r->blockOffset + r->buffer.size;
+				r->sizeIsExact = 1;
+				if (f->position >= f->dataSize)
+					return 0;
+				if (f->position + size > f->dataSize)
+					size = f->dataSize - f->position;
+			}
+		}
+		uint32_t doCopy;
+		
+		if ( f->position + size > r->blockOffset + LIF_BLOCK_DATA_SIZE ) {
+			doCopy = r->blockOffset + (LIF_BLOCK_SIZE - 2) - f->position;
+		}
+		else {
+			doCopy = size;
+		}
+		memcpy(ptr, r->buffer.data + ( f->position - r->blockOffset ), doCopy);
+		
+		ptr = (char*)ptr + doCopy;
+		size -= doCopy;
+		f->position += doCopy;
+		didRead += doCopy;
 	}
+	
+	return didRead;
 }
 
-static int getHPLength(int hpFD) {
-	uint32_t count = 0;
+static int getHPLength(HPFILE* f) {
+	if (f->mode != MODE_READ) 
+		return -1;
+	if (checkDiskChange(f) < 0)
+		return -1;
+	ReadData_t* r = f->rw.readData;
 	
-	int32_t n;
-	while( (n=readFile(hpFD, NULL, 65536)) == 65536) 
-		count += n;
-	if (n < 0)
-		return count;
-	else
-		return count + n;
+	if (r->numBlocks == 0)
+		return 0;
+	
+	r->currentBlock = r->numBlocks - 1;
+	r->blockOffset = r->currentBlock * LIF_BLOCK_DATA_SIZE;
+
+	if (readBlocks(r->startBlock + r->currentBlock, 1, &r->buffer) < 0) {
+		r->currentBlock = -1;
+		return -1;
+	}
+	
+	return r->blockOffset + r->buffer.size;
 }
 
 
@@ -414,17 +380,12 @@ off_t lseek(int fd, off_t offset, int origin) {
 			pos = f->position + offset;
 			break;
 		case SEEK_END:
-			if (f->mode == MODE_UNBUFFERED_READ && ! f->rw.unbufferedReadData->sizeIsExact ) {
-				if (ensureOpen(f)<0)
-					return -1;
-				UnbufferedReadData_t* u = f->rw.unbufferedReadData;
-				int n = getHPLength(u->fd);
-				closeFile(u->fd);
-				u->fd = -1;
+			if (f->mode == MODE_READ && ! f->rw.readData->sizeIsExact ) {
+				int n = getHPLength(f);
 				if (n < 0) 
 					return -1;
-				f->dataSize = u->fdPos + n;
-				u->sizeIsExact = 1;
+				f->dataSize = n;
+				f->rw.readData->sizeIsExact = 1;
 			}
 			pos = f->dataSize + offset;
 			break;
@@ -439,7 +400,8 @@ off_t lseek(int fd, off_t offset, int origin) {
 		f->position = f->dataSize;
 		return -1;
 	}
-	return f->position = pos;
+	f->position = pos;
+	return pos;
 }
 
 int write(int fd, const void* p, size_t size) {
@@ -576,28 +538,14 @@ int closedir(DIR *dirp) {
 }
 
 int stat(const char *path, struct stat *buf) {
-	char hpName[MAX_FILENAME_LENGTH+1];
-	uint16_t fileType = getHpName(hpName, path);
-	DirEntry_t d;
-    
-	int16_t i = 0;
-	while(1) {
-		if ( -1 == getDirEntry(i, &d) ) {
-			return -1;
-		}
-		if ((fileType == 0 || d.type == fileType) && !strcmp(d.name, hpName)) {
-			memset(buf, 0, sizeof(struct stat));
-			buf->st_mode = 0100000 /* S_IFREG */ | 0644;
-			struct filesize* fs = (struct filesize*)&d.misc;
-			uint32_t approxSize = 254*d.numBlocks;
-			if (fs->id == ID_SIZE && fs->size <= approxSize && approxSize < fs->size+254)
-				buf->st_size = fs->size;
-			else
-				buf->st_size = approxSize; // TODO: consider reading to find the actual size
-			return 0;
-		}				
-		i++;
-	}		
-	return -1;
+	int fd = open(path, O_RDONLY);
+	if (fd < 0)
+		return -1;
+	int length = lseek(fd, 0, SEEK_END);
+	memset(buf, 0, sizeof(struct stat));
+	buf->st_mode = 0100000 /* S_IFREG */ | 0644;
+	buf->st_size = length;
+	close(fd);
+	return 0;
 }
 

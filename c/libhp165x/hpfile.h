@@ -47,6 +47,7 @@ void bigDiskSupport(void);
 void _initializeDriveSettings(void);
 int getFileMisc(const char* name, uint16_t fileType, void* misc);
 int setFileMisc(const char* name, uint16_t fileType, const void* misc);
+int findDirEntry(const char* name, uint16_t fileType, DirEntry_t* dirEntry);
 
 #define ERROR_FILE_NOT_FOUND (-5)
 #endif
