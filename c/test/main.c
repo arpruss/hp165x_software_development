@@ -117,8 +117,8 @@ unsigned short loader(void) {
 
 void choose(void) {
 	initKeyboard(1);
-	setTextColors(WRITE_WHITE, WRITE_GRAY);
-	short i = hpChooser(0, 0, 40, 15, 2, 8, 1, loader, getItemName);	
+	setTextColors(WRITE_WHITE, WRITE_BLACK);
+	short i = hpChooser(0, 0, 40, 15, 2, 8, loader, getItemName, CHOOSER_DISK_BASED);
 	printf("chose %hd\n", i);
 }
 

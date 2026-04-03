@@ -49,13 +49,26 @@ typedef struct {
 #define MOUSE_BUTTON_LEFT 		 0x01
 #define MOUSE_DOUBLE_CLICK 		 0x80
 
+typedef void (*ImageDrawer_t)(uint16_t x, uint16_t y);
+
+typedef struct {
+	ImageDrawer_t drawer;
+	uint16_t drawMode;
+	uint16_t eraseMode;
+	uint32_t timeoutTicks;
+	uint8_t visible;
+} MouseCursorData_t;
+
+uint8_t isMouseCursorVisible(void);
+void saveMouseCursor(MouseCursorData_t* m); 
+void restoreMouseCursor(const MouseCursorData_t* m);
 uint8_t getInputEvent(InputEvent_t* e);
 void initInputEvents(uint8_t useSerial);
 void mouseArrow(uint16_t x, uint16_t y);
 #define initKeyboard initInputEvents
-typedef void (*ImageDrawer_t)(uint16_t x, uint16_t y);
 void setMouseCursor(ImageDrawer_t drawer, uint16_t drawMode, uint16_t eraseMode, uint32_t timeoutSeconds);
 void clearMouseCursor(void);
 void drawMouseCursor(void);
+uint8_t isInputSerialActive(void);
 
 #endif

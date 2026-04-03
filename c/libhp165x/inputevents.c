@@ -17,7 +17,14 @@ static int16_t mouseCursorY;
 
 #define IS_MOUSE(c) ( mouseEventPos > 0 || ( ((c) & MOUSE_DATA) == MOUSE_DATA ) )
 
+uint8_t isInputSerialActive(void) {
+	return useSerial;
+}
+
 void clearMouseCursor(void) {
+	if (! useSerial )
+		return;
+
 	if (mouseCursorX != NO_CURSOR) {
 		if (drawMouse != NULL) {
 			*SCREEN_MEMORY_CONTROL = mouseEraseMode;
@@ -28,6 +35,9 @@ void clearMouseCursor(void) {
 }
 
 void drawMouseCursor(void) {
+	if (! useSerial )
+		return;
+
 	lastMouseCursorTicks = getVBLCounter();
 
 	if (mouseCursorX == mouseX && mouseCursorY == mouseY) 
@@ -44,11 +54,47 @@ void drawMouseCursor(void) {
 }
 
 static void mouseTimeoutCheck(void) {
+	if (! useSerial )
+		return;
+
 	if (mouseCursorTimeoutTicks != 0 && getVBLCounter() - lastMouseCursorTicks > mouseCursorTimeoutTicks) 
 		clearMouseCursor();
 }
 
+void restoreMouseCursor(const MouseCursorData_t* m) {
+	if (! useSerial )
+		return;
+	
+	clearMouseCursor();
+	drawMouse = m->drawer;
+	mouseDrawMode = m->drawMode;
+	mouseEraseMode = m->eraseMode;
+	mouseCursorTimeoutTicks = m->timeoutTicks;
+	if (m->visible)
+		drawMouseCursor();
+}
+
+uint8_t isMouseCursorVisible(void) {
+	return mouseCursorX != NO_CURSOR;
+}
+
+void saveMouseCursor(MouseCursorData_t* m) {
+	if (! useSerial) {
+		m->visible = 0;
+		m->drawer = NULL;
+		return;
+	}
+	m->drawer = drawMouse;
+	m->drawMode = mouseDrawMode;
+	m->eraseMode = mouseEraseMode;
+	m->timeoutTicks = mouseCursorTimeoutTicks;
+	m->visible = mouseX != NO_CURSOR;
+}
+
 void setMouseCursor(ImageDrawer_t drawer, uint16_t drawMode, uint16_t eraseMode, uint32_t timeoutSeconds) {
+	if (! useSerial )
+		return;
+
 	clearMouseCursor();
 	drawMouse = drawer;
 	mouseDrawMode = drawMode;
@@ -66,9 +112,12 @@ void initInputEvents(uint8_t s) {
 	else
 		simple_serial_close();
 	oldMouseButtons = 0;
+	drawMouse = NULL;
 }
 
 static uint8_t updateMouse(uint8_t serialChar, InputEvent_t* e) {
+	if (! useSerial )
+		return 0;
 	if (mouseEventPos == 2) {
 		int16_t dx = mouseData[1] & 0x7F;
 		if (mouseData[1] & 0x40)

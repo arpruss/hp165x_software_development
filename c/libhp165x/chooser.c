@@ -13,12 +13,20 @@ static short topLeftX;
 static short topLeftY;
 static short spacing;
 static short maxWidth;
+static uint32_t flags;
 static ChooserItemNamer_t namer;
+static MouseCursorData_t mouseData;
 
-static void moveCursorToCurrent() {
+static void moveCursorToCurrent(void) {
 	short x = (currentItem - topItem) % columns;
 	short y = (currentItem - topItem) / columns;
 	setTextXY(topLeftX + x * (maxWidth + spacing), topLeftY + y);
+}
+
+static void clearWindow(void) {
+	*SCREEN_MEMORY_CONTROL = background;
+	fillRectangle(textToPixelX(topLeftX), textToPixelY(topLeftY), 
+		textToPixelX(topLeftX+width), textToPixelY(topLeftY+height));
 }
 
 static void drawName(const char* name) {
@@ -44,16 +52,41 @@ static void drawItems(short startY, short endY) {
 	}
 }
 
+static void drawSelection(uint8_t active) {
+	short x = (currentItem - topItem) % columns;
+	short y = (currentItem - topItem) / columns;
+	setTextXY(topLeftX + x * (maxWidth + spacing), topLeftY + y);
+	setTextReverse(active);
+	drawName(namer(currentItem));
+}
+
+static short getItemXY(short x, short y) {
+	x /= getFontWidth();
+	y /= getFontHeight();
+	x -= topLeftX;
+	y -= topLeftY;
+	if (x < 0 || y < 0 || x >= width || y >= height)
+		return -1;
+	if (x % (maxWidth + spacing) >= maxWidth)
+		return -1;
+	short i = x / (maxWidth + spacing) + columns * y + topItem;
+	if (i >= numItems)
+		return -1;
+	return i;
+}
+
+static void select(int16_t item) {
+	drawSelection(0);
+	currentItem = item;
+	drawSelection(1);
+}
+
 static void move(short delta) {
 	if (numItems == 0)
 		return;
-	short oldX = (currentItem - topItem) % columns;
-	short oldY = (currentItem - topItem) / columns;
-	setTextXY(topLeftX + oldX * (maxWidth + spacing), topLeftY + oldY);
-	setTextReverse(0);
-	drawName(namer(currentItem));
+	drawSelection(0);
 	currentItem += delta;
-	short newX = (currentItem - topItem) % columns;
+	//short newX = (currentItem - topItem) % columns;
 	short newY = (currentItem - topItem) / columns;
 	short lastY = (numItems - 1 - topItem) / columns;
 	short firstY = (- topItem) / columns;
@@ -73,19 +106,29 @@ static void move(short delta) {
 		newY++;
 		drawItems(0,1);
 	}
-	setTextXY(topLeftX + newX * (maxWidth + spacing), topLeftY + newY);
-	setTextReverse(1);
-	drawName(namer(currentItem));
-	setTextReverse(0);
+	drawSelection(1);
 }
 
-// refresher is called when 
+static void reset(void) {
+	uint8_t m = isMouseCursorVisible();
+	if (! (flags & CHOOSER_DEFAULT_MOUSE_CURSOR) ) {
+		m = isMouseCursorVisible();
+		restoreMouseCursor(&mouseData);
+	}
+	clearWindow();
+	setTextXY(topLeftX,topLeftY);
+	if (! (flags & CHOOSER_DEFAULT_MOUSE_CURSOR) && m && mouseData.drawer != NULL)
+		drawMouseCursor();
+}
+
 int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY, 
 		uint16_t _width, uint16_t _height,
 		uint16_t _spacing, uint16_t _maxWidth, 
-		uint8_t diskBased,
-		ChooserItemLoader_t loader, ChooserItemNamer_t _namer) {
-			
+		ChooserItemLoader_t loader, ChooserItemNamer_t _namer, uint32_t _flags) {
+
+	InputEvent_t event;
+
+	flags = _flags;
 	namer = _namer;
 	width = _width;
 	height = _height;
@@ -96,25 +139,27 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 	foreground = getTextForeground();
 	background = getTextBackground();
 	
-	*SCREEN_MEMORY_CONTROL = background;
-	
 	columns = (width + spacing) / (maxWidth + spacing);
-	
+
+	if (! (flags & CHOOSER_DEFAULT_MOUSE_CURSOR) ) {
+		saveMouseCursor(&mouseData);
+		setMouseCursor(mouseArrow, WRITE_SET_ATTR, WRITE_CLEAR_ATTR, 30);
+	}
 	
 	while(1) {
-		*SCREEN_MEMORY_CONTROL = background;
-		fillRectangle(textToPixelX(topLeftX), textToPixelY(topLeftY), 
-			textToPixelX(topLeftX+width), textToPixelY(topLeftY+height));
-		if (diskBased) {
+		clearWindow();
+		if (flags & CHOOSER_DISK_BASED) {
 			if ( (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS ) ) {
 				setTextXY(topLeftX,topLeftY);
 				putText("No disc in drive...");
 			}
 			while ( (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS ) ) {
-				if (kbhit()) {
-					short k = getch();
-					if (k == 27 || k == KEYBOARD_BREAK)
+				if (getInputEvent(&event)) {
+					if (event.type == INPUT_KEY && (event.data.key.character == 27 ||
+						event.data.key.character == KEYBOARD_BREAK)) {
+						reset();
 						return -1;
+					}
 				}
 			}
 			setTextXY(topLeftX,topLeftY);
@@ -129,9 +174,7 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 		}
 		
 		topItem = currentItem = 0;
-		*SCREEN_MEMORY_CONTROL = background;
-		fillRectangle(textToPixelX(topLeftX), textToPixelY(topLeftY), 
-			textToPixelX(topLeftX+width), textToPixelY(topLeftY+height));
+		clearWindow();
 
 		drawItems(0, height);
 
@@ -143,26 +186,37 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 		}
 		
 		while (1) {
-			if (diskBased && ( 
+			InputEvent_t event;
+			
+			if ((flags & CHOOSER_DISK_BASED) && ( 
 					( HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS ) || 
 					0 == ( HARDWARE_STATUS_OLD_DISK & *HARDWARE_STATUS ) ) ) {
 				break;
 			}
-			if (kbhit()) {
-				switch(getch()) {
+			if (getInputEvent(&event)) {
+				if (event.type == INPUT_MOUSE && numItems > 0) {
+					int16_t item = getItemXY(event.data.mouse.x, event.data.mouse.y);
+					if (0 <= item) {
+						if (event.data.mouse.buttons & MOUSE_DOUBLE_CLICK) {
+							select(item);
+							reset();
+							return currentItem;
+						}
+						else if (event.data.mouse.buttons & event.data.mouse.buttonDifference & MOUSE_BUTTON_LEFT) {
+							select(item);
+						}
+					}
+				}
+				if (event.type != INPUT_KEY)
+					continue;
+				switch(event.data.key.character) {
 					case '\n':
 					case '\r':
-						*SCREEN_MEMORY_CONTROL = background;
-						fillRectangle(textToPixelX(topLeftX), textToPixelY(topLeftY), 
-							textToPixelX(topLeftX+width), textToPixelY(topLeftY+height));
-						setTextXY(textToPixelX(topLeftX), textToPixelY(topLeftY));
+						reset();
 						return numItems == 0 ? -1 : currentItem;
 					case KEYBOARD_BREAK:
 					case 27:
-						*SCREEN_MEMORY_CONTROL = background;
-						fillRectangle(textToPixelX(topLeftX), textToPixelY(topLeftY), 
-							textToPixelX(topLeftX+width), textToPixelY(topLeftY+height));
-						setTextXY(textToPixelX(topLeftX), textToPixelY(topLeftY));
+						reset();
 						return -1;
 					case KEYBOARD_RIGHT:
 						if (currentItem + 1 < numItems)
