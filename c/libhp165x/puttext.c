@@ -37,10 +37,14 @@ void setScrollMode(uint8_t m) {
 }
 
 void getTextWindow(uint16_t* xP,uint16_t *yP,uint16_t *x2P,uint16_t *y2P) {
-	*xP = winX;
-	*yP = winX;
-	*x2P = winRightX;
-	*y2P = winBottomY;
+	if (xP != NULL)
+		*xP = winX;
+	if (yP != NULL)
+		*yP = winY;
+	if (x2P != NULL)
+		*x2P = winRightX;
+	if (y2P != NULL)
+		*y2P = winBottomY;
 }
 
 /* if bottomRightX==0 or bottomRightY==0, set to maximum possible; if negative,
@@ -106,8 +110,12 @@ uint16_t getTextMaxColumns(void) {
 	return MAX_TEXT_COLUMNS;
 }
 
-void setTextReverse(char _reverse) {
+void setTextReverse(uint8_t _reverse) {
 	reverse = _reverse;
+}
+
+uint8_t getTextReverse(void) {
+	return reverse;
 }
 
 void setTextScrollBitplanes(uint8_t b) {
@@ -153,6 +161,14 @@ uint16_t getTextX(void) {
 
 uint16_t getTextY(void) {
 	return currentY-winY;
+}
+
+uint16_t pixelToTextX(uint16_t x) {
+	return x/FONT_WIDTH - winX;
+}
+
+uint16_t pixelToTextY(uint16_t y) {
+	return y/fontHeight - winY;
 }
 
 uint16_t textToPixelX(uint16_t x) {

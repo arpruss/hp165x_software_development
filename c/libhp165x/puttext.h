@@ -7,12 +7,15 @@
 #define FONT_WIDTH 8
 #define MAX_TEXT_COLUMNS (SCREEN_WIDTH/FONT_WIDTH)
 
+uint16_t pixelToTextX(uint16_t x);
+uint16_t pixelToTextY(uint16_t y);
 void highlightText(uint16_t n, uint8_t highlightState);
 void setScrollBitplanes(uint8_t b);
 void setTextColors(uint16_t f, uint16_t b);
 uint16_t getTextForeground(void);
 uint16_t getTextBackground(void);
-void setTextReverse(char reverse);
+void setTextReverse(uint8_t reverse);
+uint8_t getTextReverse(void);
 uint16_t getTextX(void);
 uint16_t getTextY(void);
 void setTextXY(uint16_t x, uint16_t y);

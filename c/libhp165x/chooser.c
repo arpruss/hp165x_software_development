@@ -1,6 +1,7 @@
 #include "chooser.h"
 #include <string.h>
 
+static uint8_t originalReverse;
 static uint16_t foreground;
 static uint16_t background;
 static short width;
@@ -61,10 +62,8 @@ static void drawSelection(uint8_t active) {
 }
 
 static short getItemXY(short x, short y) {
-	x /= getFontWidth();
-	y /= getFontHeight();
-	x -= topLeftX;
-	y -= topLeftY;
+	x = pixelToTextX(x) - topLeftX;
+	y = pixelToTextY(y) - topLeftY;
 	if (x < 0 || y < 0 || x >= width || y >= height)
 		return -1;
 	if (x % (maxWidth + spacing) >= maxWidth)
@@ -110,15 +109,18 @@ static void move(short delta) {
 }
 
 static void reset(void) {
-	uint8_t m = isMouseCursorVisible();
 	if (! (flags & CHOOSER_DEFAULT_MOUSE_CURSOR) ) {
-		m = isMouseCursorVisible();
+		uint8_t m = isMouseCursorVisible();
 		restoreMouseCursor(&mouseData);
+		clearWindow();
+		if (m)
+			drawMouseCursor();
 	}
-	clearWindow();
+	else {
+		clearWindow();
+	}
 	setTextXY(topLeftX,topLeftY);
-	if (! (flags & CHOOSER_DEFAULT_MOUSE_CURSOR) && m && mouseData.drawer != NULL)
-		drawMouseCursor();
+	setTextReverse(originalReverse);
 }
 
 int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY, 
@@ -138,6 +140,7 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 	maxWidth = _maxWidth;
 	foreground = getTextForeground();
 	background = getTextBackground();
+	originalReverse = getTextReverse();
 	
 	columns = (width + spacing) / (maxWidth + spacing);
 
