@@ -290,7 +290,7 @@ int read(int fd, void* ptr, size_t size) {
 
 	if (checkDiskChange(f) < 0)
 		return 0;
-
+	
 	ReadData_t* r = f->rw.readData;
 	
 	if (r->numBlocks == 0)
@@ -327,7 +327,7 @@ int read(int fd, void* ptr, size_t size) {
 		uint32_t doCopy;
 		
 		if ( f->position + size > r->blockOffset + LIF_BLOCK_DATA_SIZE ) {
-			doCopy = r->blockOffset + (LIF_BLOCK_SIZE - 2) - f->position;
+			doCopy = r->blockOffset + LIF_BLOCK_DATA_SIZE - f->position;
 		}
 		else {
 			doCopy = size;
@@ -375,8 +375,9 @@ off_t lseek(int fd, off_t offset, int origin) {
 			pos = offset;
 			break;
 		case SEEK_CUR:
-			if (offset == 0)
+			if (offset == 0) {
 				return f->position;
+			}
 			pos = f->position + offset;
 			break;
 		case SEEK_END:
