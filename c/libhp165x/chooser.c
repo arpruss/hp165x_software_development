@@ -59,6 +59,7 @@ static void drawSelection(uint8_t active) {
 	setTextXY(topLeftX + x * (maxWidth + spacing), topLeftY + y);
 	setTextReverse(active);
 	drawName(namer(currentItem));
+	setTextReverse(0);
 }
 
 static short getItemXY(short x, short y) {
@@ -141,6 +142,7 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 	foreground = getTextForeground();
 	background = getTextBackground();
 	originalReverse = getTextReverse();
+	setTextReverse(0);
 	
 	columns = (width + spacing) / (maxWidth + spacing);
 
@@ -183,9 +185,7 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 
 		if (numItems > 0) {
 			moveCursorToCurrent();
-			setTextReverse(1);
-			drawName(namer(currentItem));
-			setTextReverse(0);
+			drawSelection(1);
 		}
 		
 		while (1) {

@@ -55,5 +55,4 @@ with open(sys.argv[2],"wb") as p:
     p.write( struct.pack(">I26s6sII", length, name, b"V00.00", origLength, 0x984500) )
     p.write(binary)
     
-    
-print("Binary was %d bytes" % origLength)
+print("Binary was %d bytes and is now %d bytes" % (origLength,len(binary)))

@@ -1,13 +1,18 @@
 import sys
 
+glyphs = 256
+
+if len(sys.argv) > 1:
+    glyphs = int(sys.argv[1])
+
 def rol(x,n):
     return (x << n) | (x >> (32-n))
 
 out = "uint8_t font[] = { ";
 with open(sys.argv[1], "rb") as f:
     data = f.read()
-bytesPerGlyph = len(data)//256
-for i in range(256):
+bytesPerGlyph = len(data)//glyphs
+for i in range(glyphs):
     if i % 8 == 0:
         out += "\n"
     glyph = data[i*bytesPerGlyph:(i+1)*bytesPerGlyph]
