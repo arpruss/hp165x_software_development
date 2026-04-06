@@ -53,6 +53,28 @@ void initialScreen() {
 	}
 }
 
+uint8_t readPixelAllPlanes(uint16_t x, uint16_t y) {
+	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH/4) + x/4;
+	uint8_t pixelMask = 8>>(x%4);
+	uint8_t pixel = 0;
+	for (uint8_t planeMask = 1 ; planeMask <= 8 ; planeMask <<= 1) {
+		*SCREEN_MEMORY_CONTROL = planeMask;
+		if (pixelMask & *pos)
+			pixel |= planeMask;
+	}
+	return pixel;
+}
+
+uint8_t readPixel(uint16_t x, uint16_t y, uint8_t plane) {
+	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH/4) + x/4;
+	*SCREEN_MEMORY_CONTROL = 1<<plane;
+	uint8_t pixelMask = 8>>(x%4);
+	if (pixelMask & *pos)
+		return 1;
+	else
+		return 0;
+}
+
 // TODO: readPixelAllPlanes()
 void drawPixelAllPlanes(uint16_t x, uint16_t y, uint8_t value) {
 	volatile uint16_t* pos = SCREEN + y * (SCREEN_WIDTH/4) + x/4;

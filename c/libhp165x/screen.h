@@ -52,5 +52,7 @@ void drawHorizontalLine(uint16_t x1, uint16_t y, uint16_t x2);
 void frameRectangle(uint16_t topLeftX, uint16_t topLeftY, uint16_t bottomRightX, uint16_t bottomRightY, uint16_t thickness);
 void initScreen(uint16_t height, uint16_t background);
 void drawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
+uint8_t readPixel(uint16_t x, uint16_t y, uint8_t plane);
+uint8_t readPixelAllPlanes(uint16_t x, uint16_t y);
 
 #endif

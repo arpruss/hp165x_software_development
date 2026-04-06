@@ -100,7 +100,7 @@ get 1 providing at least one has a 1. When three or four planes are active, you 
 providing at least two have a 1. Probably reading one plane at a time is the only useful
 thing to do.
 
-The simplest way is to restrict to using these modes:
+The simplest way to draw is restrict to using these modes:
  F00: set DATA to 1 (=white), clear other planes to 0
  E00: set DATA to 0 (=black), clear other planes to 0
  
