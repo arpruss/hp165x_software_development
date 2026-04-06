@@ -1,5 +1,6 @@
 #include "chooser.h"
 #include <string.h>
+#include <ctype.h>
 
 static uint8_t originalReverse;
 static uint16_t foreground;
@@ -43,12 +44,12 @@ static void drawName(const char* name) {
 }
 
 static void drawItems(short startY, short endY) {
-	for (short i = topItem ; i < numItems && i - topItem < columns * height ; i++) {
+	for (short i = topItem ; i - topItem < columns * height ; i++) {
 		short y = (i - topItem) / columns;
 		if (startY <= y && y < endY) {
 			short x = (i - topItem) % columns;
 			setTextXY(topLeftX + x * (maxWidth + spacing), topLeftY + y);
-			drawName(namer(i));
+			drawName(i < numItems ? namer(i) : "");
 		}
 	}
 }
@@ -106,6 +107,56 @@ static void move(short delta) {
 		newY++;
 		drawItems(0,1);
 	}
+	drawSelection(1);
+}
+
+static void nextByCharacter(char c) {
+	if (numItems == 0)
+		return;
+	c = tolower(c);
+	drawSelection(0);
+	short next;
+	for (next = currentItem+1; next < numItems ; next++) {
+		if (tolower(namer(next)[0]) == c) 
+			break;
+	}
+	if (next >= numItems) {
+		for (next = 0; next < currentItem; next++) 
+			if (tolower(namer(next)[0]) == c) 
+				break;
+	}
+	short newY = (next - topItem) / columns;
+	if (0 <= newY && newY < height) {
+		currentItem = next;
+		drawSelection(1);
+		return;
+	}
+	
+	// need to scroll
+	if (next < currentItem) {
+		topItem = next / columns * columns;
+		if (topItem >= columns)
+			topItem -= columns;
+	}		
+	else {
+		short y = next / columns;
+		short rows = (numItems+columns-1)/columns;
+		if (rows <= height) {
+			topItem = 0; // shouldn't happen
+		}
+		else if (y >= rows-height) {
+			topItem = (rows-height) * columns;
+		}
+		else {
+			topItem = y * columns - columns;
+			if (topItem < 0)
+				topItem += columns;
+		}
+	}
+	
+	currentItem = next;
+	
+	drawItems(0, height);
 	drawSelection(1);
 }
 
@@ -221,6 +272,7 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 					case 27:
 						reset();
 						return -1;
+					case ' ':
 					case KEYBOARD_RIGHT:
 						if (currentItem + 1 < numItems)
 							move(1);
@@ -244,6 +296,10 @@ int hpChooser(uint16_t _topLeftX, uint16_t _topLeftY,
 							move(columns);
 						else
 							move(numItems - 1 - currentItem);
+						break;
+					default:
+						if (isprint(event.data.key.character))
+							nextByCharacter(event.data.key.character);
 						break;
 				}
 			}
