@@ -13,6 +13,7 @@ typedef uint8_t byte;
 
 #include "ibm8x14hp.c"
 
+static uint8_t underline=0;
 static uint16_t cursorX=0;
 static uint16_t cursorY=0;
 static char cursorVisible=0;
@@ -34,6 +35,14 @@ static uint8_t reverse = 0;
 
 void setScrollMode(uint8_t m) {
 	scrollMode = m;
+}
+
+void setTextUnderline(uint8_t u) {
+	underline = u;
+}
+
+uint8_t getTextUnderline(void) {
+	return underline;
 }
 
 void getTextWindow(uint16_t* xP,uint16_t *yP,uint16_t *x2P,uint16_t *y2P) {
@@ -450,7 +459,13 @@ uint16_t __attribute__((noinline,noclone)) putTextN(const char* s, uint16_t n) {
 			}
 		}
 		
+		if (underline) {
+			*SCREEN_MEMORY_CONTROL = fg;
+			*(volatile uint32_t*)(pos + (fontHeight-1)*(SCREEN_WIDTH/4)) = 0xF000F;
+		}
+		
 		pos += 2;
+		
 		currentX++;
 	}
 	

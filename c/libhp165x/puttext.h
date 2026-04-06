@@ -45,5 +45,6 @@ uint8_t getScrollBitplanes(void);
 void showTextCursor(char value);
 uint16_t textToPixelX(uint16_t x);
 uint16_t textToPixelY(uint16_t y);
-
+void setTextUnderline(uint8_t u);
+uint8_t getTextUnderline(void);
 #endif

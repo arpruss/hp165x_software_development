@@ -369,7 +369,7 @@ def readDir(quiet=False,verbose=False):
         largestSpace = totalBlocks - previous
     if not quiet:
         print("Used blocks:",usedBlocks)
-        print("Largest space:",largestSpace)
+        print("Largest space:",largestSpace*254,"bytes /",largestSpace,"blocks")
         
 def create(name):
     global diskData
