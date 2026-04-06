@@ -3,4 +3,6 @@ hardware evolves.
 
 Add O_RDWR support for hpposix.
 
-Test file size detection and seeking forward for unbuffered read.
+Add ftruncate support for hpposix.
+
+Add fseek-past-end support for writeable files.
