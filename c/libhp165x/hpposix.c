@@ -14,7 +14,7 @@
 
 #define LIFPACK // pack disk if not enough space
 
-#define CHUNK_SIZE 4096
+#define DEFAULT_CHUNK_SIZE 4096
 
 #define LIF_BLOCK_DATA_SIZE (LIF_BLOCK_SIZE - 2)
 
@@ -31,6 +31,7 @@
 #define DISK_UNCHANGED        0x9107
 
 #define MODE_READ    		  0
+#define MODE_READ_WRITE		  1
 #define MODE_WRITE            2
 
 /* The files are entirely stored in memory. 
@@ -49,11 +50,13 @@ struct filesize {
 struct chunk {
 	uint32_t offset;
 	struct chunk* next;
-	char data[CHUNK_SIZE];
+	uint32_t chunkSize;
+	char data[];
 };
 
 typedef struct {
 	char filename[MAX_FILENAME_LENGTH+1];
+	uint8_t dirty;
 	uint16_t fileType;
 	struct chunk* currentChunk;
 	struct chunk firstChunk;
@@ -150,8 +153,48 @@ int open(const char* name, int flags, ...) {
 	
 	char hpName[MAX_FILENAME_LENGTH+1];
 	uint16_t fileType = getHpName(hpName, name);
+	int fd;
 	
-	int fd = 0;
+	if ((flags & O_RDWR) && !(flags & O_TRUNC)) {
+		DirEntry_t d;
+		if (findDirEntry(hpName, fileType, &d) < 0)
+			return -1;
+		fd = open(name, O_RDONLY);
+		if (fd < 0)
+			return fd;
+		int size = lseek(fd, 0, SEEK_END);
+		if (size < 0 || lseek(fd, 0, SEEK_SET) < 0) {
+			close(fd);
+			return -1;
+		}
+		WriteData_t *w = malloc(sizeof(WriteData_t)+size);
+		w->firstChunk.chunkSize = size;
+		if (w == NULL) {
+			close(fd);
+			return -1;
+		}
+		size = read(fd, w->firstChunk.data, size);
+		close(fd);
+		if (size < 0) {
+			free(w);
+			return -1;
+		}
+		fd -= FD_OFFSET; // reuse FD
+		w->firstChunk.chunkSize = size;
+		w->firstChunk.next = NULL;
+		w->firstChunk.offset = 0;
+		w->dirty = 0;
+		w->currentChunk = &(w->firstChunk);
+		strcpy(w->filename, hpName);
+		w->fileType = d.type;
+		files[fd].rw.writeData = w;
+		files[fd].position = size;
+		files[fd].mode = MODE_READ_WRITE;
+		files[fd].dataSize = size;
+		_posixCleanup = posixCleanup; /* close on _exit() */
+		return fd + FD_OFFSET;
+	}
+		
 	for (fd=0;fd<MAX_FILES;fd++) {
 		if (files[fd].rw.data == NULL)
 			break;
@@ -159,23 +202,24 @@ int open(const char* name, int flags, ...) {
 	if (fd >= MAX_FILES) {
         return -1;		
 	}
-	if (flags & O_RDWR) {
-		return -1; // TODO
-	}
-	
-	if (flags & O_WRONLY) {
-		WriteData_t *w = malloc(sizeof(WriteData_t));
+
+	if ((flags & O_WRONLY) || (flags & O_RDWR)) { // If we have O_RDWR here, we also have O_TRUNC
+		WriteData_t *w = malloc(sizeof(WriteData_t)+DEFAULT_CHUNK_SIZE);
 		if (w == NULL) {
 			return -1;
 		}
-		files[fd].rw.writeData = w;
+
 		strcpy(w->filename,hpName);
 		w->fileType = fileType == 0 ? DEFAULT_FILE_TYPE : fileType;
 		w->firstChunk.next = NULL;
 		w->firstChunk.offset = 0;
+		w->firstChunk.chunkSize = DEFAULT_CHUNK_SIZE;
 		w->currentChunk = &(w->firstChunk);
+		w->dirty = 0 != (flags & O_TRUNC);
+
+		files[fd].rw.writeData = w;
 		files[fd].position = 0;
-		files[fd].mode = MODE_WRITE;
+		files[fd].mode = (flags & O_RDWR) ? MODE_READ_WRITE : MODE_WRITE;
 		files[fd].dataSize = 0;
 		_posixCleanup = posixCleanup; /* close on _exit() */
 		return fd+FD_OFFSET;
@@ -210,7 +254,7 @@ int close(int fd) {
 	
 	HPFILE*f = &files[fd-FD_OFFSET];
 	
-	if (f->mode == MODE_WRITE) {
+	if (f->mode == MODE_WRITE || (f->mode == MODE_READ_WRITE && f->rw.writeData->dirty)) {
 		uint32_t size = f->dataSize;
 		
 #ifdef LIFPACK
@@ -241,7 +285,7 @@ int close(int fd) {
 			struct chunk* next = chunkP->next;
 			if (0 <= out) 
 			{
-				int32_t s = CHUNK_SIZE;
+				int32_t s = chunkP->chunkSize;
 				if ((uint32_t)s > size)
 					s = size;
 				if (s > 0) {
@@ -282,8 +326,89 @@ static void posixCleanup(void) {
 	}
 }
 
+static int readWrite(HPFILE* f, void* p, size_t size, uint8_t writeMode) {
+	WriteData_t* w = (WriteData_t*)f->rw.writeData;
+
+	struct chunk* curChunk = w->currentChunk;
+	
+	if (!writeMode) {
+		if (f->position >= f->dataSize)
+			return 0;
+		if (f->position + size > f->dataSize) 
+			size = f->dataSize - f->position;		
+	}
+	
+	if (f->position < curChunk->offset) {
+		curChunk = &w->firstChunk;
+	}
+
+	while (curChunk->offset + curChunk->chunkSize <= f->position) {
+		if (f->dataSize < curChunk->offset + curChunk->chunkSize) {
+			f->dataSize = curChunk->offset + curChunk->chunkSize;
+		}
+		if (curChunk->next == NULL) {
+			curChunk->next = malloc(sizeof(struct chunk)+DEFAULT_CHUNK_SIZE);
+			if (curChunk->next == NULL) {
+				w->currentChunk = curChunk;
+				return 0;
+			}
+			memset(curChunk->next, 0, sizeof(struct chunk)+DEFAULT_CHUNK_SIZE);
+			curChunk->next->chunkSize = DEFAULT_CHUNK_SIZE;
+			curChunk->next->offset = curChunk->offset + curChunk->chunkSize;
+		}			
+		curChunk = curChunk->next;
+	}
+	
+	if (f->dataSize < f->position)
+		f->dataSize = f->position;
+	
+	uint32_t wrote = 0;
+	
+	while (0 < size) {
+		uint32_t posInChunk = f->position - curChunk->offset;
+		uint32_t toCopy = curChunk->chunkSize - posInChunk;
+		if (toCopy > size)
+			toCopy = size;
+		
+		if (writeMode) {
+			memcpy(curChunk->data + posInChunk, p, toCopy);
+			w->dirty = 1;
+		}
+		else {
+			memcpy(p, curChunk->data + posInChunk, toCopy);
+		}
+		
+		f->position = curChunk->offset + posInChunk + toCopy;
+		if (f->position > f->dataSize)
+			f->dataSize = f->position;
+		size -= toCopy;
+		wrote += toCopy;
+		p = (char*)p + toCopy;
+		if (0 < size) {
+			if (curChunk->next == NULL) {
+				curChunk->next = malloc(sizeof(struct chunk)+DEFAULT_CHUNK_SIZE);
+				if (curChunk->next == NULL) {
+					w->currentChunk = curChunk;
+					return wrote;
+				}
+				memset(curChunk->next, 0, sizeof(struct chunk));
+				curChunk->next->chunkSize = DEFAULT_CHUNK_SIZE;
+				curChunk->next->offset = curChunk->offset + curChunk->chunkSize;
+			}
+			curChunk = curChunk->next;
+		}
+	}
+	
+	w->currentChunk = curChunk;
+	return wrote;
+}
+
 int read(int fd, void* ptr, size_t size) {
 	HPFILE* f = &files[fd-FD_OFFSET];
+	
+	if (f->mode == MODE_READ_WRITE) {
+		return readWrite(f, ptr, size, 0);
+	}
 
 	if (f->mode != MODE_READ) 
 		return -1;
@@ -405,72 +530,18 @@ off_t lseek(int fd, off_t offset, int origin) {
 	return pos;
 }
 
+
+
 int write(int fd, const void* p, size_t size) {
 	HPFILE* f = &files[fd-FD_OFFSET];
 
-	if (f->mode != MODE_WRITE)
+	if (f->mode != MODE_WRITE && f->mode != MODE_READ_WRITE)
 		return -1;
 
 	if (size == 0)
 		return 0;
 	
-	WriteData_t* w = (WriteData_t*)f->rw.writeData;
-
-	struct chunk* curChunk = w->currentChunk;
-	
-	if (f->position < curChunk->offset) {
-		curChunk = &w->firstChunk;
-	}
-
-	while (curChunk->offset + CHUNK_SIZE <= f->position) {
-		if (f->dataSize < curChunk->offset + CHUNK_SIZE) {
-			f->dataSize = curChunk->offset + CHUNK_SIZE;
-		}
-		if (curChunk->next == NULL) {
-			curChunk->next = malloc(sizeof(struct chunk));
-			if (curChunk->next == NULL) {
-				w->currentChunk = curChunk;
-				return 0;
-			}
-			memset(curChunk->next, 0, sizeof(struct chunk));
-			curChunk->next->offset = curChunk->offset + CHUNK_SIZE;
-		}			
-		curChunk = curChunk->next;
-	}
-	
-	if (f->dataSize < f->position)
-		f->dataSize = f->position;
-	
-	uint32_t wrote = 0;
-	
-	while (0 < size) {
-		uint32_t posInChunk = f->position - curChunk->offset;
-		uint32_t toCopy = CHUNK_SIZE - posInChunk;
-		if (toCopy > size)
-			toCopy = size;
-		memcpy(curChunk->data + posInChunk, p, toCopy);
-		f->position = curChunk->offset + posInChunk + toCopy;
-		if (f->position > f->dataSize)
-			f->dataSize = f->position;
-		size -= toCopy;
-		wrote += toCopy;
-		p = (char*)p + toCopy;
-		if (0 < size) {
-			if (curChunk->next == NULL) {
-				curChunk->next = malloc(sizeof(struct chunk));
-				if (curChunk->next == NULL) {
-					w->currentChunk = curChunk;
-					return wrote;
-				}
-				memset(curChunk->next, 0, sizeof(struct chunk));
-				curChunk->next->offset = curChunk->offset + CHUNK_SIZE;
-			}
-			curChunk = curChunk->next;
-		}
-	}
-	
-	w->currentChunk = curChunk;
-	return wrote;
+	return readWrite(f, (void*)p, size, 1);
 }
 
 int fsync(int fd) {

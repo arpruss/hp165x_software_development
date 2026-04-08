@@ -46,9 +46,9 @@ int stat(const char *path, struct stat *buf);
 #ifndef O_WRONLY
 #define O_WRONLY 1
 #endif
-//#ifndef O_RDWR // TODO
-//#define O_RDWR   2
-//#endif
+#ifndef O_RDWR 
+#define O_RDWR   2
+#endif
 #ifndef O_CREAT
 #define O_CREAT 0x0040
 #endif
