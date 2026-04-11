@@ -22,6 +22,11 @@ void patchInt(uint16_t level, void (*address)()) {
 	*(volatile uint16_t*)(ptr) = 0x4EF9;
 }
 
+void nopInt(uint16_t level) {
+	volatile uint8_t* ptr = ((volatile uint8_t*)0x980000)+6*(level-1);
+	*(volatile uint16_t*)(ptr) = 0x4E73;
+}
+
 void unpatchInt(uint16_t level) {
 	volatile uint8_t* current = ((volatile uint8_t*)0x980000)+6*(level-1);
 	volatile uint8_t* orig = ((volatile uint8_t*)_original_int1_handler)+6*(level-1);
