@@ -14,6 +14,7 @@ void _diskPack(void);
 int _commitDir(void);
 int _writeBlocks(uint32_t blockNum, unsigned count, const void* data);
 int _readBlocks(uint32_t blockNum, unsigned count, void* data);
+int _readBlock(uint32_t blockNum, void* data);
 int _commitBlocks(void);
 
 uint8_t _dirtyDisk=1;
@@ -23,6 +24,7 @@ _WRAP_0(_commitBlocks,0xec0a);
 _WRAP_2(_writeBlock,0xebf8);
 _WRAP_3(_writeBlocks,0xebbc);
 _WRAP_3(_readBlocks,0xebc2);
+_WRAP_2(_readBlock,0xebfe);
 _WRAP_2(_renameDirEntry,0xebc8);
 _WRAP_3(_openFile,0xeb74);
 _WRAP_1(_closeFile,0xeb7a);
@@ -91,6 +93,13 @@ int writeBlocks(uint32_t blockNum, unsigned count, const void* data) {
 int readBlocks(uint32_t blockNum, unsigned count, void* data) {
 	_saveAsteriskArea();
 	int r = _readBlocks(blockNum, count, data);
+	_restoreAsteriskArea();
+	return r;
+}
+
+int readBlock(uint32_t blockNum, void* data) {
+	_saveAsteriskArea();
+	int r = _readBlock(blockNum, data);
 	_restoreAsteriskArea();
 	return r;
 }

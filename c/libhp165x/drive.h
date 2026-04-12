@@ -21,11 +21,11 @@
 
 // These are not thoroughly tested.
 int16_t driveSeek(uint8_t track, uint8_t side);
-int16_t driveReadWriteSectors(uint8_t track, uint8_t side, uint8_t startSectorID, uint8_t endSectorID, uint8_t sectorSizeSelect, char* data, uint8_t mode);
+int16_t driveReadWriteSectors(uint8_t track, uint8_t side, uint8_t startSectorID, uint8_t endSectorID, uint8_t sectorSizeSelect, void* data, uint8_t mode);
 uint8_t driveGetST0(void);
 uint8_t driveGetST1(void);
 uint8_t driveGetST2(void);
 void driveGetFinalPosition(uint8_t* trackP, uint8_t* sideP, uint8_t* sectorP);
-int16_t driveReadBlock(uint16_t blockNum, char* data);
+int16_t driveReadBlock(uint16_t blockNum, void* data);
 
 #endif

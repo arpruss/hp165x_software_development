@@ -34,6 +34,8 @@
 #define MODE_READ_WRITE		  1
 #define MODE_WRITE            2
 
+//#define readBlock driveReadBlock
+
 /* The files are entirely stored in memory. 
    This is a kludge to get around the fact that I don't know how to seek
    within the HP's files, and the HP has a limit of one open file at a time. 
@@ -437,7 +439,7 @@ int read(int fd, void* ptr, size_t size) {
 			r->currentBlock = f->position / LIF_BLOCK_DATA_SIZE;
 			r->blockOffset = r->currentBlock * LIF_BLOCK_DATA_SIZE;
 			
-			if (readBlocks(r->startBlock+r->currentBlock, 1, &r->buffer) < 0) {
+			if (readBlock(r->startBlock+r->currentBlock, &r->buffer) < 0) {
 				return 0;
 			}
 			if ( r->buffer.size < LIF_BLOCK_DATA_SIZE ) {
@@ -481,7 +483,7 @@ static int getHPLength(HPFILE* f) {
 	r->currentBlock = r->numBlocks - 1;
 	r->blockOffset = r->currentBlock * LIF_BLOCK_DATA_SIZE;
 
-	if (readBlocks(r->startBlock + r->currentBlock, 1, &r->buffer) < 0) {
+	if (readBlock(r->startBlock + r->currentBlock, &r->buffer) < 0) {
 		r->currentBlock = -1;
 		return -1;
 	}

@@ -27,9 +27,9 @@ static uint8_t finalSide;
 static uint8_t finalSector;
 static uint8_t finalSectorSize;
 
-static char trackBuffer[DRIVE_DEFAULT_SECTOR_SIZE * DRIVE_DEFAULT_SECTORS_PER_TRACK];
+static char trackBuffer[DISK_DEFAULT_SECTOR_SIZE * DISK_DEFAULT_SECTORS_PER_TRACK];
 static uint8_t bufferPositionTrack;
-static uint8_t bufferPositionSide;
+static uint8_t bufferPositionSide = 0xFF;
 static uint8_t bufferPositionSector;
 
 uint8_t driveGetST0(void) {
@@ -160,7 +160,7 @@ static void int5_write(void) {
 }
 
 int16_t driveSeek(uint8_t track, uint8_t side) {
-	*MISC_CONTROL = 0x42;
+	*MISC_CONTROL = 0x48|0x02;
 	intDone = 0;
 	
 	patchInt(5, int5_seek);
@@ -174,12 +174,12 @@ int16_t driveSeek(uint8_t track, uint8_t side) {
 
 	while (!intDone);
 
-	*MISC_CONTROL = 0x40;
+	*MISC_CONTROL = 0x48;
 
 	return (0 == (st0 & (0x80|0x40))) && (finalTrack == track) ? 0 : -1;
 }
 
-int16_t driveReadWriteSectors(uint8_t track, uint8_t side, uint8_t startSectorID, uint8_t endSectorID, uint8_t sectorSizeSelect, char* data, uint8_t mode) {
+int16_t driveReadWriteSectors(uint8_t track, uint8_t side, uint8_t startSectorID, uint8_t endSectorID, uint8_t sectorSizeSelect, void* data, uint8_t mode) {
 	if (mode != DRIVE_READ)
 		return DRIVE_ERROR; // TODO
 	
@@ -187,7 +187,7 @@ int16_t driveReadWriteSectors(uint8_t track, uint8_t side, uint8_t startSectorID
 		return DRIVE_ERROR;
 	
 	int16_t didRead;
-	*MISC_CONTROL = 0x42;
+	*MISC_CONTROL = 0x48|0x02;
 	intDone = 0;
 	intError = 0;
 	buffer = data;
@@ -215,17 +215,17 @@ int16_t driveReadWriteSectors(uint8_t track, uint8_t side, uint8_t startSectorID
 
 	while(!intDone);
 
-	didRead = buffer-data;
+	didRead = buffer-(char*)data;
 	if (!intError) {
 		if ((st2 & 0x20) || (st1 & 0x20))
 			didRead = -didRead;
 	}
-	*MISC_CONTROL = 0x40;
+	*MISC_CONTROL = 0x48;
 
 	return didRead;
 }
 
-int16_t driveReadBlock(uint16_t blockNum, char* data) {
+int16_t driveReadBlock(uint16_t blockNum, void* data) {
 	if (blockNum > *(volatile uint16_t*)0x9842a8)
 		return -1;
 	uint8_t track = blockNum / (BLOCKS_PER_TRACK*2);
@@ -244,13 +244,13 @@ int16_t driveReadBlock(uint16_t blockNum, char* data) {
 	
 	if (_dirtyDisk || side != bufferPositionSide || track != bufferPositionTrack || sector < bufferPositionSector) {
 		uint8_t sectorID = (track == 79 ? 97 : 1) + sector;
-		uint8_t count = DRIVE_DEFAULT_SECTORS_PER_TRACK - sector;
+		uint8_t count = DISK_DEFAULT_SECTORS_PER_TRACK - sector;
 		uint8_t lastSectorID = sectorID + count - 1;
 		uint16_t i;
 		
 		for (i = 0 ; i < 3 ; i++) {
 			int16_t n = driveReadWriteSectors(track,side,sectorID,lastSectorID,DISK_DEFAULT_SECTOR_SIZE_SELECT,trackBuffer,DRIVE_READ);
-			if (n == count * (uint16_t)DRIVE_DEFAULT_SECTOR_SIZE)
+			if (n == count * (uint16_t)DISK_DEFAULT_SECTOR_SIZE)
 				break;
 		}
 		if (i >= 3)

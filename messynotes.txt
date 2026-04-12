@@ -50,6 +50,8 @@ VIDEO
 Default screen size: 592x384 (adjustable to up to 640x400 with mc6845 settings, or 640x480 with 
 minor distortion on bottom of screen).
 
+https://bitsavers.trailing-edge.com/components/motorola/_dataSheets/6845.pdf 
+
 Some of the ROM routines (e.g., DrawText) enforce an 8-pixel margin.
 
 Apparently the video memory apparently consists of four bit-planes.
@@ -156,7 +158,12 @@ SPECIAL HARDWARE ADDRESSES
 0x200000 ??: involved in acquisition test
 0x200001 ??: involved in acquisition test; involved in trap #0 function 1D
 0x201000.w: screen memory control (see below)  
-0x202001.b: set bit 7 to set display lookup table, clear when done; bit 6 is clear before and set after writing stuff to MC6845 ; https://bitsavers.trailing-edge.com/components/motorola/_dataSheets/6845.pdf ; bit 1 gets cleared when a changed disk is read
+0x202001.b: miscellaneous control
+	bit 7 gets set to set display lookup table, cleared when done
+	bit 6 gets cleared before writing to MC6845 and set afterwards
+	bit 3 gets set to mark disk data as refreshed (20f000 bit 0)
+	bit 1 gets cleared when a disk is read
+	bit 0 is set when waiting for FDC interrupt sense data, and then cleared afterwards
 0x203000.b: BEEP: 0xFF on, $FE off
 0x204001.b-0x204020: put display look table entries here: 00=black, 01=gray, 02=black
 0x205000 ??: involved in spinner
