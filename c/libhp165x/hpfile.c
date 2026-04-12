@@ -16,6 +16,8 @@ int _writeBlocks(uint32_t blockNum, unsigned count, const void* data);
 int _readBlocks(uint32_t blockNum, unsigned count, void* data);
 int _commitBlocks(void);
 
+uint8_t _dirtyDisk=1;
+
 _WRAP_0(_initializeDiskSettings,0xec10);
 _WRAP_0(_commitBlocks,0xec0a);
 _WRAP_2(_writeBlock,0xebf8);
@@ -81,6 +83,7 @@ int writeBlocks(uint32_t blockNum, unsigned count, const void* data) {
 	int r = _writeBlocks(blockNum, count, data);
 	if (r >= 0)
 		r = _commitBlocks();
+	_dirtyDisk = 1;
 	_restoreAsteriskArea();
 	return r;
 }
@@ -95,12 +98,14 @@ int readBlocks(uint32_t blockNum, unsigned count, void* data) {
 void closeFile(int32_t h) {
 	_saveAsteriskArea();
 	_closeFile(h);
+	_dirtyDisk = 1;
 	_restoreAsteriskArea();
 }
 
 int writeFile(int32_t fd, const void* data, int32_t size) {
 	_saveAsteriskArea();
 	int n = _writeFile(fd,data,size);
+	_dirtyDisk = 1;
 	_restoreAsteriskArea();
 	return n;
 }
@@ -121,6 +126,7 @@ int refreshDir(void) {
 		_restoreAsteriskArea();
 		return 0;
 	}
+	_dirtyDisk = 1;
 	int retVal = _refreshDir();
 	bigDiskSupport();
 	_restoreAsteriskArea();
@@ -179,6 +185,8 @@ int openFile(const char* name, uint32_t fileType, uint32_t mode) {
 	_saveAsteriskArea();
 	int h = _openFile(paddedName, fileType, mode);
 	_restoreAsteriskArea();
+	if (mode == OPEN_WRITE)
+		_dirtyDisk = 1;
 	return h;
 }
 
@@ -211,6 +219,7 @@ int renameFile(const char* name, uint16_t fileType, const char* newName, int32_t
 			if (newFileType >= 0) 
 				d.type = newFileType;
 			memcpy(d.name, newPaddedName, MAX_FILENAME_LENGTH);
+			_dirtyDisk = 1;
 			_renameDirEntry(i, &d);
 			int r = _commitDir();
 			_restoreAsteriskArea();
@@ -235,6 +244,7 @@ int setFileMisc(const char* name, uint16_t fileType, const void* misc) {
 		}
 		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
 			memcpy(d.misc, misc, sizeof(d.misc));
+			_dirtyDisk = 1;
 			_renameDirEntry(i, &d);
 			int r = _commitDir();
 			_restoreAsteriskArea();
