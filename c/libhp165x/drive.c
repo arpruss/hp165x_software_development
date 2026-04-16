@@ -26,6 +26,7 @@ static uint8_t finalTrack;
 static uint8_t finalSide;
 static uint8_t finalSector;
 static uint8_t finalSectorSize;
+static uint8_t rqmFail;
 
 static char trackBuffer[DISK_DEFAULT_SECTOR_SIZE * DISK_DEFAULT_SECTORS_PER_TRACK];
 static uint8_t bufferPositionTrack;
@@ -56,8 +57,10 @@ void driveGetFinalPosition(uint8_t* trackP, uint8_t* sideP, uint8_t* sectorP) {
 uint8_t __attribute__((noinline)) waitForRQM(void) {
 	for (uint16_t i=0;i<100;i++) {
 		shortPause();
-		if (*DRIVE_STATUS & DRIVE_STATUS_RQM)
+		if (*DRIVE_STATUS & DRIVE_STATUS_RQM) {
+			rqmFail = 1;
 			return 1;
+		}
 	}
 	return 0;
 }
@@ -82,6 +85,7 @@ static void int5_seek(void) {
 }
 
 static void __attribute__((noinline,used))ioStatus(void) {
+	rqmFail = 0;
 	waitForRQM();
 	st0 = *DRIVE_DATA;
 	waitForRQM();
@@ -164,6 +168,8 @@ int16_t driveSeek(uint8_t track, uint8_t side) {
 	intDone = 0;
 	
 	patchInt(5, int5_seek);
+	
+	rqmFail = 0;
 
 	waitForRQM();
 	*DRIVE_DATA = DRIVE_SEEK;
@@ -171,11 +177,15 @@ int16_t driveSeek(uint8_t track, uint8_t side) {
 	*DRIVE_DATA = side ? 0 : 4; 
 	waitForRQM();
 	*DRIVE_DATA = track;
+	
+	if (rqmFail)
+		return -1;
 
 	while (!intDone);
 
 	*MISC_CONTROL = 0x48;
 
+	// todo: do timeout
 	return (0 == (st0 & (0x80|0x40))) && (finalTrack == track) ? 0 : -1;
 }
 
@@ -186,8 +196,7 @@ int16_t driveReadWriteSectors(uint8_t track, uint8_t side, uint8_t startSectorID
 	if (driveSeek(track, side) < 0)
 		return DRIVE_ERROR;
 	
-	int16_t didRead;
-	*MISC_CONTROL = 0x48|0x02;
+	*MISC_CONTROL = MISC_CONTROL_DEFAULT | MISC_CONTROL_DRIVE_LED;
 	intDone = 0;
 	intError = 0;
 	buffer = data;
@@ -209,19 +218,26 @@ int16_t driveReadWriteSectors(uint8_t track, uint8_t side, uint8_t startSectorID
 	waitForRQM();
 	*DRIVE_DATA = endSectorID;
 	waitForRQM();
-	*DRIVE_DATA = DISK_GPL;
+	*DRIVE_DATA = sectorSizeSelect == 1 ? 0xE :
+				  sectorSizeSelect == 2 ? 0x1B :
+				  DISK_GPL;
 	waitForRQM();
+	
+	rqmFail = 0;
+	
 	*DRIVE_DATA = 0xFF; //DTL
 
-	while(!intDone);
+	for (uint32_t i = 0x80000 ; i > 0 ; i--)
+		if (intDone)
+			break;
 
-	didRead = buffer-(char*)data;
-	if (!intError) {
-		if ((st2 & 0x20) || (st1 & 0x20))
-			didRead = -didRead;
-	}
-	*MISC_CONTROL = 0x48;
+	int16_t didRead = buffer-(char*)data;
 
+	if (intError || rqmFail || (st2 & 0x20) || (st1 & 0x20))
+		didRead = -didRead;
+
+	*MISC_CONTROL = MISC_CONTROL_DEFAULT;
+	
 	return didRead;
 }
 

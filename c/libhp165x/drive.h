@@ -4,6 +4,8 @@
 #include <hp165x.h>
 
 #define MISC_CONTROL ((volatile uint8_t*)0x202001)
+#define MISC_CONTROL_DEFAULT   0x48
+#define MISC_CONTROL_DRIVE_LED 2
 #define DRIVE_STATUS ((volatile uint8_t*)0x20d001)
 #define DRIVE_STATUS_RQM 0x80
 #define DRIVE_STATUS_EXM 0x20

@@ -158,12 +158,14 @@ SPECIAL HARDWARE ADDRESSES
 0x200000 ??: involved in acquisition test
 0x200001 ??: involved in acquisition test; involved in trap #0 function 1D
 0x201000.w: screen memory control (see below)  
-0x202001.b: miscellaneous control
-	bit 7 gets set to set display lookup table, cleared when done
-	bit 6 gets cleared before writing to MC6845 and set afterwards
-	bit 3 gets set to mark disk data as refreshed (20f000 bit 0)
-	bit 1 gets cleared when a disk is read
-	bit 0 is set when waiting for FDC interrupt sense data, and then cleared afterwards
+0x202001.b: miscellaneous control; safe default is 0x48 (shadowed at 0x980717 [980716.w works])
+	bit 7: gets set to set display lookup table, cleared when done
+	bit 6: gets cleared before writing to MC6845 and set afterwards
+	bit 5: may be connected with acquisition
+	bit 3: transition from 1 to 0 to mark disk data as refreshed (20f001 bit 0)
+	bit 1: disk LED (set=on)
+	bit 0: is set when waiting for FDC interrupt sense data, and then cleared afterwards; transition from
+		   1 to 0 in test code seems to hang things
 0x203000.b: BEEP: 0xFF on, $FE off
 0x204001.b-0x204020: put display look table entries here: 00=black, 01=gray, 02=black
 0x205000 ??: involved in spinner
@@ -182,7 +184,7 @@ SPECIAL HARDWARE ADDRESSES
 0x20d003.b: read/write. NEC muPD72065 disk controller I/O.
 0x20e001: ?? write
 0x20f000.w:
-	bit 0: if clear, disk has been changed and data needs refresh; set by call to ebb0
+	bit 0: if clear, disk has been changed and data needs refresh; set by bit 
 	bit 1: last spinner turn was to the right
 	bit 3: no disk in drive
 	bit 4: ???

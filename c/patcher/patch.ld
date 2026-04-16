@@ -1,30 +1,7 @@
-/*
- * Modify the ROM and RAM base and sz (size) variables below to
- * suit your systems memory layout.
- *
- *   base indicates at what address a memory begins
- *   sz indicates the size of that memory
- *
- * Values can be specified in decimal, hexadecimal, or as units such
- * as 1K or 1M.
- *
- * Space for the stack may also be reserved here. The heap will then
- * consume all remaining RAM between the end of the .bss section and
- * the lowest address reserved for the stack.
- *
- * Since there are no controls in place to ensure the stack does not
- * grow into the heap, the user is responsible for reserving sufficient
- * stack space to prevent it overwriting the upper areas of the heap.
- */
 _program_base = 0xA72008;
 _program_end =  0xA77FFE;
 _stack_start = 0; /* there should be about 30K here */
 _program_sz = _program_end - _program_base;
-
-/*
- * Dont modify below this line (unless you know what youre doing),
- * except to add user interrupt vectors.
- */
 
 EXTERN(_start)
 ENTRY(_start)

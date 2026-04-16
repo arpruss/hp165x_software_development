@@ -22,7 +22,41 @@ hpjmp_buf jb;
 
 _WRAP_0(_eb02,0xeb02);
 
+void printBinary(uint8_t x) {
+	for (int8_t i=7; i>=0; i--)
+		putChar(x&(1<<i) ? '1' : '0');
+}
 
+void miscControl(void) {
+	uint8_t setMode = 1;
+	uint16_t control = *(volatile uint16_t*)(0x980716);
+	uint32_t n = 1;
+	while(1) {
+		setTextXY(0,0);
+		putText(setMode ? "set mode  \n" : "clear mode\n");
+		putText("MISC_CONTROL: ");
+		printBinary(control);
+		putText("\nHARDWARE_STATUS: ");
+		printBinary(*HARDWARE_STATUS);
+		uint16_t k = getKey(0);
+		if (k) {
+			k = parseKey(k);
+			if ('0' <= k && k <='7') {
+				if (setMode)
+					control |= (1<<(k-'0'));
+				else
+					control &= ~(1<<(k-'0'));
+				*MISC_CONTROL = control;
+				
+			}
+			if ('R' == k)
+				setMode = !setMode;
+			if (KEYBOARD_BREAK == k)
+				return;
+		}
+		printf("\n%u\n%u", (unsigned)getVBLCounter(),n++);
+	}
+}
 
 void fileTest(void) {
 	printf("starting test\n");
@@ -344,6 +378,7 @@ main(int argc, char** argv) {
 	putText("B - choose\n");
 	putText("C - inputEvents\n");
 	putText("D - mouse\n");
+	putText("E - misc control\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -367,6 +402,7 @@ main(int argc, char** argv) {
 		case KEY_B: choose(); break;
 		case KEY_C: inputEvents(); break;
 		case KEY_D: mouse(); break;
+		case KEY_E: miscControl(); break;
 		default:
 			reload();
 	}

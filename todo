@@ -1,5 +1,3 @@
-Fix packing of big disks in c/libhp165x/pack.c
-
 In lifutils.py, support typed files with colon.
 
 See why SYSTEM_ crashes loading PVTEST_ from bigdisk.
