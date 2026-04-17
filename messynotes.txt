@@ -173,6 +173,7 @@ SPECIAL HARDWARE ADDRESSES
 0x2050fe ??: involved in spinner
 0x206000.b: spinner speed
 0x207000 (write): -1 does something spinnery
+0x209001-f: read/write in SYSTEM_. Might be HPIB
 0x20a000: direct i/o address
 0x20a002: connected with serial test 
 0x20a004: connected with serial test ; mode??
@@ -586,3 +587,5 @@ Channel 1:
 200mV/200mV = 0x4C/0x44
 200mV/20V = 0x4C/0xB4
 1V/200mV = 0x4C/0x44
+
+00a330ca.l = xincrement (float): xincrement*50.0 is the actual time, maybe in ns
