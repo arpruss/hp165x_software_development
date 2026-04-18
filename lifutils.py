@@ -247,7 +247,7 @@ def disjoint(x,xcount,y,ycount):
 def packFiles(d):
     global diskData
     
-    fillFF( dirStart * BLOCK_SIZE, len(diskData) - dirStart * BLOCK_SIZE )
+    fillFF( dirStart * BLOCK_SIZE, (totalBlocks - dirStart) * BLOCK_SIZE )
     if BIGDISK:
         for i in range(len(d)-1,-1,-1):
             if d[i].isReserved():
@@ -378,18 +378,25 @@ def create(name):
     tracks = DATA_TRACKS
     totalBlocks = tracks * SIDES * blocksPerTrack
     header=bytearray.fromhex("800041313635582000000002100000000000001200000000FFFFFFFF00000002FFFFFFFF")
-    header[24:28] = struct.pack(">I", tracks)
+    if not GENERIC and 0 < MAGIC_TRACK and 77 <= tracks <= MAGIC_TRACK + 1:
+        header[24:28] = struct.pack(">I", 77)
+    else:
+        header[24:28] = struct.pack(">I", tracks)
     header[32:36] = struct.pack(">I", blocksPerTrack)
-    if 0 < MAGIC_TRACK and MAGIC_TRACK < tracks:
+    if not GENERIC and 0 < MAGIC_TRACK and MAGIC_TRACK + 1 < tracks:
+        BIGDISK = 1
         header[12:14] = struct.pack(">H", tracks|(ord('B')<<8))
+    else:
+        BIGDISK = 0
     sides = 2
     diskData = bytearray()
     diskData += header
     diskData += (BLOCK_SIZE-len(header)) * b'\x00'
     diskData += (BLOCK_SIZE*(totalBlocks-1)) * b'\xFF'
-    if MAGIC_TRACK >= 0 and MAGIC_TRACK < tracks:
-        diskData[magicBlock * BLOCK_SIZE : (magicBlock + 1) * BLOCK_SIZE] = magicData
-        diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = DirEntry.makeReserved().toBinary()
+    if not GENERIC and 0 < MAGIC_TRACK and MAGIC_TRACK < tracks:
+        diskData[magicBlock * BLOCK_SIZE : (magicBlock + MAGIC_BLOCKS) * BLOCK_SIZE] = magicData
+        if BIGDISK:
+            diskData[2*BLOCK_SIZE:2*BLOCK_SIZE+DIR_ENTRY_SIZE] = DirEntry.makeReserved().toBinary()
 
 def loadHeader():
     global lifHeader, name, dirStart, lifId, dirBlocks, dirVersion, tracks, sides, blocksPerTrack
