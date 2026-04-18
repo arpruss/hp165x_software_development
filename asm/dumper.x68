@@ -1,13 +1,7 @@
-*-----------------------------------------------------------
-* Title      :
-* Written by :
-* Date       :
-* Description:
-*-----------------------------------------------------------
     ORG    $984500
     
     include hpdefs.x68
-    
+
 START:                  ; first instruction of program
 ;     jsr ClearToBlack
      jsr ClearToWhite
@@ -23,19 +17,19 @@ START:                  ; first instruction of program
      clr.w LAST_KEY
 
 TOP:  
-     move.l #0, Print_x
-     move.l #0, Print_y
-     move.l position, D1
+     move.l #0,Print_x
+     move.l #0,Print_y
+     move.l position,D1
      bsr PrintDWord
 
-     move.l #400, Print_x
-     move.l new_position, D1
+     move.l #400,Print_x
+     move.l new_position,D1
      bsr PrintDWord
 
-     move.b #$A, D1
+     move.b #$A,D1
      bsr PrintChar
   
-     move.l position, A1
+     move.l position,A1
      move.l #29-1,D3
 loop:
      bsr Dump32
@@ -43,6 +37,9 @@ loop:
 
 key_loop:
      move.w LAST_KEY,D0
+     tst.w D0
+     beq no_key    
+     move.b #BUZZER_OFF,BUZZER ; click
      clr.w LAST_KEY
      cmp.w #$0104,D0 ; stop
      beq DONE
@@ -88,6 +85,7 @@ key_loop:
      beq keyF
      cmp.w #$0801,D0
      beq keyIO
+no_key:     
 resume:
      move.b continuous,D0
      cmp.b #0,D0
@@ -169,9 +167,9 @@ update_position:
      lsl.l #4,D1
      add.l D0,D1
      move.l D1,new_position
-     move.l #400, Print_x
-     move.l #00, Print_y
-     move.l new_position, D1
+     move.l #400,Print_x
+     move.l #00,Print_y
+     move.l new_position,D1
      bsr PrintDWord
      bra key_loop
 
@@ -206,21 +204,3 @@ continuous: dc.b $1
     
     include utilities.x68
     END    START        ; last line of source
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-*~Font name~Courier New~
-*~Font size~10~
-*~Tab type~1~
-*~Tab size~4~

@@ -58,6 +58,36 @@ void miscControl(void) {
 	}
 }
 
+void beeper(void) {
+	uint8_t setMode = 1;
+	uint16_t control = 0xFE;
+	uint32_t n = 1;
+    setKeyClick(0);
+	while(1) {
+		setTextXY(0,0);
+		putText(setMode ? "set mode  \n" : "clear mode\n");
+		putText("SET: ");
+		printBinary(control);
+		uint16_t k = getKey(1);
+		if (k) {
+			k = parseKey(k);
+			if ('0' <= k && k <='7') {
+				if (setMode)
+					control |= (1<<(k-'0'));
+				else
+					control &= ~(1<<(k-'0'));
+				*BEEPER = control;
+				
+			}
+			if ('R' == k)
+				setMode = !setMode;
+			if (KEYBOARD_BREAK == k)
+				return;
+		}
+		printf("\n%u\n%u", (unsigned)getVBLCounter(),n++);
+	}
+}
+
 void fileTest(void) {
 	printf("starting test\n");
 	static char testBuffer[6543];
@@ -379,6 +409,7 @@ main(int argc, char** argv) {
 	putText("C - inputEvents\n");
 	putText("D - mouse\n");
 	putText("E - misc control\n");
+	putText("F - beeper\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -403,6 +434,7 @@ main(int argc, char** argv) {
 		case KEY_C: inputEvents(); break;
 		case KEY_D: mouse(); break;
 		case KEY_E: miscControl(); break;
+		case KEY_F: beeper(); break;
 		default:
 			reload();
 	}

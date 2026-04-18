@@ -1,13 +1,13 @@
 ;    ORG    $984500
 ;START:                  ; first instruction of program
     
-    include hpdefs.x68
+;    include hpdefs.x68
     
 ClearToWhite:
     move.w #WRITE_WHITE,SCREEN_MEMORY_CONTROL
 ClearToWhite_0:
     movem.l D0-D7/A0-A1,-(SP) ; save all registers used
-    move.l #$000F000F, D0
+    move.l #$000F000F,D0
     move.l D0,D1
     move.l D0,D2
     move.l D0,D3
@@ -15,10 +15,10 @@ ClearToWhite_0:
     move.l D0,D5
     move.l D0,D6
     move.l D0,D7
-    move.l #(SCREEN+(592*384/2)), A0 ; 592*384/2 is divisible by 64
-    move.l  #SCREEN, A1
+    move.l #(SCREEN+(592*384/2)),A0 ; 592*384/2 is divisible by 64
+    move.l  #SCREEN,A1
 ClearToWhite_1:
-    movem.l D0-D7,-(A0) ; clear 16 display words at once, decrementing A0 by 32
+    movem.l D0-D7,-(A0) ; clear 16 display words at once,decrementing A0 by 32
     cmp.l A1,A0
     bge ClearToWhite_1
     
@@ -63,11 +63,11 @@ PrintByte:
 
     move.l D1,-(SP)
     
-    lsr.b #4, D1
+    lsr.b #4,D1
     jsr PrintNybble
     move.l (SP)+,D1
 
-    and.b #$F, D1
+    and.b #$F,D1
     jsr PrintNybble
     
     movem.l (SP)+,D0-D2/A1
@@ -85,11 +85,11 @@ PrintChar_write:
     move.l Print_x,D1
     move.l D1,-(SP)
     jsr ROM_SET_COORDINATES ; set coordinates
-    addq.l #8, SP
+    addq.l #8,SP
 
     pea Print_message
     jsr ROM_DRAW_TEXT ; draw text
-    addq.l #4, SP
+    addq.l #4,SP
     
     move.l Print_x,D1
     addq.l #8,D1
@@ -129,19 +129,20 @@ Print_message:
 WaitForSelect:
     cmp.w #$2001,LAST_KEY
     bne WaitForSelect
+    move.b #BUZZER_OFF,BUZZER
     clr.w LAST_KEY
     rts
 
 SetBold:
     pea 1
     jsr ROM_SET_BOLD
-    add.l #4, SP
+    add.l #4,SP
     rts
 
 ResetBold:
     clr.l -(SP)
     jsr ROM_SET_BOLD
-    add.l #4, SP
+    add.l #4,SP
     rts
     
 Beep:
@@ -160,8 +161,3 @@ Beep:
     
 
 
-
-*~Font name~Courier New~
-*~Font size~10~
-*~Tab type~1~
-*~Tab size~4~

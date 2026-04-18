@@ -1,6 +1,4 @@
-ROM_BEEP equ $ecd0
-ROM_RELOAD equ $ece2
-ROM_GET_KEY equ $eb38
+    include hpdefs.x68    
 
     ORG    $984500
 START:                  ; first instruction of program
@@ -16,7 +14,7 @@ LOOP:
     jsr PrintByte
     bra LOOP
 
-    include utilities.X68    
+    include utilities.x68    
 
 try:    
     dc.l 0
@@ -29,8 +27,3 @@ try:
 
 
 
-
-*~Font name~Courier New~
-*~Font size~10~
-*~Tab type~1~
-*~Tab size~4~

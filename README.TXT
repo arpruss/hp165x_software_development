@@ -11,13 +11,11 @@ I assume you have have hxc floppy emulation software in ../floppy/hxc
 Using EASy68K, you can assemble a 68K assembly file with an origin of 0x984500 to an S-record file
 in asm/file.S68. Then you can create an .hfe virtual disc by running:
   ./builddisc.sh file
-By default it also copies it to e:/DSKA0004.HFE. If you put that in your Gotek, you can either boot
+By default it also copies it to d:/DSKA0004.HFE. If you put that in your Gotek, you can either boot
 your logic analyzer to it, or you can load it using the logic analyzer's IO menu as a "self test"
 (the latter doesn't always work as well).
 
-If you get Tom Storey's bare metal toolkit (https://github.com/tomstorey/m68k_bare_metal) and a 
-copy of m68k-elf-gcc (Windows: https://sourceforge.net/projects/mingw-gcc-68k-elf/), you can build C 
-programs. Drop it in the same directory as this, build libmetal, and you can compile the projects in c/.
+You can also use vasm on most of the assembly code. See the Makefiles in the asm directory.
 
 A falling blocks game based on code from my 2002 Wiztris game for the Sharp 7xx organizer
 is included in the c/ directory.

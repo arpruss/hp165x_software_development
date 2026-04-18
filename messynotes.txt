@@ -162,11 +162,11 @@ SPECIAL HARDWARE ADDRESSES
 	bit 7: gets set to set display lookup table, cleared when done
 	bit 6: gets cleared before writing to MC6845 and set afterwards
 	bit 5: may be connected with acquisition
-	bit 3: transition from 1 to 0 to mark disk data as refreshed (20f001 bit 0)
+	bit 3: transition from 1 to 0 marks disk data as refreshed (20f001 bit 0)
 	bit 1: disk LED (set=on)
 	bit 0: is set when waiting for FDC interrupt sense data, and then cleared afterwards; transition from
 		   1 to 0 in test code seems to hang things
-0x203000.b: BEEP: 0xFF on, $FE off
+0x203000.b: BEEP: bit 0 set: on, bit 0 clear: off; all writes that don't toggle beep generate a click
 0x204001.b-0x204020: put display look table entries here: 00=black, 01=gray, 02=black
 0x205000 ??: involved in spinner
 0x205002 ??: involved in spinner

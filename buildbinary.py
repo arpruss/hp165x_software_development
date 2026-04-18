@@ -15,9 +15,15 @@ with open(sys.argv[1],"r") as s:
         line = s.readline()
         if not line:
             break
-        if line.startswith("S2"):
-            count = int(line[2:4],16)-4
-            pos = int(line[4:4+6],16)
+        if line.startswith("S2") or line.startswith("S3"):
+            if line.startswith("S3"):
+                count = int(line[2:4],16)-5
+                pos = int(line[4:4+8],16)
+                dataStart = 12
+            else:
+                count = int(line[2:4],16)-4
+                pos = int(line[4:4+6],16)
+                dataStart = 10
             
             if not checkedPos:
                 if pos != BASE:
@@ -26,7 +32,7 @@ with open(sys.argv[1],"r") as s:
                 else:
                     checkedPos = True
                 
-            data = bytes.fromhex(line[10:10+2*count])
+            data = bytes.fromhex(line[dataStart:dataStart+2*count])
             if pos >= BASE:
                 pos -= BASE
                 if pos > len(binary):

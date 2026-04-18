@@ -1,4 +1,4 @@
-     include hpdefs.x68
+     include ../asm/hpdefs.x68
 
 ;; ORG $A09710 (for insertion between end of SYSTEM_ code and beginning of SYSTEM_ data)
 
@@ -38,7 +38,7 @@ normalDisk0:
 ;patch_load_test:
 ;    clr.l   -(SP)
 ;    clr.l   -(SP)
-;    jsr     $ebfe ; read block zero to ROM -- i.e., seek to first track
+;    jsr     $ebfe ; read block zero to ROM -- i.e.,seek to first track
 ;    addq    #8,SP
 ;    jmp     $ece8
 	
@@ -91,7 +91,7 @@ patch:
     move.l  SP,savedStack
     move.l  #stack,SP
     
-    movem.l D0-D7/A0-A6, -(SP)
+    movem.l D0-D7/A0-A6,-(SP)
 
     move.w  $20F000,D0
     move.w  D0,D2
@@ -113,10 +113,10 @@ runPatch:
 
 cleanupPatch:    
     clr.w   triggered
-    movem.l (SP)+, D0-D7/A0-A6
+    movem.l (SP)+,D0-D7/A0-A6
     move.w  #$FFFF,D1
 
-    move.l  savedStack, SP
+    move.l  savedStack,SP
 
     rts    
 patchError:
@@ -134,11 +134,11 @@ screendump:
 
     move.l  D0,D7 ; file number
     
-    move.l  D7, -(SP)   ; save 
+    move.l  D7,-(SP)   ; save 
     
     pea     (pbmHeaderEnd-pbmHeader)
     pea     (pbmHeader)
-    move.l  D7, -(SP)
+    move.l  D7,-(SP)
     
     jsr     ROM_WRITE_FILE
 
@@ -149,13 +149,13 @@ screendump:
     cmp.l   #(pbmHeaderEnd-pbmHeader),D0
     bne     closeWithError
     
-    move.l #SCREEN, A0 ; current position
+    move.l #SCREEN,A0 ; current position
     move.l #(SCREEN+(SCREEN_WIDTH/4)*2*SCREEN_HEIGHT),A1 ; end of screen
-    move.l #SCREEN_MEMORY_CONTROL, A2
+    move.l #SCREEN_MEMORY_CONTROL,A2
     
 copyToBuffer:
-    move.l #buffer, A4
-    move.w #buffer_size-1, D4
+    move.l #buffer,A4
+    move.w #buffer_size-1,D4
 
 copyLoop:
     ;;  Display = (Attr^(OV&OData | ~OV&Data)) & ~(OData&~OV)
@@ -164,7 +164,7 @@ READ_ODATA equ $f-$2
 READ_OV    equ $f-$4
 READ_ATTR  equ $f-$8
 
-READ MACRO ; MODE, DEST, TEMP
+READ MACRO ; MODE,DEST,TEMP
     move.w \1,(A2)     
     move.w (A0),\2
     and.w  #$F,\2
@@ -174,7 +174,7 @@ READ MACRO ; MODE, DEST, TEMP
     or.w   \3,\2
     ENDM
     
-READ_LAST MACRO ; MODE, DEST, TEMP
+READ_LAST MACRO ; MODE,DEST,TEMP
     move.w \1,(A2)     
     move.w (A0)+,\2
     and.w  #$F,\2
@@ -184,10 +184,10 @@ READ_LAST MACRO ; MODE, DEST, TEMP
     or.w   \3,\2
     ENDM
     
-    READ   #READ_DATA,  D0, D6
-    READ   #READ_ODATA, D1, D6
-    READ   #READ_OV,    D2, D6
-    READ_LAST   #READ_ATTR,  D3, D6
+    READ   #READ_DATA, D0,D6
+    READ   #READ_ODATA,D1,D6
+    READ   #READ_OV,   D2,D6
+    READ_LAST   #READ_ATTR, D3,D6
 
 ; output = (D3^(D2&D1 | ~D2&D0)) & (~D1|D2)
 ; use S5 as temporary
@@ -206,21 +206,21 @@ READ_LAST MACRO ; MODE, DEST, TEMP
     move.b D2,(A4)+
     dbra   D4,copyLoop
     
-    movem.l D0-D7/A0-A6, -(SP)
+    movem.l D0-D7/A0-A6,-(SP)
     
     pea     (buffer_size)
     pea     (buffer)
-    move.l  D7, -(SP)
+    move.l  D7,-(SP)
     
     jsr     ROM_WRITE_FILE
     
     add.l   #12,SP
 
-;    move.l  D0, error ;; -0x15
+;    move.l  D0,error ;; -0x15
 
     cmp.l   #buffer_size,D0
     
-    movem.l (SP)+, D0-D7/A0-A6
+    movem.l (SP)+,D0-D7/A0-A6
     
     bne     closeWithError    
 
@@ -233,7 +233,7 @@ closeFile:
     move.b  $98077d,D0
     move.w  D0,SCREEN_MEMORY_CONTROL
 
-    move.l  D7, -(SP)    
+    move.l  D7,-(SP)    
     jsr     ROM_CLOSE_FILE    
     add.l   #4,SP
 
@@ -270,11 +270,11 @@ dirLoop:
     cmp.w   #file_type,D0
     bne     dirLoop
     
-    move.l  buffer, D7
-    cmp.l   #'SCRN', D7
+    move.l  buffer,D7
+    cmp.l   #'SCRN',D7
     bne     dirLoop
-    move.l  buffer+6, D7
-    cmp.l   #'.PBM', D7
+    move.l  buffer+6,D7
+    cmp.l   #'.PBM',D7
     bne     dirLoop
     
     move.l  #(buffer+4),A0
@@ -295,7 +295,7 @@ dirDone:
     move.l  #(filename+4),A0
     bra     formatNumber2
     
-parseNumber2: ; parse 2-digit number at A0 into D0.w, clobbering D7
+parseNumber2: ; parse 2-digit number at A0 into D0.w,clobbering D7
     moveq.l #0,D7
     move.b  (A0)+,D0
     sub.w   #'0',D0
@@ -355,9 +355,10 @@ pbmHeaderEnd:
 filename:
     dc.b 'SCRNSH.PBM',0
     
-;    include utilities.x68       
+;    include ../asm/utilities.x68       
 
-    org  (*+1)&-2
+    ds.b (*&1) ; even align
+        
 buffer_size equ $200    
 buffer:
 stack_size equ $800
@@ -380,7 +381,6 @@ PATCH_TABLE:
     dc.l   patch_get_key
     
     END    START        ; last line of source
-
 
 
 
