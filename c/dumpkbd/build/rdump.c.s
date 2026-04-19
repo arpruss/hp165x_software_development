@@ -11,13 +11,14 @@
 main:
 	lea (-80,%sp),%sp
 	movem.l #60,-(%sp)
+	move.w 2101248,%d0
 	clr.l -(%sp)
 	jsr setTextBlackOnWhite
 	jsr drawBlack
 	jsr fillScreen
 	addq.l #4,%sp
 	lea (16,%sp),%a2
-	lea sprintf_,%a5
+	lea sprintf,%a5
 	lea setTextXY,%a4
 	lea putText,%a3
 .L2:
