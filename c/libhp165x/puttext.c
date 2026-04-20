@@ -554,3 +554,7 @@ void showTextCursor(char value) {
 	}
 	cursorVisible = value;
 }
+
+uint8_t isTextCursorVisible(void) {
+    return cursorVisible;
+}

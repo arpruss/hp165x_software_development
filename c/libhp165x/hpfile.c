@@ -2,6 +2,7 @@
 #include <string.h>
 #include "hp165x.h"
 
+#define EXTRA_RETRIES 3
 #define TOTAL_BLOCKS ((volatile uint32_t*)0x009842a6)
 
 int32_t _renameDirEntry(uint32_t index, const ROMDirEntry_t* newEntry);
@@ -90,16 +91,26 @@ int writeBlocks(uint32_t blockNum, unsigned count, const void* data) {
 	return r;
 }
 
-int readBlocks(uint32_t blockNum, unsigned count, void* data) {
+int __attribute__ ((noinline, optimize("Os"))) readBlocks(uint32_t blockNum, unsigned count, void* data) {
 	_saveAsteriskArea();
-	int r = _readBlocks(blockNum, count, data);
+    int r;
+    for (short i=0; i<3; i++) {
+        r = _readBlocks(blockNum, count, data);
+        if (r >= 0)
+            break;
+    }
 	_restoreAsteriskArea();
 	return r;
 }
 
-int readBlock(uint32_t blockNum, void* data) {
+int __attribute__ ((noinline, optimize("Os"))) readBlock(uint32_t blockNum, void* data) {
 	_saveAsteriskArea();
-	int r = _readBlock(blockNum, data);
+    int r;
+    for (short i=0; i<3; i++) {
+        r = _readBlock(blockNum, data);
+        if (r >= 0)
+            break;
+    }
 	_restoreAsteriskArea();
 	return r;
 }

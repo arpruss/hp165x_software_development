@@ -460,6 +460,9 @@ int read(int fd, void* ptr, size_t size) {
 			doCopy = size;
 		}
 		memcpy(ptr, r->buffer.data + ( f->position - r->blockOffset ), doCopy);
+//        putchar('{');
+//        for (int i=0;i<doCopy;i++) putChar(((char*)ptr)[i]);
+//        putChar('}');
 		
 		ptr = (char*)ptr + doCopy;
 		size -= doCopy;
