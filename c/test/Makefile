@@ -4,24 +4,15 @@ SRCS=main.c
 CPU=68000
 
 LIBRARY=picolibc 
-#LIBRARY=libmetal
 PREFIX=m68k-elf
-HPLIB=hp165x
+HPLIB=hp165x640
 PRINTF_VERSION= #--defsym=vfscanf=__d_vfscanf --defsym=vfprintf=__d_vfprintf 
 GCC_LIB_DIR=C:/68k/bin/../lib/gcc/m68k-elf/13.1.0/m$(CPU)/ 
 
-LIBRARY=picolibc
-ifeq ($(LIBRARY),picolibc)
 LIBC_INCLUDE = ../picolibc-$(CPU)/usr/local/include
 LIBC_LIB_DIR = ../picolibc-$(CPU)/usr/local/lib
 LIBC = c
 LIBC_OPTIONS =
-else
-LIBC_INCLUDE = ../../m68k_bare_metal/include
-LIBC_LIB_DIR = ../../m68k_bare_metal/libmetal
-LIBC = metal-$(CPU)	
-LIBC_OPTIONS = -Dsetjmp=hpsetjmp -Dlongjmp=hplongjmp -Djmp_buf=hpjmp_buf
-endif
 
 BUILDDIR=build
 CC=$(PREFIX)-gcc

@@ -172,47 +172,46 @@ copyTwoLines:
 
 	rts
 
-copyTwoLinesNot:
-/* %a1 = source, %a0 = dest */
-
-	.macro  move32not
-	movem.l (%a1)+,%d0-%d7 /* 48 bytes */
-	not.l	%d0
-	not.l	%d1
-	not.l	%d2
-	not.l	%d3
-	not.l	%d4
-	not.l	%d5
-	not.l	%d6
-	not.l	%d7
-	movem.l %d0-%d7,(%a0)
-	lea 32(%a0),%a0
+clearTwoLines:
+/* %a0 = dest */
+	.macro  clear52
+	movem.l %d0-%d7/%a2-%a6,(%a0)
+	lea 52(%a0),%a0
 	.endm
-
-	.rept 18
-	move32not
+    
+	move.l #0x000F000F,%d0
+    move.l %d0,%d1
+    move.l %d0,%d2
+    move.l %d0,%d3
+    move.l %d0,%d4
+    move.l %d0,%d5
+    move.l %d0,%d6
+    move.l %d0,%d7
+    move.l %d0,%a2
+    move.l %d0,%a3
+    move.l %d0,%a4
+    move.l %d0,%a5
+    move.l %d0,%a6
+	
+	.rept 11
+	clear52 
 	.endr
-	/* moved 576 bytes */	
+	/* moved 572 bytes */
 #if SCREEN_WIDTH==592
-	/* need to move 16 bytes more */
-	movem.l (%a1)+,%d0-%d3 /* 16 bytes */
-	not.l	%d0
-	not.l	%d1
-	not.l	%d2
-	not.l	%d3
+	/* need to move 20 bytes more */
+	movem.l %d0-%d4,(%a0)
+	lea 20(%a0),%a0
+#elif SCREEN_WIDTH==640
+	clear52
+	/* moved 624 bytes, need to move 16 more */
 	movem.l %d0-%d3,(%a0)
 	lea 16(%a0),%a0
-#elif SCREEN_WIDTH==640
-	/* need to move 64 bytes more */
-	move32not
-	move32not
 #else
 #error Unsupported width for optimization.
 #endif
 	
 	move.l  #(LINE_BYTES*2),%d0
 	sub.l	%d0,%a0
-	sub.l	%d0,%a1
 
 	rts
 
@@ -239,37 +238,37 @@ wholeLines:
 	btst.b  #0,_bitplanes
 	beq		4f
 
+	move.w #(~(0x001)),SCREEN_MEMORY_CONTROL
+	bsr		clearTwoLines
 	move.w #(~(0x101)),SCREEN_MEMORY_CONTROL	
 	bsr		copyTwoLines
-	move.w #(~(0x001)),SCREEN_MEMORY_CONTROL
-	bsr		copyTwoLinesNot
 
 4:
 	btst.b  #1,_bitplanes
 	beq		4f	
 
+	move.w #(~(0x002)),SCREEN_MEMORY_CONTROL
+	bsr		clearTwoLines
 	move.w #(~(0x202)),SCREEN_MEMORY_CONTROL	
 	bsr		copyTwoLines
-	move.w #(~(0x002)),SCREEN_MEMORY_CONTROL
-	bsr		copyTwoLinesNot
 
 4:
 	btst.b  #2,_bitplanes
 	beq		4f	
 
+	move.w #(~(0x004)),SCREEN_MEMORY_CONTROL
+	bsr		clearTwoLines
 	move.w #(~(0x404)),SCREEN_MEMORY_CONTROL	
 	bsr		copyTwoLines
-	move.w #(~(0x004)),SCREEN_MEMORY_CONTROL
-	bsr		copyTwoLinesNot
 
 4:
 	btst.l  #3,_bitplanes
 	beq		4f	
 
+	move.w #(~(0x008)),SCREEN_MEMORY_CONTROL
+	bsr		clearTwoLines
 	move.w #(~(0x808)),SCREEN_MEMORY_CONTROL	
 	bsr		copyTwoLines
-	move.w #(~(0x008)),SCREEN_MEMORY_CONTROL
-	bsr		copyTwoLinesNot
 
 4:
 	move.l  #(LINE_BYTES*2),%d0 
