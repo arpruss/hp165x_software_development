@@ -108,6 +108,18 @@ static uint16_t fromHex(const char* p) {
 	}
 }
 
+static uint8_t validateName(const char* hpName) {
+    if (!*hpName)
+        return 0;
+    uint8_t c;
+    while ((c=(uint8_t)*hpName) != 0) {
+        if (c <= 32 || c > 126)
+            return 0;
+        hpName++;
+    }
+    return 1;
+}
+
 /* specify type with ":type" (in hex) */
 static uint16_t getHpName(char* hpName, const char* name) {
 	uint16_t i,j;
@@ -152,6 +164,9 @@ static int checkDiskChange(HPFILE* f) {
 
 int open(const char* name, int flags, ...) {
 	DirEntry_t d;
+    
+    if (!validateName(name))
+        return -1;
 	
 	char hpName[MAX_FILENAME_LENGTH+1];
 	uint16_t fileType = getHpName(hpName, name);
