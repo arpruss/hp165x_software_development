@@ -102,7 +102,7 @@ uint16_t peekKey(void);
 #define ERROR_TIMEOUT (-2)
 int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks);
 int getText(char* _buffer, uint16_t maxSize);
-void padFilename(char* paddedName, const char* name);
+int padFilename(char* paddedName, const char* name);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to

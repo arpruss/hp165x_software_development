@@ -67,7 +67,7 @@ def help():
     print("python lifutils.py ren lifname.lif SOURCE_NAME DEST_NAME")
     print("python lifutils.py type lifname.lif FILE_TO_RETYPE FileType")
     print("python lifutils.py get lifname.lif FILE_TO_GET [host_filename]")
-    print("python lifutils.py put lifname.lif [host_filename] FILE_TO_PUT FileType")
+    print("python lifutils.py put lifname.lif [host_filename] FILE_TO_PUT [FileType]")
     print("python lifutils.py pack lifname.lif")
     print("With del or single-filename get you can use wildcards.")
     sys.exit(1)
@@ -291,7 +291,7 @@ def packFiles(d):
 def pack():
     return packFiles([e for _,e in directory])
     
-def put(inFile, outFile, fileType):
+def put(inFile, outFile, fileType, quiet=False):
     outFile = outFile[:10]
     
     newEntry = DirEntry()
@@ -319,13 +319,15 @@ def put(inFile, outFile, fileType):
             return True
 
     if delete(outFile):
-        print("Deleted original")
+        if not quiet:
+            print("Deleted original")
         readDir(True)
         
-    print("Packing directory and data")
+    if not quiet:
+        print("Packing directory and data")
     if not packFiles([d for _,d in directory] + [ newEntry, ]):
         return False
-    readDir(True)
+    readDir(quiet=quiet)
     return True
 
 def readDir(quiet=False,verbose=False):                
@@ -516,6 +518,16 @@ elif cmd == "put":
         rewrite = True
     else:
         print("Error putting %s -> %s" % (inFile,outFile))    
+elif cmd == "mput":
+    fileType = int(sys.argv[-1],16)
+    for i in range(3,len(sys.argv)-1):
+        inFile = sys.argv[i]
+        outFile = os.path.basename(inFile)
+        print("Putting %s -> %s" % (inFile, outFile))
+        if put(inFile, outFile, fileType, quiet=(i < len(sys.argv)-1)):
+            rewrite = True
+        else:
+            print("Error putting")
 elif cmd == "get":
     ret = False
     if len(sys.argv) >= 5:

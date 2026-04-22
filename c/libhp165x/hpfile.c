@@ -153,12 +153,22 @@ int refreshDir(void) {
 	return retVal;
 }
 
-void padFilename(char* paddedName, const char* name) {
+int padFilename(char* paddedName, const char* name) {
+    int r = 0;
+    if (*name == 0)
+        r = -1;
 	memset(paddedName, ' ', MAX_FILENAME_LENGTH);
 	uint16_t l = strlen(name);
 	if (l > MAX_FILENAME_LENGTH)
 		l = MAX_FILENAME_LENGTH;
+    for (uint16_t i = 0 ; i < l ; i++) {
+        if (name[i] <= 32 || name[i] >= 127) {
+            r = -1;
+            break;
+        }
+    }
 	memcpy(paddedName, name, l);
+    return r;
 }
 
 void unpadFilename(char* unpaddedName, const char* name) {
@@ -198,10 +208,12 @@ int __attribute__((noinline)) getDirEntry(int index, DirEntry_t* dirEntry) {
 }
 
 int openFile(const char* name, uint32_t fileType, uint32_t mode) {
+	char paddedName[MAX_FILENAME_LENGTH];
+	if (padFilename(paddedName, name) < 0) {
+        return -1;
+    }
 	if (refreshDir() < 0)
 		return -1;
-	char paddedName[MAX_FILENAME_LENGTH];
-	padFilename(paddedName, name);
 	_saveAsteriskArea();
 	int h = _openFile(paddedName, fileType, mode);
 	_restoreAsteriskArea();
@@ -226,7 +238,8 @@ int renameFile(const char* name, uint16_t fileType, const char* newName, int32_t
 	char paddedName[MAX_FILENAME_LENGTH];
 	padFilename(paddedName, name);
 	char newPaddedName[MAX_FILENAME_LENGTH];
-	padFilename(newPaddedName, newName);
+	if (padFilename(newPaddedName, newName)<0)
+        return -1;
 	ROMDirEntry_t d;
 	int i = 0;
 	_saveAsteriskArea();
