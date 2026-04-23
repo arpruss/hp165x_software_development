@@ -197,14 +197,24 @@ int __attribute__((noinline)) getDirEntry(int index, DirEntry_t* dirEntry) {
 	ROMDirEntry_t d;
 	if (index == 0 && refreshDir() < 0)
 		return -1;
-	_saveAsteriskArea();
 	int type = _getDirEntry(index, &d);
-	_restoreAsteriskArea();
 	if (type == -1) {
 		return -1;
 	}
 	romDirEntryToDirEntry(&d, dirEntry);
 	return type & 0xFFFF;
+}
+
+ROMDirEntry_t* __attribute__((noinline)) fastGetROMDirEntry(uint16_t index) {
+	if (index == 0 && refreshDir() < 0)
+		return NULL;
+    if (index >= sizeof(ROMDirEntry_t) * (uint16_t)(*NUM_DIR_BLOCKS))
+        return NULL;
+    ROMDirEntry_t* dp = FIRST_DIR_ENTRY + index;
+    if (dp->type == 0xFFFF)
+        return NULL;
+    else
+        return dp;
 }
 
 int openFile(const char* name, uint32_t fileType, uint32_t mode) {

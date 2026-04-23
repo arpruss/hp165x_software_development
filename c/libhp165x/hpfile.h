@@ -5,7 +5,8 @@
 #define OPEN_WRITE 2
 #define MAX_FILENAME_LENGTH 10
 #define LIF_BLOCK_SIZE 256
-#define ID_SIZE (('S'<<8)|('z')) // put this at the start of the misc field in direntry and put filesize in as the rest of the field
+#define NUM_DIR_BLOCKS ((uint32_t*)0x984162)
+#define FIRST_DIR_ENTRY ((ROMDirEntry_t*)0x9808ac)
 
 typedef struct {
 	char name[MAX_FILENAME_LENGTH]; // space padded
@@ -49,6 +50,8 @@ int getFileMisc(const char* name, uint16_t fileType, void* misc);
 int setFileMisc(const char* name, uint16_t fileType, const void* misc);
 int findDirEntry(const char* name, uint16_t fileType, DirEntry_t* dirEntry);
 int readBlock(uint32_t blockNum, void* data);
+ROMDirEntry_t* fastGetROMDirEntry(uint16_t index);
+void unpadFilename(char* unpaddedName, const char* name);
 
 #define ERROR_FILE_NOT_FOUND (-5)
 #endif

@@ -57,13 +57,13 @@ scrollDown:  /* void scrollDown(uint16_t lines, uint16_t leftX, uint16_t topY, u
 	lsr.w  #1,%d6			  /* byte offset for start */
 	sub.w  %d4,%d6			  /* byte count per line */
 	lsr.w  #2,%d6			  /* dword count per line */
-	sub.w  #1,%d6			  /* %d6: rep count per line */
+	subq.w #1,%d6			  /* %d6: rep count per line */
 	move.l #(SCREEN),%a0      
-	add.l  %d7,%a0            /* destination pointer */
+	adda.l %d7,%a0            /* destination pointer */
 	move.l %a0,%a1
-	sub.l  %d0,%a1			  /* source pointer */
+	suba.l %d0,%a1			  /* source pointer */
 	move.l #(SCREEN),%a2
-	add.l  %d5,%a2			  /* top */
+	adda.l %d5,%a2			  /* top */
 	
 0:
 	cmp.l  %a2,%a1 /* ensure source does not go too high */
@@ -102,8 +102,8 @@ notBit2Down:
 	move.w #(~(0x008)),SCREEN_MEMORY_CONTROL
 	bsr copyLineNot
 notBit3Down:
-	sub.l  #(LINE_BYTES),%a0
-	sub.l  #(LINE_BYTES),%a1
+	suba.w #(LINE_BYTES),%a0
+	suba.w #(LINE_BYTES),%a1
 	bra 0b
 1:
 
@@ -112,13 +112,14 @@ notBit3Down:
 
 	move.w #(LINE_BYTES),%d7
  	move.w %d6,%d4
-	add.w  #1,%d6 
+	addq.w #1,%d6 
 	add.w  %d6,%d6 
 	add.w  %d6,%d6 /* number of bytes to clear per line */
 	add.w  %d6,%d7 /* offset between end of one line and beginning of previous */
 	ext.l  %d7	
 	
-	move.l #0x000F000F, %d0
+//	move.l #0x000F000F, %d0
+    moveq.l #(-1),%d0
 2:
 	move.w %d4,%d6
 3:	
@@ -167,19 +168,21 @@ copyTwoLines:
 #endif
 	
 	move.l  #(LINE_BYTES*2),%d0
-	sub.l	%d0,%a0
-	sub.l	%d0,%a1
+	suba.l	%d0,%a0
+	suba.l	%d0,%a1
 
 	rts
 
 clearTwoLines:
-/* %a0 = dest */
+/* %a0 = dest */	
+	adda.w   #(LINE_BYTES*2),%a0
+
 	.macro  clear52
-	movem.l %d0-%d7/%a2-%a6,(%a0)
-	lea 52(%a0),%a0
+	movem.l %d0-%d7/%a2-%a6,-(%a0)
 	.endm
     
-	move.l #0x000F000F,%d0
+    moveq.l #(-1),%d0
+	//move.l #0x000F000F,%d0
     move.l %d0,%d1
     move.l %d0,%d2
     move.l %d0,%d3
@@ -187,31 +190,26 @@ clearTwoLines:
     move.l %d0,%d5
     move.l %d0,%d6
     move.l %d0,%d7
-    move.l %d0,%a2
-    move.l %d0,%a3
-    move.l %d0,%a4
-    move.l %d0,%a5
-    move.l %d0,%a6
+    movea.l %d0,%a2
+    movea.l %d0,%a3
+    movea.l %d0,%a4
+    movea.l %d0,%a5
+    movea.l %d0,%a6
 	
 	.rept 11
 	clear52 
 	.endr
-	/* moved 572 bytes */
+	/* cleared 572 bytes */
 #if SCREEN_WIDTH==592
-	/* need to move 20 bytes more */
-	movem.l %d0-%d4,(%a0)
-	lea 20(%a0),%a0
+	/* need to clear 20 bytes more */
+	movem.l %d0-%d4,-(%a0)
 #elif SCREEN_WIDTH==640
 	clear52
-	/* moved 624 bytes, need to move 16 more */
-	movem.l %d0-%d3,(%a0)
-	lea 16(%a0),%a0
+	/* cleared 624 bytes, need to clear 16 more */
+	movem.l %d0-%d3,-(%a0)
 #else
 #error Unsupported width for optimization.
 #endif
-	
-	move.l  #(LINE_BYTES*2),%d0
-	sub.l	%d0,%a0
 
 	rts
 
@@ -283,7 +281,8 @@ wholeLines:
 	   and %a0 to the top of the clear area */
 
 	move.w ARGW(SCROLLUP_SAVED+WHOLELINES_SAVED,fillMode),SCREEN_MEMORY_CONTROL
-	move.l #0x000F000F,%d7
+	moveq.l #(-1),%d7
+    //move.l #0x000F000F,%d7
 	move.l %d7,%d6
 	move.l %d7,%d5
 	move.l %d7,%d4
@@ -385,8 +384,8 @@ notBit2:
 	move.w #(~(0x008)),SCREEN_MEMORY_CONTROL
 	bsr copyLineNot
 notBit3:
-	add.l  #(LINE_BYTES),%a0
-	add.l  #(LINE_BYTES),%a1
+	adda.w #(LINE_BYTES),%a0
+	adda.w #(LINE_BYTES),%a1
 	bra 0b
 1:
 
@@ -404,7 +403,8 @@ notBit3:
 	sub.w  %d6,%d7 /* offset between end of one line and beginning of next */
 	ext.l  %d7	
 	
-	move.l #0x000F000F, %d0
+    moveq.l #(-1),%d0
+	//move.l #0x000F000F, %d0
 2:
 	move.w %d4,%d6
 3:	

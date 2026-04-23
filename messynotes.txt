@@ -449,8 +449,8 @@ ebaa, eb92,
 
 432c: clear directory
 
-directory stored at 9800ca and 9808ac (sometimes?). In latter location changed with ebb0.
-9808ac is where the data is primarily stored.
+directory stored at 9808ac (sometimes?) with current block copied to 9800ca. 
+
 eba4 (implemented 327e) looks like it may load the whole dir
 
 ebfe: read block (unsigned blockNum, char* data); returns 0 if successful
