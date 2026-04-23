@@ -1,6 +1,6 @@
 SRCS=hp165x.c puttext.c loadexec.c key.c hpfile.c serial.c scroll.S simple_serial.c \
 	inputevents.c input.c mc6845.c screen.c crt0.S atexit.S picostubs.c hpposix.c setjmp.S pack.c \
-	pixel.S chooser.c mouseArrow.S drive.c
+	pixel.S chooser.c mouseArrow.S drive.c seed32.c
 
 PREFIX=m68k-elf
 

@@ -103,6 +103,7 @@ uint16_t peekKey(void);
 int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks);
 int getText(char* _buffer, uint16_t maxSize);
 int padFilename(char* paddedName, const char* name);
+uint32_t getSeed32(void);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to

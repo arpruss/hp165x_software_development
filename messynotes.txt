@@ -15,7 +15,7 @@ MEMORY MAP
 Stuff in ROM seems to reference addresses in a60000-a6ffff, and maybe even A5FFFA=a60000-6, so it's 
 probably safest to end program storage at a5fffa. This seems to be some sort of a heap.
 
-00983000-00983FFF appears to be unused in ROM. I'm tried putting the user stack for my code at 983ffe.
+00983000-00983FFF appears to be unused in ROM. I'm tried putting the user for my code at 983ffe.
 That gives it 4094 bytes. Which is a bit small. So now I am trying a79000, which experimentally should
 give around 30K.
 
@@ -530,6 +530,9 @@ TIME
 A7005f: seconds
 A7005e: minutes
 A7005d: hours
+A7005c: frames (up to frame-count)
+A70076: frames per second
+A70066: frames per second adjustment (subtracted from frames per second)??
 
 It's synchronized to VBL, since if we change the VBL timing, the counter speed changes, alas.
 The update code is at 6b0e.
