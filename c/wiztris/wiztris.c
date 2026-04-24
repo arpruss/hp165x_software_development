@@ -665,7 +665,7 @@ int main()
 	  *SCREEN_MEMORY_CONTROL = DRAW_FOREGROUND;
 	  
 	  if (!randomized) {
-		  srand(getVBLCounter());
+		  srand(getSeed32());
 		  randomized = 1;
 	  }
       switch(k) {

@@ -384,8 +384,25 @@ void mouse(void) {
 	}
 }
 
-void reb(void) {
-    reboot();
+void screenMemoryRand(void) {
+    while(KEY_STOP != getKey(0)) {
+        *SCREEN_MEMORY_CONTROL = WRITE_BLACK;
+        fillScreen();
+        setTextXY(0,0);
+        uint32_t n = getVBLCounter();
+        while (n==getVBLCounter());
+        *SCREEN_MEMORY_CONTROL = 0b1110;
+        uint32_t x = xorShift32Aligned(SCREEN,64000);
+        n = getVBLCounter();
+        while (n==getVBLCounter());
+        *SCREEN_MEMORY_CONTROL = 0b1101;
+        uint32_t y = xorShift32Aligned(SCREEN,64000);
+        n = getVBLCounter();
+        while (n==getVBLCounter());
+        *SCREEN_MEMORY_CONTROL = 0b0100;
+        uint32_t z = xorShift32Aligned(SCREEN,64000);
+        printf("%08lx %08lx %08lx\n", x, y, z); 
+    }
 }
 
 main(int argc, char** argv) {
@@ -413,7 +430,7 @@ main(int argc, char** argv) {
 	putText("C - inputEvents\n");
 	putText("D - mouse\n");
 	putText("E - misc control\n");
-	putText("RUN - reboot\n");
+	putText("IO - screen memory randomness\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -438,7 +455,7 @@ main(int argc, char** argv) {
 		case KEY_C: inputEvents(); break;
 		case KEY_D: mouse(); break;
 		case KEY_E: miscControl(); break;
-		case KEY_RUN: reb(); break;
+		case KEY_IO: screenMemoryRand(); break;
 		default:
 			reload();
 	}

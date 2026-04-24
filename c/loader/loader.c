@@ -10,6 +10,9 @@
 #define DRAW_BACKGROUND WRITE_BLACK
 #define DRAW_FOREGROUND WRITE_WHITE
 
+uint32_t 
+rotatedSum(const void* _data, uint16_t _len);
+
 char _names[MAX_FILES][MAX_FILENAME_LENGTH+1];
 char* names[MAX_FILES];
 int numNames = 0;
@@ -186,8 +189,6 @@ void menu(void) {
 	}
 }
 
-extern uint8_t _original_int1_handler[];
-
 int main(void) {
 	setTextReverse(0);
 	setTextColors(DRAW_FOREGROUND, DRAW_BACKGROUND);
@@ -200,3 +201,4 @@ int main(void) {
 		menu();
 	}
 }
+
