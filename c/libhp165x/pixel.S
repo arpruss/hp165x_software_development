@@ -55,7 +55,7 @@ drawLine:  /* void drawLine(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) 
 	move.w ARGW(LINE_SAVED,y2),%D3
 		
     cmp.w  %D0,%D2
-    bhs    leftToRight
+    bhs.s  leftToRight
     exg    %D0,%D2
     exg    %D1,%D3
 leftToRight:    
@@ -65,7 +65,7 @@ leftToRight:
     move.w %D3,%D5
     move.l #LINE_BYTES,%D4
     sub.w  %D1,%D5
-    bhs    notNeg1
+    bhs.s  notNeg1
     neg.w  %D5
     move.l #(-LINE_BYTES),%D4
 notNeg1:
@@ -109,12 +109,12 @@ notNeg1:
 loop1:
     move.w  %D3,(%A0) 
     lsr.w   #1,%D3
-    bne     notZero1
+    bne.s   notZero1
     move.w  #8,%D3
     addq.l  #2,%A0
 notZero1:    
     tst.w   %D1
-    blt     notPosError1
+    blt.s   notPosError1
     // error>0
     add     %D4,%A0
     add     %D5,%D1 // error += 2(dy-dx)
@@ -135,17 +135,17 @@ horizontal:
 loop3:
     move.w  %D3,(%A0) 
     lsr.w   #1,%D3
-    bne     notZero3
+    bne.s   notZero3
     add.l   %D0,%A0
     move.w  %D1,%D3    // D1=8: reset bitmask
     cmp.w   %D1,%D2
-    blo     lessThan8
+    blo.s   lessThan8
     move.l  #0x000F000F,%D4 
 fastLoop:    
     move.l  %D4,(%A0)+
     sub.w   %D1,%D2    // D1=8
     cmp.w   %D1,%D2
-    bhs     fastLoop
+    bhs.s   fastLoop
 lessThan8: 
 notZero3:    
     dbra    %D2,loop3 // dec dx   
@@ -172,10 +172,10 @@ loop2:
     add.l   %D4,%A0
     
     tst.w   %D1
-    blt     notPosError2
+    blt.s   notPosError2
     // error>0
     lsr.w   #1,%D3
-    bne     notZero2
+    bne.s   notZero2
     move.w  #8,%D3
     addq.l  #2,%A0
 notZero2:    

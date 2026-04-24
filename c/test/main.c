@@ -384,11 +384,8 @@ void mouse(void) {
 	}
 }
 
-void a7005c(void) {
-    while (getKey(0) != KEY_STOP) {
-        setTextXY(0,0);
-        printf("%002u %03u %03u", *(volatile uint8_t*)0xA7005c, *(volatile uint8_t*)0xA70066, *(volatile uint8_t*)0xA70076);
-    }
+void reb(void) {
+    reboot();
 }
 
 main(int argc, char** argv) {
@@ -416,7 +413,7 @@ main(int argc, char** argv) {
 	putText("C - inputEvents\n");
 	putText("D - mouse\n");
 	putText("E - misc control\n");
-	putText("F - a7005c\n");
+	putText("RUN - reboot\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
 	
@@ -441,7 +438,7 @@ main(int argc, char** argv) {
 		case KEY_C: inputEvents(); break;
 		case KEY_D: mouse(); break;
 		case KEY_E: miscControl(); break;
-		case KEY_F: a7005c(); break;
+		case KEY_RUN: reb(); break;
 		default:
 			reload();
 	}

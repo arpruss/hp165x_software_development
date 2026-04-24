@@ -67,7 +67,7 @@ scrollDown:  /* void scrollDown(uint16_t lines, uint16_t leftX, uint16_t topY, u
 	
 0:
 	cmp.l  %a2,%a1 /* ensure source does not go too high */
-	ble	   1f 
+	ble    1f 
 	
 /* move d6+1 words from a0 to a1 */
 	btst #0,%d2
@@ -127,9 +127,9 @@ notBit3Down:
 	dbra   %d4,3b
 	sub.w  %d7,%a0
 	cmp.l  %a2,%a0
-	ble 4f
+	ble.s 4f
 	move.w %d6,%d4
-	bra 2b
+	bra.s 2b
 4:
 	movem.l (%sp)+, SCROLLDOWN_SAVE_REGS
 	rts
@@ -234,7 +234,7 @@ wholeLines:
 
 1:
 	btst.b  #0,_bitplanes
-	beq		4f
+	beq.s	4f
 
 	move.w #(~(0x001)),SCREEN_MEMORY_CONTROL
 	bsr		clearTwoLines
@@ -243,7 +243,7 @@ wholeLines:
 
 4:
 	btst.b  #1,_bitplanes
-	beq		4f	
+	beq.s	4f	
 
 	move.w #(~(0x002)),SCREEN_MEMORY_CONTROL
 	bsr		clearTwoLines
@@ -252,7 +252,7 @@ wholeLines:
 
 4:
 	btst.b  #2,_bitplanes
-	beq		4f	
+	beq.s	4f	
 
 	move.w #(~(0x004)),SCREEN_MEMORY_CONTROL
 	bsr		clearTwoLines
@@ -261,7 +261,7 @@ wholeLines:
 
 4:
 	btst.l  #3,_bitplanes
-	beq		4f	
+	beq.s	4f	
 
 	move.w #(~(0x008)),SCREEN_MEMORY_CONTROL
 	bsr		clearTwoLines
@@ -294,7 +294,7 @@ wholeLines:
 1:
 	movem.l %d4-%d7,-(%a1) 
 	cmp.l	%a0,%a1
-	bgt		1b /* a1 > a0 ==> not yet done */
+	bgt.s	1b /* a1 > a0 ==> not yet done */
 
 	movem.l (%sp)+, WHOLELINES_SAVE_REGS
 	movem.l (%sp)+, SCROLLUP_SAVE_REGS 
@@ -353,7 +353,7 @@ scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint1
 	
 /* move d6+1 words from a0 to a1 */
 	btst #0,%d2
-	beq notBit0 
+	beq.s notBit0 
 	/* copy 1s */
 	move.w #(~(0x101)),SCREEN_MEMORY_CONTROL
 	bsr copyLine
@@ -361,7 +361,7 @@ scrollUp:  /* void scrollUp(uint16_t lines, uint16_t leftX, uint16_t topY, uint1
 	bsr copyLineNot
 notBit0:
 	btst #1,%d2
-	beq notBit1 
+	beq.s notBit1 
 	/* copy 1s */
 	move.w #(~(0x202)),SCREEN_MEMORY_CONTROL
 	bsr copyLine
@@ -369,7 +369,7 @@ notBit0:
 	bsr copyLineNot
 notBit1:
 	btst #2,%d2
-	beq notBit2
+	beq.s notBit2
 	/* copy 1s */
 	move.w #(~(0x404)),SCREEN_MEMORY_CONTROL
 	bsr copyLine
@@ -377,7 +377,7 @@ notBit1:
 	bsr copyLineNot
 notBit2:
 	btst #3,%d2
-	beq notBit3
+	beq.s notBit3
 	/* copy 1s */
 	move.w #(~(0x808)),SCREEN_MEMORY_CONTROL
 	bsr copyLine
@@ -412,20 +412,19 @@ notBit3:
 	dbra   %d4,3b
 	add.w  %d7,%a0
 	cmp.l  %a1,%a0
-	bge 4f
+	bge.s  4f
 	move.w %d6,%d4
-	bra 2b
+	bra.s  2b
 4:
 	movem.l (%sp)+, SCROLLUP_SAVE_REGS
 	rts
 
-copyLine: /* copy %d6 dwords from a1 to a0 clobbering d3, d4, d5, d7 */
+copyLine: /* copy %d6 dwords from a1 to a0 clobbering d3, d5, d7 */
 	move.l %a0,%d3
 	move.l %a1,%d5
 	move.w %d6,%d7
 1:
-	move.l (%a1)+,%d4
-	move.l %d4,(%a0)+
+	move.l (%a1)+,(%a0)+
 	dbra   %d6,1b
 
 	move.l %d3,%a0
@@ -433,7 +432,7 @@ copyLine: /* copy %d6 dwords from a1 to a0 clobbering d3, d4, d5, d7 */
 	move.w %d7,%d6
 	rts
 	
-copyLineNot: /* same, but negating */
+copyLineNot: /* copy %d6 dwords from a1 to a0 clobbering d3, d4, d5, d7, but negating */
 	move.l %a0,%d3
 	move.l %a1,%d5
 	move.w %d6,%d7

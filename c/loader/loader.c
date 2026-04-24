@@ -84,7 +84,7 @@ void scan(void) {
 				uint16_t k = getKey(0); 
 				if (k != 0) {
 					if (k == KEY_STOP)
-						reload();
+						reboot();
 				}
 			}
 			setTextXY(0,0);
@@ -130,7 +130,7 @@ void menu(void) {
 	while (1) {
 		uint16_t k = getKey(0); 
 		if (k == KEY_STOP)
-			reload();
+			reboot();
 		else if (k == KEY_RUN)
 			return;
 		if (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS )

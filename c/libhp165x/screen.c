@@ -102,7 +102,7 @@ asm(
 	"  move.w screenHeight, %%d0\n"
 	"  mulu.w #(" _QUOTE(SCREEN_WIDTH/2) "), %%d0\n" 
 	"  add.l  %%d0, %%a0\n"
-	"  move.l #0x000F000F, %%d0\n"
+	"  moveq.l #(-1), %%d0\n"
     "  move.l %%d0,%%d1\n"
     "  move.l %%d0,%%d2\n"
     "  move.l %%d0,%%d3\n"
@@ -117,7 +117,7 @@ asm(
 	"1:\n"
 	"  movem.l %%d0-%%d7/%%a2-%%a5,-(%%a0)\n" // ; clear 12 dwords at once, decrementing A0 by 48
     "  cmp.l %%a1,%%a0\n"
-    "  bge 1b\n" : : : "d2", "d3", "d4", "d5", "d6", "d7", "a2", "a3", "a4", "a5" ); 
+    "  bge.s 1b\n" : : : "d2", "d3", "d4", "d5", "d6", "d7", "a2", "a3", "a4", "a5" ); 
 }
 
 /* draws a frame around a fillRectangle() */

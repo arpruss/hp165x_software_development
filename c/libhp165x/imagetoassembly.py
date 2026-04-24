@@ -134,6 +134,8 @@ def makeImage(img,width,height,startOffset,clipWidth=None):
         else:
             if dword < 128:
                 code += f"    moveq #0x{dword:02x},%d0\n"
+            elif dword == 0x0F0F0F0F:
+                code += f"    moveq #(-1),%d0\n" # the high nibbles get ignored
             else:
                 code += f"    move.l #0x{dword:08x},%d0\n"
             for p in positions:
@@ -150,6 +152,8 @@ def makeImage(img,width,height,startOffset,clipWidth=None):
         else:
             if dword < 128:
                 code += f"    moveq #0x{dword:02x},%d0\n"
+            elif dword == 0x000F000F:
+                code += f"    moveq #(-1),%d0\n"
             else:
                 code += f"    move.l #0x{dword:08x},%d0\n"
             for p in positions:

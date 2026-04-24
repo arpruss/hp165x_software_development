@@ -8,6 +8,20 @@ extern volatile uint32_t vblCounterValue;
 extern void _vbl_counter_code(void);
 void _final_cleanup_with_atexit_support(void);
 
+static void rebooter(void) {
+    asm volatile("ori.w #0x0700, %sr\n"
+                 "reset\n"
+                 "movea.l 0,%sp\n"
+                 "movea.l 4,%a0\n"
+                 "jmp (%a0)\n");
+	__builtin_unreachable(); 
+}
+
+void reboot(void) {
+    patchInt(1, rebooter);
+    while(1);
+}
+
 uint32_t getVBLCounter(void) {
 	return vblCounterValue;
 }
