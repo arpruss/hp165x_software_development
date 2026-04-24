@@ -25,9 +25,11 @@ xorShift32Aligned(const void* _data, uint16_t _len) {
     uint32_t out;
     const void* data = _data;
     uint16_t len = _len;
-    asm volatile("  lsr.l #2, %[len]\n"
+    asm volatile(
+        "  lsr.l #2, %[len]\n"
         "  subq.w #1, %[len]\n"
         "  moveq.l #0, %[out]\n"
+        "  move.l #0xFFFF, %%d2\n"
         "1:\n"
         "  move.l (%[data])+,%%d1\n"
         "  eor.l %%d1,%[out]\n"
@@ -36,15 +38,15 @@ xorShift32Aligned(const void* _data, uint16_t _len) {
         "  lsl.l #5,%%d1\n"
         "  eor.l %%d1,%[out]\n"
         "  move.l %[out],%%d1\n"
-        "  lsr.l #8,%%d1\n" 
-        "  lsr.l #8,%%d1\n" // todo:use SWAP?
+        "  swap %%d1\n" 
+        "  and %%d2,%%d1\n" // shift right by 16 bits
         "  lsr.l #1,%%d1\n"
         "  eor.l %%d1,%[out]\n"
         "  move.l %[out],%%d1\n"
         "  lsl.l #5,%%d1\n"
         "  eor.l %%d1,%[out]\n"
         "  dbra %[len],1b\n"
-        : [out] "=&d" (out) : [data] "a" (data), [len] "d" (len) : "d1" );
+        : [out] "=&d" (out) : [data] "a" (data), [len] "d" (len) : "d1", "d2" );
     return out;
 }
 
