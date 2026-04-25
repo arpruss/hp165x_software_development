@@ -1,61 +1,54 @@
 #include <hp165x.h>
 
-
-// _data must be even aligned and _len divisible by 4
+// Paul Hsieh's super fast hash, but only for 32-bit data
+// n=number of dwords
 uint32_t 
-rotatedSumAligned(const void* _data, uint16_t _len) {
-    uint32_t out;
+superFastHashAligned32(const uint32_t* _data, uint16_t n) {
+    uint32_t hash;
     const void* data = _data;
-    uint16_t len = _len;
-    asm volatile("  lsr.l #2, %[len]\n"
-        "  subq.w #1, %[len]\n"
-        "  moveq.l #0, %[out]\n"
-        "1:\n"
-        "  move.l (%[data])+,%%d1\n"
-        "  eor.l %%d1,%[out]\n"
-        "  rol.l #7,%[out]\n"
-        "  dbra %[len],1b\n"
-        : [out] "=&d" (out) : [data] "a" (data), [len] "d" (len) : "d1" );
-    return out;
-}
-
-// _data must be even aligned and _len divisible by 4
-uint32_t 
-xorShift32Aligned(const void* _data, uint16_t _len) {
-    uint32_t out;
-    const void* data = _data;
-    uint16_t len = _len;
+    uint16_t len = n;
     asm volatile(
-        "  lsr.l #2, %[len]\n"
+        "  moveq  #0,%[hash]\n"
+        "  move.l #0xFFFF,%%d2\n"
+        "  move.w %[len],%[hash]\n"
+        "  add.l  %[hash],%[hash]\n"
+        "  add.l  %[hash],%[hash]\n" // hash=len in bytes
         "  subq.w #1, %[len]\n"
-        "  moveq.l #0, %[out]\n"
-        "  move.l #0xFFFF, %%d2\n"
         "1:\n"
-        "  move.l (%[data])+,%%d1\n"
-        "  eor.l %%d1,%[out]\n"
-        "  move.l %[out],%%d1\n"
-        "  lsl.l #8,%%d1\n"
-        "  lsl.l #5,%%d1\n"
-        "  eor.l %%d1,%[out]\n"
-        "  move.l %[out],%%d1\n"
-        "  swap %%d1\n" 
-        "  and %%d2,%%d1\n" // shift right by 16 bits
-        "  lsr.l #1,%%d1\n"
-        "  eor.l %%d1,%[out]\n"
-        "  move.l %[out],%%d1\n"
-        "  lsl.l #5,%%d1\n"
-        "  eor.l %%d1,%[out]\n"
+        "  moveq  #0,%%d1\n"
+        "  move.w (%[data])+,%%d1\n"
+        "  add.l  %%d1,%[hash]\n"  // hash += low16bits
+        "  move.w (%[data])+,%%d1\n"
+        "  lsl.l  #3,%%d1\n"     
+        "  lsl.l  #8,%%d1\n"     
+        "  eor.l  %[hash],%%d1\n"  // d1 = (high16bits<<11)^hash
+        "  and.w  %%d2,%[hash]\n"
+        "  swap   %[hash]\n"
+        "  eor.l  %%d1,%[hash]\n"  // hash=(hash<<16)^d1
+        "  move.l %[hash],%%d1\n" 
+        "  lsr.l  #3,%%d1\n"
+        "  lsr.l  #8,%%d1\n"
+        "  add.l  %%d1,%[hash]\n"  // hash += hash >> 11
         "  dbra %[len],1b\n"
-        : [out] "=&d" (out) : [data] "a" (data), [len] "d" (len) : "d1", "d2" );
-    return out;
+        : [hash] "=&d" (hash) : [data] "a" (data), [len] "d" (len) : "d1", "d2" );
+        
+    hash ^= hash<<3;
+    hash += hash>>5;
+    hash ^= hash<<4;
+    hash += hash>>17;
+    hash ^= hash<<25;
+    hash += hash>>6;
+        
+    return hash;
 }
+
 
 uint32_t getSeed32(void) {
     uint32_t n = getVBLCounter();
     while (n==getVBLCounter());
     *SCREEN_MEMORY_CONTROL=0b1110;
-    uint32_t x = xorShift32Aligned((void*)SCREEN,64000);
-    x = x ^ xorShift32Aligned((void*)0xA70020,0x40) ^ xorShift32Aligned((void*)0xA70800,0xb6);
+    uint32_t x = superFastHashAligned32((void*)SCREEN,64000/4);
+    x = x ^ superFastHashAligned32((void*)0xA70020,0x40/4) ^ superFastHashAligned32((void*)0xA70800,0xb8/4);
     *SCREEN_MEMORY_CONTROL=WRITE_WHITE;
     return x;
 }

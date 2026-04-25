@@ -384,6 +384,8 @@ void mouse(void) {
 	}
 }
 
+uint32_t superFastHashAligned32(const uint32_t* _data, uint16_t n);
+
 void screenMemoryRand(void) {
     while(KEY_STOP != getKey(0)) {
         *SCREEN_MEMORY_CONTROL = WRITE_BLACK;
@@ -392,16 +394,17 @@ void screenMemoryRand(void) {
         uint32_t n = getVBLCounter();
         while (n==getVBLCounter());
         *SCREEN_MEMORY_CONTROL = 0b1110;
-        uint32_t x = xorShift32Aligned(SCREEN,64000);
+        uint32_t x = superFastHashAligned32(SCREEN,64000/4);
         n = getVBLCounter();
         while (n==getVBLCounter());
         *SCREEN_MEMORY_CONTROL = 0b1101;
-        uint32_t y = xorShift32Aligned(SCREEN,64000);
+        uint32_t y = superFastHashAligned32(SCREEN,64000/4);
         n = getVBLCounter();
         while (n==getVBLCounter());
         *SCREEN_MEMORY_CONTROL = 0b0100;
-        uint32_t z = xorShift32Aligned(SCREEN,64000);
-        printf("%08lx %08lx %08lx\n", x, y, z); 
+        uint32_t z = superFastHashAligned32(SCREEN,64000/4);
+        printf("%08lx %08lx %08lx\n", x, y, z);
+        delayTicks(16);
     }
 }
 

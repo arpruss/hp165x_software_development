@@ -1,8 +1,9 @@
 The keyboard.[ch] support for a serial keyboard will change as the 
 hardware evolves.
 
-Test O_RDWR support.
-
 Add ftruncate support for hpposix.
 
 Add fseek-past-end support for writeable files.
+
+Change hashing to https://people.computing.clemson.edu/~jmarty/courses/commonCourseContent/AdvancedModule-SecurityConceptsAndApplicationToLinux/HASHFunction-Tutorial2.pdf
+in seed32.c
