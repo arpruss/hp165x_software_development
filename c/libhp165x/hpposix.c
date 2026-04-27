@@ -121,7 +121,7 @@ static uint8_t validateName(const char* hpName) {
 }
 
 /* specify type with ":type" (in hex) */
-static uint16_t getHpName(char* hpName, const char* name) {
+uint16_t getHPName(char* hpName, const char* name) {
 	uint16_t i,j;
 	uint16_t fileType = 0;
 	
@@ -169,7 +169,7 @@ int open(const char* name, int flags, ...) {
         return -1;
 	
 	char hpName[MAX_FILENAME_LENGTH+1];
-	uint16_t fileType = getHpName(hpName, name);
+	uint16_t fileType = getHPName(hpName, name);
 	int fd;
 	
 	if ((flags & O_RDWR) && !(flags & O_TRUNC)) {
@@ -571,16 +571,16 @@ int fsync(int fd) {
 
 int unlink(const char *pathname) {
 	char hpName[MAX_FILENAME_LENGTH+1];
-	uint16_t type = getHpName(hpName, pathname);
+	uint16_t type = getHPName(hpName, pathname);
     return deleteByNameAndType(hpName, type);
 }
 
 /* if no type is specified in newPathname, the type is unchanged */
 int rename(const char *pathname, const char* newPathname) {
 	char hpName[MAX_FILENAME_LENGTH+1];
-	uint16_t type = getHpName(hpName, pathname);
+	uint16_t type = getHPName(hpName, pathname);
 	char hpName2[MAX_FILENAME_LENGTH+1];
-	int32_t type2 = getHpName(hpName2, newPathname);
+	int32_t type2 = getHPName(hpName2, newPathname);
 	if (type2 == 0)
 		type2 = -1;
     return renameFile(hpName, type, hpName2, type2);

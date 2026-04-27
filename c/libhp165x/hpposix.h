@@ -39,6 +39,7 @@ struct dirent* readdir(DIR* dirp);
 DIR *opendir(const char *name);
 int unlink(const char *pathname);
 int stat(const char *path, struct stat *buf);
+uint16_t getHPName(char* hpName, const char* name);
 
 #ifndef O_RDONLY
 #define O_RDONLY 0

@@ -193,19 +193,7 @@ static void romDirEntryToDirEntry(ROMDirEntry_t* d, DirEntry_t* dirEntry) {
 	memcpy(&dirEntry->misc, &d->misc, sizeof(d->misc));
 }
 
-int __attribute__((noinline)) getDirEntry(int index, DirEntry_t* dirEntry) {
-	ROMDirEntry_t d;
-	if (index == 0 && refreshDir() < 0)
-		return -1;
-	int type = _getDirEntry(index, &d);
-	if (type == -1) {
-		return -1;
-	}
-	romDirEntryToDirEntry(&d, dirEntry);
-	return type & 0xFFFF;
-}
-
-ROMDirEntry_t* __attribute__((noinline)) fastGetROMDirEntry(uint16_t index) {
+ROMDirEntry_t* __attribute__((noinline)) getROMDirEntry(uint16_t index) {
 	if (index == 0 && refreshDir() < 0)
 		return NULL;
     if (index >= sizeof(ROMDirEntry_t) * (uint16_t)(*NUM_DIR_BLOCKS))
@@ -217,7 +205,20 @@ ROMDirEntry_t* __attribute__((noinline)) fastGetROMDirEntry(uint16_t index) {
         return dp;
 }
 
+int __attribute__((noinline)) getDirEntry(int index, DirEntry_t* dirEntry) {
+	ROMDirEntry_t* d;
+	if (index == 0 && refreshDir() < 0)
+		return -1;
+    d = getROMDirEntry(index);
+	if (d == NULL)
+        return -1;
+	romDirEntryToDirEntry(d, dirEntry);
+	return d->type & 0xFFFF;
+}
+
 int openFile(const char* name, uint32_t fileType, uint32_t mode) {
+    if (mode == OPEN_WRITE && !strcmp(name,"|RESERVED|"))
+        return -1;
 	char paddedName[MAX_FILENAME_LENGTH];
 	if (padFilename(paddedName, name) < 0) {
         return -1;
@@ -243,6 +244,8 @@ _WRAP_0(_eb68,0xeb68); */
 
 /* if newFileType == -1, don't change fileType */
 int renameFile(const char* name, uint16_t fileType, const char* newName, int32_t newFileType) {
+    if (!strcmp(name,"|RESERVED|"))
+        return -1;
 	if (refreshDir() < 0)
 		return -1;
 	char paddedName[MAX_FILENAME_LENGTH];
@@ -250,70 +253,23 @@ int renameFile(const char* name, uint16_t fileType, const char* newName, int32_t
 	char newPaddedName[MAX_FILENAME_LENGTH];
 	if (padFilename(newPaddedName, newName)<0)
         return -1;
-	ROMDirEntry_t d;
+	ROMDirEntry_t* d;
 	int i = 0;
-	_saveAsteriskArea();
 	while(1) {
-		if ( -1 == _getDirEntry(i, &d) ) {
-			_restoreAsteriskArea();
+		if ( NULL == (d = getROMDirEntry(i) ) ) {
 			return -1;
 		}
-		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
+		if (d->type != 0 && !strncmp(d->name, paddedName, MAX_FILENAME_LENGTH) && (d->type == fileType || fileType==0)) {
+            ROMDirEntry_t newDirEntry = *d;
 			if (newFileType >= 0) 
-				d.type = newFileType;
-			memcpy(d.name, newPaddedName, MAX_FILENAME_LENGTH);
+				newDirEntry.type = newFileType;
+			memcpy(newDirEntry.name, newPaddedName, MAX_FILENAME_LENGTH);
 			_dirtyDisk = 1;
-			_renameDirEntry(i, &d);
+			_saveAsteriskArea();
+			_renameDirEntry(i, &newDirEntry);
 			int r = _commitDir();
 			_restoreAsteriskArea();
 			return r;
-		}
-		i++;
-	}
-}
-
-int setFileMisc(const char* name, uint16_t fileType, const void* misc) {
-	if (refreshDir() < 0)
-		return -1;
-	char paddedName[MAX_FILENAME_LENGTH];
-	padFilename(paddedName, name);
-	ROMDirEntry_t d;
-	int i = 0;
-	_saveAsteriskArea();
-	while(1) {
-		if ( -1 == _getDirEntry(i, &d) ) {
-			_restoreAsteriskArea();
-			return -1;
-		}
-		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
-			memcpy(d.misc, misc, sizeof(d.misc));
-			_dirtyDisk = 1;
-			_renameDirEntry(i, &d);
-			int r = _commitDir();
-			_restoreAsteriskArea();
-			return r;
-		}
-		i++;
-	}
-}
-
-int getFileMisc(const char* name, uint16_t fileType, void* misc) {
-	if (refreshDir() < 0)
-		return -1;
-	char paddedName[MAX_FILENAME_LENGTH];
-	padFilename(paddedName, name);
-	ROMDirEntry_t d;
-	int i = 0;
-	_saveAsteriskArea();
-	while(1) {
-		if ( -1 == _getDirEntry(i, &d) ) {
-			_restoreAsteriskArea();
-			return -1;
-		}
-		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
-			memcpy(misc, d.misc, sizeof(d.misc));
-			_restoreAsteriskArea();
-			return 0;
 		}
 		i++;
 	}
@@ -324,18 +280,15 @@ int findDirEntry(const char* name, uint16_t fileType, DirEntry_t* dirEntry) {
 		return -1;
 	char paddedName[MAX_FILENAME_LENGTH];
 	padFilename(paddedName, name);
-	ROMDirEntry_t d;
+	ROMDirEntry_t* d;
 	int i = 0;
-	_saveAsteriskArea();
 	while(1) {
-		if ( -1 == _getDirEntry(i, &d) ) {
-			_restoreAsteriskArea();
+		if ( NULL == (d = getROMDirEntry(i) ) ) {
 			return -1;
 		}
-		if (d.type != 0 && !strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && (d.type == fileType || fileType==0)) {
-			_restoreAsteriskArea();
-			romDirEntryToDirEntry(&d, dirEntry);
-			return d.type & 0xFFFF;
+		if (d->type != 0 && !strncmp(d->name, paddedName, MAX_FILENAME_LENGTH) && (d->type == fileType || fileType==0)) {
+            romDirEntryToDirEntry(d, dirEntry);
+			return 0;
 		}
 		i++;
 	}
@@ -350,17 +303,14 @@ int getFileType(const char* name) {
 		return -1;
 	char paddedName[MAX_FILENAME_LENGTH];
 	padFilename(paddedName, name);
-	ROMDirEntry_t d;
+	ROMDirEntry_t* d;
 	int i = 0;
-	_saveAsteriskArea();
 	while(1) {
-		if ( -1 == _getDirEntry(i, &d) ) {
-			_restoreAsteriskArea();
-			return 0;
+		if ( NULL == (d = getROMDirEntry(i) ) ) {
+			return -1;
 		}
-		if (!strncmp(d.name, paddedName, MAX_FILENAME_LENGTH) && d.type != 0) {
-			_restoreAsteriskArea();
-			return d.type;
+		if (d->type != 0 && !strncmp(d->name, paddedName, MAX_FILENAME_LENGTH)) {
+			return d->type;
 		}
 		i++;
 	}
@@ -377,17 +327,16 @@ int diskSpace(uint32_t* totalBlocksP, uint32_t* freeBlocksP, uint32_t* largestSp
 	uint32_t lastBlock = nonDataBlocks;
 	uint32_t space;
 	
-	DirEntry_t d;
+	ROMDirEntry_t* d;
 	int i = 0;
 
-	while (getDirEntry(i, &d) >= 0) {
-		//printf("%u %.10s %u  %u:%u\n", i, d.name, d.type, d.startBlock, d.startBlock+d.numBlocks); 
-		if (d.type != 0) {
-			space = d.startBlock - lastBlock;
+	while (NULL != (d = getROMDirEntry(i)) ) {
+		if (d->type != 0) {
+			space = d->startBlock - lastBlock;
 			freeBlocks += space;
 			if (space > largestSpace)
 				largestSpace = space;
-			lastBlock = d.startBlock + d.numBlocks;
+			lastBlock = d->startBlock + d->numBlocks;
 		}
 		i++;
 	}
