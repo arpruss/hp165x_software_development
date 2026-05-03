@@ -45,7 +45,10 @@ _start:
 		move.l  #vbl_count, 0x980712 /* VBL callback */
 
 		bsr		bigDiskSupport
+        clr.l   -(%sp)
+        clr.l   -(%sp)
         jsr     main
+        addq.l  #8,%sp
 		
 		.globl  exit
 exit:		

@@ -4,6 +4,7 @@
 #include <fcntl.h>
 //#include <errno.h> //TODO!
 
+#include <sys/_timeval.h>
 #define _POSIX_MONOTONIC_CLOCK
 #include <time.h>
 #include <stdint.h>
@@ -661,4 +662,15 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp) {
     } 
 
     return -1;
+}
+
+int gettimeofday(struct timeval *tv,
+                        void* tz) {
+    (void)tz; 
+    uint32_t t = getVBLCounter();
+    uint32_t perSec = ticksPerSecond();
+    tv->tv_sec = t / perSec;
+    t %= perSec;
+    tv->tv_usec = (t * 1000000)/perSec;
+    return 0; 
 }

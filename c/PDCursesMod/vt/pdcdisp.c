@@ -1,0 +1,424 @@
+#if defined( DOS) || (defined( _WIN32) && !defined( PDC_WIDE))
+   #define USE_UNICODE_ACS_CHARS 0
+#else
+   #define USE_UNICODE_ACS_CHARS 1
+#endif
+
+#include <wchar.h>
+#include <assert.h>
+#include <errno.h>
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#ifdef _WIN32
+    #include <io.h>
+    #include <fcntl.h>
+
+    extern int PDC_wine_version;
+#else
+    #include <unistd.h>
+#endif
+
+#include "curspriv.h"
+#include "pdcvt.h"
+#include "../common/acs_defs.h"
+#include "../common/pdccolor.h"
+
+int PDC_get_terminal_fd( void)
+{
+    static int stdout_fd = -1;
+
+    if( stdout_fd == -1)
+      {
+#if defined( _WIN32) || defined( __DMC__)
+/*    if( FILE_TYPE_CHAR == GetFileType( GetStdHandle( STD_OUTPUT_HANDLE)))  */
+      stdout_fd = 2;
+#else
+      if( isatty( STDOUT_FILENO))
+         stdout_fd = STDOUT_FILENO;   /* stdout hasn't been redirected;  use it */
+      else if( isatty( STDERR_FILENO))
+         stdout_fd = STDERR_FILENO;    /* stdout is redirected to a file;  use stderr */
+      else
+         {
+         fprintf(stderr, "No output device found\n");
+         exit( -1);
+         }
+#if defined( _WIN32) && defined( PDC_WIDE) && defined( _O_U8TEXT)
+      _setmode( stdout_fd, _O_U8TEXT);
+#endif
+#endif
+      }
+   return( stdout_fd);
+}
+
+                   /* Rarely,  writes to stdout fail if a signal handler is
+                      called.  In which case we just try to write out the
+                      remainder of the buffer until success happens.     */
+
+#define TBUFF_SIZE 512
+
+static size_t put_to_stdout( const char *buff, size_t bytes_out)
+{
+    static char *tbuff = NULL;
+    static size_t bytes_cached;
+    int stdout_fd;
+
+    if( !buff && !tbuff)
+        return( 0);
+
+    if( !buff && bytes_out == 1)        /* release memory at shutdown */
+    {
+        free( tbuff);
+        tbuff = NULL;
+        bytes_cached = 0;
+        return( 0);
+    }
+
+    if( buff && !tbuff)
+        tbuff = (char *)malloc( TBUFF_SIZE);
+    stdout_fd = PDC_get_terminal_fd( );
+    while( bytes_out || (!buff && bytes_cached))
+    {
+        if( buff)
+        {
+            size_t n_copy = bytes_out;
+
+            if( n_copy > TBUFF_SIZE - bytes_cached)
+                n_copy = TBUFF_SIZE - bytes_cached;
+            memcpy( tbuff + bytes_cached, buff, n_copy);
+            buff += n_copy;
+            bytes_out -= n_copy;
+            bytes_cached += n_copy;
+        }
+        if( bytes_cached == TBUFF_SIZE || !buff)
+            while( bytes_cached)
+            {
+#ifdef _WIN32
+                size_t bytes_written;
+
+                if( PDC_wine_version <= 0)
+                    bytes_written = _write( stdout_fd, tbuff,
+                                             (unsigned int)bytes_cached);
+                else
+                    bytes_written = fwrite( tbuff, 1,
+                                             (unsigned int)bytes_cached, stdout);
+#else
+                const size_t bytes_written = write( stdout_fd, tbuff, bytes_cached);
+#endif
+                bytes_cached -= bytes_written;
+                if( bytes_cached)
+                    memmove( tbuff, tbuff + bytes_written, bytes_cached);
+            }
+    }
+    return( bytes_cached);
+}
+
+size_t PDC_puts_to_stdout( const char *buff)
+{
+   return( put_to_stdout( buff, (buff ? strlen( buff) : 1)));
+}
+
+void PDC_gotoyx(int y, int x)
+{
+   char tbuff[50];
+
+   *tbuff = '\0';
+#ifdef _WIN32
+   if( PDC_wine_version > 0)
+      strcpy( tbuff, CSI "1;1H\r\n");
+#endif
+   sprintf( tbuff + strlen( tbuff), CSI "%d;%dH", y + 1, x + 1);
+   PDC_puts_to_stdout( tbuff);
+   PDC_doupdate( );
+}
+
+#define RESET_ATTRS   CSI "0m"
+#define ITALIC_ON     CSI "3m"
+#define ITALIC_OFF    CSI "23m"
+#define UNDERLINE_ON  CSI "4m"
+#define UNDERLINE_OFF CSI "24m"
+#define BLINK_ON      CSI "5m"
+#define BLINK_OFF     CSI "25m"
+#define BOLD_ON       CSI "1m"
+#define BOLD_OFF      CSI "22m"
+#define DIM_ON        CSI "2m"
+#define DIM_OFF       CSI "22m"
+#define REVERSE_ON    CSI "7m"
+#define STRIKEOUT_ON  CSI "9m"
+#define STRIKEOUT_OFF CSI "29m"
+
+/* see 'addch.c' for an explanation of how combining chars are handled. */
+
+#ifdef USING_COMBINING_CHARACTER_SCHEME
+   int PDC_expand_combined_characters( const cchar_t c, cchar_t *added);  /* addch.c */
+
+static size_t _unpack_combined_character( wchar_t *obuff, const size_t buffsize,
+                                       const cchar_t ch)
+{
+    cchar_t root, newchar;
+    size_t rval = 1;
+
+    root = ch;
+    while( rval < buffsize && (root = PDC_expand_combined_characters( root,
+                       &newchar)) > MAX_UNICODE)
+       obuff[rval++] = (wchar_t)newchar;
+    obuff[0] = (wchar_t)root;
+    if( rval < buffsize)
+       obuff[rval++] = (wchar_t)newchar;
+    assert( rval < buffsize);
+    assert( rval > 1);
+    return( rval);
+}
+#endif
+
+#ifdef _WIN32
+   #define COLOR_CMD_RGB   "2;%d;%d;%dm"
+   #define COLOR_CMD_IDX   "5;%dm"
+   #define COLOR_CMD_FOREGND   "38;"
+   #define COLOR_CMD_BACKGND   "48;"
+#else
+   #define COLOR_CMD_RGB   "2:%d:%d:%dm"
+   #define COLOR_CMD_IDX   "5:%dm"
+   #define COLOR_CMD_FOREGND   "38:"
+   #define COLOR_CMD_BACKGND   "48:"
+#endif
+
+static void color_string( char *otext, const PACKED_RGB rgb)
+{
+   extern bool PDC_has_rgb_color;      /* pdcscrn.c */
+   const int red = Get_RValue( rgb);
+   const int green = Get_GValue( rgb);
+   const int blue = Get_BValue( rgb);
+
+   if( PDC_has_rgb_color)
+      sprintf( otext, COLOR_CMD_RGB, red, green, blue);
+   else
+      {
+      int idx;
+
+      if( red == green && red == blue)   /* gray scale: indices from */
+         {
+         if( red < 27)     /* this would underflow; remap to black */
+            idx = COLOR_BLACK;
+         else if( red >= 243)    /* this would overflow */
+            idx = COLOR_WHITE;
+         else
+            idx = (red - 3) / 10 + 232;     /* 232 to 255 */
+         }
+      else
+         idx = ((blue - 35) / 40) + ((green - 35) / 40) * 6
+                  + ((red - 35) / 40) * 36 + 16;
+
+      sprintf( otext, COLOR_CMD_IDX, idx);
+      }
+}
+
+static int get_sixteen_color_idx( const PACKED_RGB rgb)
+{
+    int rval = 0;
+
+    if( rgb & 0x80)    /* red value >= 128 */
+        rval = 1;
+    if( rgb & 0x8000)      /* green value >= 128 */
+        rval |= 2;
+    if( rgb & 0x800000)        /* blue value >= 128 */
+        rval |= 4;
+    return( rval);
+}
+
+static void reset_color( char *obuff, const chtype ch)
+{
+    static PACKED_RGB prev_bg = (PACKED_RGB)-2;
+    static PACKED_RGB prev_fg = (PACKED_RGB)-2;
+    PACKED_RGB bg, fg;
+
+    if( !obuff)
+        {
+        prev_bg = prev_fg = (PACKED_RGB)-2;
+        return;
+        }
+    PDC_get_rgb_values( ch, &fg, &bg);
+    *obuff = '\0';
+    if( ch & A_REVERSE)
+         if( bg != prev_bg || fg != prev_fg)
+              if( bg == (PACKED_RGB)-1 || fg == (PACKED_RGB)-1)
+              {
+                  prev_fg = fg;
+                  prev_bg = bg;
+                  strcpy( obuff, REVERSE_ON);
+              }
+    if( bg != prev_bg)
+        {
+        if( bg == (PACKED_RGB)-1)   /* default background */
+            strcpy( obuff, CSI "49m");
+        else if( !bg)
+            strcpy( obuff, CSI "40m");
+        else if( COLORS <= 16)
+            sprintf( obuff, CSI "4%dm", get_sixteen_color_idx( bg));
+        else
+            {
+            strcpy( obuff, CSI COLOR_CMD_BACKGND);
+            color_string( obuff + 5, bg);
+            }
+        prev_bg = bg;
+        }
+
+    if( fg != prev_fg)
+        {
+        obuff += strlen( obuff);
+        if( fg == (PACKED_RGB)-1)   /* default foreground */
+            strcpy( obuff, CSI "39m");
+        else if( COLORS <= 16)
+            sprintf( obuff, CSI "3%dm", get_sixteen_color_idx( fg));
+        else
+            {
+            strcpy( obuff, CSI COLOR_CMD_FOREGND);
+            color_string( obuff + 5, fg);
+            }
+        prev_fg = fg;
+        }
+}
+
+int PDC_wc_to_utf8( char *dest, const int32_t code);
+
+#define OBUFF_SIZE 100
+
+void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
+{
+    static chtype prev_ch = 0;
+    static bool force_reset_all_attribs = TRUE;
+    char obuff[OBUFF_SIZE];
+
+    if( !srcp)
+    {
+        prev_ch = 0;
+        force_reset_all_attribs = TRUE;
+        PDC_puts_to_stdout( RESET_ATTRS);
+        return;
+    }
+    assert( x >= 0);
+    assert( len <= SP->cols - x);
+    assert( lineno >= 0);
+    assert( lineno < SP->lines);
+    assert( len > 0);
+    assert( len < MAX_PACKET_LEN);
+#ifdef DOS           /* can't write to last cell at lower right */
+    if( lineno == SP->lines - 1 && len == SP->cols - x)
+        len--;
+#endif
+    PDC_gotoyx( lineno, x);
+    if( force_reset_all_attribs || (!x && !lineno))
+    {
+        force_reset_all_attribs = FALSE;
+        reset_color( NULL, 0);
+        prev_ch = ~*srcp;
+    }
+    while( len)
+    {
+       int ch = (int)( *srcp & A_CHARTEXT), count = 1;
+       chtype changes = *srcp ^ prev_ch;
+       size_t bytes_out = 0;
+
+#ifdef PDC_WIDE
+       assert( ch != MAX_UNICODE);
+       assert( len == 1 || ch < MAX_UNICODE);
+#endif
+       if( _is_altcharset( *srcp))
+          ch = (int)acs_map[ch & 0x7f];
+       if( ch < (int)' ' || (ch >= 0x80 && ch <= 0x9f))
+          ch = ' ';
+       *obuff = '\0';
+       if( changes & (A_REVERSE | A_STRIKEOUT | A_BOLD | A_BLINK))
+       {
+          prev_ch = 0;
+          changes = *srcp | A_COLOR;
+          strcpy( obuff, RESET_ATTRS);
+          reset_color( NULL, 0);
+       }
+       if( SP->termattrs & changes & A_BOLD)
+          if( *srcp & A_BOLD)
+             strcat( obuff, BOLD_ON);
+       if( changes & A_UNDERLINE)
+          strcat( obuff, (*srcp & A_UNDERLINE) ? UNDERLINE_ON : UNDERLINE_OFF);
+       if( changes & A_ITALIC)
+          strcat( obuff, (*srcp & A_ITALIC) ? ITALIC_ON : ITALIC_OFF);
+       if( changes & A_STRIKEOUT)
+          strcat( obuff, (*srcp & A_STRIKEOUT) ? STRIKEOUT_ON : STRIKEOUT_OFF);
+       if( SP->termattrs & changes & A_BLINK)
+          if( *srcp & A_BLINK)
+             strcat( obuff, BLINK_ON);
+       if( changes & (A_COLOR | A_STANDOUT | A_BLINK | A_REVERSE))
+          reset_color( obuff + strlen( obuff), *srcp);
+       if( *obuff)
+#ifdef _WIN32
+          if( PDC_puts_to_stdout( obuff) > 50 && PDC_wine_version > 0)
+              PDC_gotoyx( lineno, x);
+#else
+          PDC_puts_to_stdout( obuff);
+#endif
+#ifdef USING_COMBINING_CHARACTER_SCHEME
+       if( ch > (int)MAX_UNICODE)      /* combining char sequence */
+       {
+           wchar_t unpacked[10];
+           size_t i, n_wchars = _unpack_combined_character( unpacked, 10, ch);
+
+           for( i = bytes_out = 0; i < n_wchars; i++)
+           {
+               bytes_out += PDC_wc_to_utf8( obuff + bytes_out, (wchar_t)unpacked[i]);
+               if( bytes_out > OBUFF_SIZE - 6)
+                  {
+                  put_to_stdout( obuff, bytes_out);
+                  bytes_out = 0;
+                  }
+           }
+       }
+       else if( ch < (int)MAX_UNICODE)
+#endif
+       {
+#ifdef DOS
+           bytes_out = 1;
+           *obuff = (char)ch;
+#else
+           bytes_out = PDC_wc_to_utf8( obuff, (wchar_t)ch);
+#endif
+#ifdef PDC_WIDE
+           while( count < len && !((srcp[0] ^ srcp[count]) & ~A_CHARTEXT)
+                        && (ch = (srcp[count] & A_CHARTEXT)) < (int)MAX_UNICODE)
+           {
+#else
+           while( count < len && !((srcp[0] ^ srcp[count]) & ~A_CHARTEXT))
+           {
+               ch = srcp[count] & A_CHARTEXT;
+#endif
+               if( _is_altcharset( srcp[count]))
+                  ch = (int)acs_map[ch & 0x7f];
+#if !defined( PDC_WIDE)
+               obuff[bytes_out++] = (char)ch;
+#else
+               if( ch < (int)' ' || (ch >= 0x80 && ch <= 0x9f))
+                  ch = ' ';
+               bytes_out += PDC_wc_to_utf8( obuff + bytes_out, (wchar_t)ch);
+#endif
+               if( bytes_out > OBUFF_SIZE - 6)
+                  {
+                  put_to_stdout( obuff, bytes_out);
+                  bytes_out = 0;
+                  }
+               count++;
+           }
+       }
+       put_to_stdout( obuff, bytes_out);
+       bytes_out = 0;
+       prev_ch = *srcp;
+       srcp += count;
+       len -= count;
+#ifdef _WIN32
+       x += count;
+#endif
+   }
+}
+
+void PDC_doupdate(void)
+{
+    put_to_stdout( NULL, 0);
+}
