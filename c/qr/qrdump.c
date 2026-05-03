@@ -12,13 +12,13 @@ bool qrcodegen_encodeBinary(uint8_t dataAndTemp[], size_t dataLen, uint8_t qrcod
 
 void cls() {
   *SCREEN_MEMORY_CONTROL = WRITE_WHITE;
-  for (volatile uint16_t* p=SCREEN;p<SCREEN+SCREEN_WIDTH*SCREEN_HEIGHT/4;p++)
+  for (volatile uint16_t* p=SCREEN;p<SCREEN+screenWidth*screenHeight/4;p++)
 	  *p = 0x0F;
 }
 
 static void printQr(const uint8_t qrcode[]) {
 	int size = qrcodegen_getSize(qrcode);
-	int pixelHeight = SCREEN_HEIGHT / size;
+	int pixelHeight = screenHeight / size;
 	int pixelWidth = ADJUST_WIDTH(pixelHeight);
 	int height = pixelHeight * size;
 	int width = pixelWidth * size;
@@ -26,9 +26,9 @@ static void printQr(const uint8_t qrcode[]) {
 	for (uint16_t y = 0; y < size ; y++) {
 		for (uint16_t x = 0; x < size ; x++) {
 			if (qrcodegen_getModule(qrcode, x, y)) {
-				uint16_t x0 = x * pixelWidth + (SCREEN_WIDTH-width)/2;
-				uint16_t y0 = y * pixelHeight + (SCREEN_HEIGHT-height)/2;
-				volatile uint16_t* pos = SCREEN + y0 * (SCREEN_WIDTH / 4) + x0/4;
+				uint16_t x0 = x * pixelWidth + (screenWidth-width)/2;
+				uint16_t y0 = y * pixelHeight + (screenHeight-height)/2;
+				volatile uint16_t* pos = SCREEN + y0 * (screenWidth / 4) + x0/4;
 				volatile uint16_t* pos2;
 				uint16_t mask = 8>>(x0%4);
 				uint16_t value = 0;
@@ -40,7 +40,7 @@ static void printQr(const uint8_t qrcode[]) {
 						pos2 = pos;
 						for (uint16_t dy = 0 ; dy < pixelHeight ; dy++) {
 							*pos2 = value;
-							pos2 += SCREEN_WIDTH / 4;
+							pos2 += screenWidth / 4;
 						}
 						pos++;
 						mask = 8;
@@ -51,7 +51,7 @@ static void printQr(const uint8_t qrcode[]) {
 					pos2 = pos;
 					for (uint16_t dy = 0 ; dy < pixelHeight ; dy++) {
 						*pos2 = value;
-						pos2 += SCREEN_WIDTH / 4;
+						pos2 += screenWidth / 4;
 					}
 				}
 			}
@@ -96,11 +96,11 @@ int main()
 		dump(pos,512);
 		for (int i=0;i<10; i++) {
 			waitSeconds(1);
-			if (*LAST_KEY==KEY_STOP) 
+			if (*LAST_KEY==HP_KEY_STOP) 
 				reload();
 		}
 	}
-	while (KEY_STOP != getKey(1));
+	while (HP_KEY_STOP != getKey(1));
 	reload();
     return 0;
 }

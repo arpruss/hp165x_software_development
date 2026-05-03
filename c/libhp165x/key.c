@@ -26,31 +26,31 @@ static const struct {
 	uint16_t key;
 	char	 ascii;
 } keyToASCII[] = {
-	{ KEY_0, '0' },
-	{ KEY_1, '1' },
-	{ KEY_2, '2' },
-	{ KEY_3, '3' },
-	{ KEY_4, '4' },
-	{ KEY_5, '5' },
-	{ KEY_6, '6' },
-	{ KEY_7, '7' },
-	{ KEY_8, '8' },
-	{ KEY_9, '9' },
-	{ KEY_A, 'A' },
-	{ KEY_B, 'B' },
-	{ KEY_C, 'C' },
-	{ KEY_D, 'D' },
-	{ KEY_E, 'E' },
-	{ KEY_F, 'F' },
-	{ KEY_SELECT, '\n' },
-	{ KEY_CLEAR, '\b' },
-	{ KEY_DONT_CARE, ' ' },
-	{ KEY_RUN, 'R' },
-	{ KEY_TRACE, 'T' },
-	{ KEY_IO, 'I' },
-	{ KEY_CHS, '-' },
-	{ KEY_DECIMAL, '.' },
-	{ KEY_STOP, KEYBOARD_BREAK }, // ctrl-c
+	{ HP_KEY_0, '0' },
+	{ HP_KEY_1, '1' },
+	{ HP_KEY_2, '2' },
+	{ HP_KEY_3, '3' },
+	{ HP_KEY_4, '4' },
+	{ HP_KEY_5, '5' },
+	{ HP_KEY_6, '6' },
+	{ HP_KEY_7, '7' },
+	{ HP_KEY_8, '8' },
+	{ HP_KEY_9, '9' },
+	{ HP_KEY_A, 'A' },
+	{ HP_KEY_B, 'B' },
+	{ HP_KEY_C, 'C' },
+	{ HP_KEY_D, 'D' },
+	{ HP_KEY_E, 'E' },
+	{ HP_KEY_F, 'F' },
+	{ HP_KEY_SELECT, '\n' },
+	{ HP_KEY_CLEAR, '\b' },
+	{ HP_KEY_DONT_CARE, ' ' },
+	{ HP_KEY_RUN, 'R' },
+	{ HP_KEY_TRACE, 'T' },
+	{ HP_KEY_IO, 'I' },
+	{ HP_KEY_CHS, '-' },
+	{ HP_KEY_DECIMAL, '.' },
+	{ HP_KEY_STOP, KEYBOARD_BREAK }, // ctrl-c
 };
 
 static uint16_t lastKey = 0;
@@ -77,9 +77,9 @@ uint16_t getKey(char wait) {
 				*BEEPER = BEEPER_OFF;
 			}
 			if (spinnerState & 0x80000000)
-				return KEY_TURN_CCW;
+				return HP_KEY_TURN_CCW;
 			else
-				return KEY_TURN_CW;
+				return HP_KEY_TURN_CW;
 		}
 		else if (k == 0) {
 			if (lastKey == 0)
@@ -135,9 +135,9 @@ uint16_t peekKey(void) {
 			return 0;
 		uint32_t spinnerState = *(volatile uint32_t*)0x98070C;
 		if (spinnerState & 0x80000000)
-			return KEY_TURN_CCW;
+			return HP_KEY_TURN_CCW;
 		else
-			return KEY_TURN_CW;
+			return HP_KEY_TURN_CW;
 	}
 	else if (k == 0) {
 		if (lastKey == 0)
@@ -170,10 +170,10 @@ uint16_t peekKey(void) {
 }
 
 char parseKey(uint16_t k) {
-	if (k == KEY_TURN_CCW) {
+	if (k == HP_KEY_TURN_CCW) {
 		return dialHorizontal ? KEYBOARD_LEFT : KEYBOARD_UP;
 	}
-	else if (k == KEY_TURN_CW) {
+	else if (k == HP_KEY_TURN_CW) {
 		return dialHorizontal ? KEYBOARD_RIGHT : KEYBOARD_DOWN;
 	}
 	for (unsigned i=0; i<sizeof(keyToASCII)/sizeof(*keyToASCII); i++) {

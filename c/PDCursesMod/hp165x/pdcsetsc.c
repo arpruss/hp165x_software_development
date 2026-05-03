@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <curspriv.h>
 #include "pdcvt.h"
+#undef getch
+#include <hp165x.h>
 
 /*man-start**************************************************************
 

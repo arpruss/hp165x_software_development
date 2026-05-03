@@ -346,7 +346,7 @@ void inputEvents(void) {
 		if (getInputEvent(&e)) {
 			if (e.type == INPUT_KEY) {
 				printf("key: %x %x\n", e.data.key.character, e.data.key.nativeKey);
-				if (e.data.key.nativeKey == KEY_STOP)
+				if (e.data.key.nativeKey == HP_KEY_STOP)
 					return;
 			}
 			else if (e.type == INPUT_MOUSE) {
@@ -367,7 +367,7 @@ void mouse(void) {
 		InputEvent_t e;
 		if (getInputEvent(&e)) {
 			if (e.type == INPUT_KEY) {
-				if (e.data.key.nativeKey == KEY_STOP)
+				if (e.data.key.nativeKey == HP_KEY_STOP)
 					return;
 				else {
 					setTextXY(x/getFontWidth(),y/getFontHeight());
@@ -387,7 +387,7 @@ void mouse(void) {
 uint32_t superFastHashAligned32(const uint32_t* _data, uint16_t n);
 
 void screenMemoryRand(void) {
-    while(KEY_STOP != getKey(0)) {
+    while(HP_KEY_STOP != getKey(0)) {
         *SCREEN_MEMORY_CONTROL = WRITE_BLACK;
         fillScreen();
         setTextXY(0,0);
@@ -443,22 +443,22 @@ main(int argc, char** argv) {
 	setTextXY(0,0);
 
 	switch(k) {
-		case KEY_0: scrolling(); break;
-		case KEY_1: text(); break;
-		case KEY_2: lut(); break;
-		case KEY_3: pack(); break;
-		case KEY_4: testJmp(); break;
-		case KEY_5: rows(); break;
-		case KEY_6: stack(); break;
-//		case KEY_7: scope(); break;
-		case KEY_8: fileTest(); break;
-		case KEY_9: diskInfo(); break;
-		case KEY_A: line(); break;
-		case KEY_B: choose(); break;
-		case KEY_C: inputEvents(); break;
-		case KEY_D: mouse(); break;
-		case KEY_E: miscControl(); break;
-		case KEY_IO: screenMemoryRand(); break;
+		case HP_KEY_0: scrolling(); break;
+		case HP_KEY_1: text(); break;
+		case HP_KEY_2: lut(); break;
+		case HP_KEY_3: pack(); break;
+		case HP_KEY_4: testJmp(); break;
+		case HP_KEY_5: rows(); break;
+		case HP_KEY_6: stack(); break;
+//		case HP_KEY_7: scope(); break;
+		case HP_KEY_8: fileTest(); break;
+		case HP_KEY_9: diskInfo(); break;
+		case HP_KEY_A: line(); break;
+		case HP_KEY_B: choose(); break;
+		case HP_KEY_C: inputEvents(); break;
+		case HP_KEY_D: mouse(); break;
+		case HP_KEY_E: miscControl(); break;
+		case HP_KEY_IO: screenMemoryRand(); break;
 		default:
 			reload();
 	}

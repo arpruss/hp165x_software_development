@@ -39,10 +39,17 @@ CC=$(PREFIX)-gcc
 LD=$(PREFIX)-ld
 OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
+GCC_LIB_DIR=C:/68k/bin/../lib/gcc/m68k-elf/13.1.0/m$(CPU)/ 
 
-CFLAGS=-m$(CPU) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I../../m68k_bare_metal/include -I. -msoft-float -MMD -MP -O99
-LFLAGS=-L../libhp165x -L../../m68k_bare_metal/libmetal  --script=platform.ld -lmetal-$(CPU) -lhp165x
+HPLIB=hp165x
+LIBC_INCLUDE = ../picolibc-$(CPU)/usr/local/include
+LIBC_LIB_DIR = ../picolibc-$(CPU)/usr/local/lib
+LIBC = c
+LIBC_OPTIONS =
 
+CFLAGS=-m$(CPU) $(LIBC_OPTIONS) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I$(LIBC_INCLUDE) -I. -msoft-float -MMD -MP -O99
+LFLAGS=-gc-sections $(PRINTF_VERSION) -L../libhp165x -L$(LIBC_LIB_DIR) --script=platform.ld -l$(HPLIB) -l$(LIBC) -l$(HPLIB) -L$(GCC_LIB_DIR) -lgcc -Map=build/map
+    
 OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
 OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))
 OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))

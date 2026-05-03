@@ -336,12 +336,12 @@ void drop()
 				 //*LAST_KEY = 0;
 				 switch(c)
                  {
-                   case KEY_DISPLAY:
+                   case HP_KEY_DISPLAY:
                             shownext=!shownext;
                             doshownext(nextpiece,nextrot,shownext);
                             break;
-                   case KEY_2:
-				   case KEY_TURN_CW:
+                   case HP_KEY_2:
+				   case HP_KEY_TURN_CW:
                             rot2=(rot+NROTS-1)%NROTS;
                             if(fitq(row,col,piece,rot2))
                             {
@@ -350,8 +350,8 @@ void drop()
                                dopiece(row,col,piece,rot,1,DRAW_BOARD);
                             }
                             break;
-                   case KEY_1:
-				   case KEY_TURN_CCW:
+                   case HP_KEY_1:
+				   case HP_KEY_TURN_CCW:
                             rot2=(rot+1)%NROTS;
                             if(fitq(row,col,piece,rot2))
                             {
@@ -360,7 +360,7 @@ void drop()
                                dopiece(row,col,piece,rot,1,DRAW_BOARD);
                             }
                             break;
-                   case KEY_RUN:
+                   case HP_KEY_RUN:
                             if(level<9)
                               {
                                 level++;
@@ -368,7 +368,7 @@ void drop()
                                 showlevel();
                               }
                               break;
-                   case KEY_DECIMAL:
+                   case HP_KEY_DECIMAL:
                           col2=col+1;
                           if(fitq(row,col2,piece,rot))
                           {
@@ -377,7 +377,7 @@ void drop()
                             dopiece(row,col,piece,rot,1,DRAW_BOARD);
                           }
                           break;
-                   case KEY_0:
+                   case HP_KEY_0:
                       col2=col-1;
                       if(fitq(row,col2,piece,rot))
                       {
@@ -386,14 +386,14 @@ void drop()
                         dopiece(row,col,piece,rot,1,DRAW_BOARD);
                       }
                       break;
-                   case KEY_CHS:
+                   case HP_KEY_CHS:
                           curdelay=0;
                           droppedfrom=getlowestrow(row,piece,rot);
                       break;
-                   case KEY_STOP:
+                   case HP_KEY_STOP:
 					  exit(0);
                       return;
-                   case KEY_SELECT: {
+                   case HP_KEY_SELECT: {
 					  uint32_t tick = getVBLCounter();
 					  drawgrid(1);
 					  dopiece(row,col,piece,rot,0,DRAW_BOARD);
@@ -484,7 +484,7 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 		setTextReverse(0);
 		uint16_t k = getKey(1);
 		switch(k) {
-			case KEY_TURN_CW:
+			case HP_KEY_TURN_CW:
 				if (c < 'A' || c > 'Z') {
 					c = 'A';
 				}
@@ -495,7 +495,7 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 				}
 				out[cursorPosition] = c;
 				break;
-			case KEY_TURN_CCW:
+			case HP_KEY_TURN_CCW:
 				if (c < 'A' || c > 'Z') {
 					c = 'Z';
 				}
@@ -506,12 +506,12 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 				}
 				out[cursorPosition] = c;
 				break;
-			case KEY_RUN:
-			case KEY_STOP:
+			case HP_KEY_RUN:
+			case HP_KEY_STOP:
 				drawTextAt(col,row,out);
 				for (int i=strlen(out);i<length;i++) putText(" ");
 				return;
-			case KEY_SELECT:
+			case HP_KEY_SELECT:
 				have++;
 				if (have>length) {
 					out[length] = 0;
@@ -519,7 +519,7 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 					return;
 				}
 				break;
-			case KEY_CLEAR:
+			case HP_KEY_CLEAR:
 				if(have>0) {
 					have--;
 					out[have] = 0;
@@ -528,13 +528,13 @@ void getinitials(char* out, uint16_t length, uint16_t col, uint16_t row) {
 					out[cursorPosition] = ' ';
 				}
 				break;
-			case KEY_A:
-			case KEY_B:
-			case KEY_C:
-			case KEY_D:
-			case KEY_E:
-			case KEY_F:
-			case KEY_DONT_CARE:
+			case HP_KEY_A:
+			case HP_KEY_B:
+			case HP_KEY_C:
+			case HP_KEY_D:
+			case HP_KEY_E:
+			case HP_KEY_F:
+			case HP_KEY_DONT_CARE:
 				out[cursorPosition] = parseKey(k);
 				have++;
 				break;
@@ -669,37 +669,37 @@ int main()
 		  randomized = 1;
 	  }
       switch(k) {
-		  case KEY_0:
+		  case HP_KEY_0:
 			level = 0;
 			break;
-		  case KEY_1:
+		  case HP_KEY_1:
 			level = 1;
 			break;
-		  case KEY_2:
+		  case HP_KEY_2:
 			level = 2;
 			break;
-		  case KEY_3:
+		  case HP_KEY_3:
 			level = 3;
 			break;
-		  case KEY_4:
+		  case HP_KEY_4:
 			level = 4;
 			break;
-		  case KEY_5:
+		  case HP_KEY_5:
 			level = 5;
 			break;
-		  case KEY_6:
+		  case HP_KEY_6:
 			level = 6;
 			break;
-		  case KEY_7:
+		  case HP_KEY_7:
 			level = 7;
 			break;
-		  case KEY_8:
+		  case HP_KEY_8:
 			level = 8;
 			break;
-		  case KEY_9:
+		  case HP_KEY_9:
 			level = 9;
 			break;
-	      case KEY_STOP:
+	      case HP_KEY_STOP:
 			return 0;
 		  default:
 			level = 3;
@@ -720,7 +720,7 @@ int main()
          add_high_score();
 		 k = 0;
       }
-   } while(k!=KEY_0 && k!=KEY_STOP);
+   } while(k!=HP_KEY_0 && k!=HP_KEY_STOP);
    return 0;
 }
    

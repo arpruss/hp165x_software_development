@@ -93,7 +93,7 @@ void scan(void) {
 			while ( (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS ) ) {
 				uint16_t k = getKey(0); 
 				if (k != 0) {
-					if (k == KEY_STOP)
+					if (k == HP_KEY_STOP)
 						reload();
 				}
 			}
@@ -139,9 +139,9 @@ void menu(void) {
 	}
 	while (1) {
 		uint16_t k = getKey(0); 
-		if (k == KEY_STOP)
+		if (k == HP_KEY_STOP)
 			reload();
-		else if (k == KEY_RUN)
+		else if (k == HP_KEY_RUN)
 			return;
 		if (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS )
 			return;
@@ -166,27 +166,27 @@ void menu(void) {
 			}
 			continue;
 		}
-		else if (KEY_SELECT == k) {
+		else if (HP_KEY_SELECT == k) {
 			loadAndRun(names[selected]);
 		}
-		else if (KEY_TURN_CW == k) {
+		else if (HP_KEY_TURN_CW == k) {
 			drawEntry(selected, 0);
 			selected = (selected + 1) % numNames;
 			drawEntry(selected, 1);
 		}
-		else if (KEY_TURN_CCW == k) {
+		else if (HP_KEY_TURN_CCW == k) {
 			drawEntry(selected, 0);
 			selected = (selected + numNames - 1) % numNames;
 			drawEntry(selected, 1);
 		}
-		else if (KEY_CLEAR == k) {
+		else if (HP_KEY_CLEAR == k) {
 			setTextColors(DRAW_BACKGROUND,DRAW_FOREGROUND);
 			setTextXY(0,0);
 			putText("Delete? (0/1)");
 			setTextColors(DRAW_FOREGROUND,DRAW_BACKGROUND);
 			putText("                                          ");
 			k = getKey(1);
-			if (k==KEY_1) {
+			if (k==HP_KEY_1) {
 				deleteByNameAndType(names[selected], TYPE_EXE);
 			}
 			return;
