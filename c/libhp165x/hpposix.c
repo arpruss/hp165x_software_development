@@ -674,3 +674,10 @@ int gettimeofday(struct timeval *tv,
     tv->tv_usec = (t * 1000000)/perSec;
     return 0; 
 }
+
+
+#include <sys/times.h>
+
+clock_t times(struct tms *buffer) {
+    return getVBLCounter(); // TODO: use different kinds of times
+}

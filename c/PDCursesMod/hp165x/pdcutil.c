@@ -15,3 +15,9 @@ const char *PDC_sysname(void)
 }
 
 enum PDC_port PDC_port_val = PDC_PORT_DOS; // TODO
+
+void PDC_beep(void) {
+    *BEEPER = BEEPER_ON;
+    delayTicks(7);
+    *BEEPER = BEEPER_OFF;
+}

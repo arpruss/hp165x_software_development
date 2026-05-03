@@ -66,12 +66,45 @@ on some terminals).
    "Correct" mouse handling will require that we detect a button-down,
 then hold off for SP->mouse_wait to see if we get a release event.  */
 
+static struct {
+    uint16_t character;
+    uint16_t key;
+} translate[] = {
+    { KEYBOARD_LEFT, KEY_LEFT },
+    { KEYBOARD_RIGHT, KEY_RIGHT },
+    { KEYBOARD_UP, KEY_UP },
+    { KEYBOARD_DOWN, KEY_DOWN },
+    { KEYBOARD_F1, KEY_F0+1 },
+    { KEYBOARD_F1+1, KEY_F0+2 },
+    { KEYBOARD_F1+2, KEY_F0+3 },
+    { KEYBOARD_F1+3, KEY_F0+4 },
+    { KEYBOARD_F1+4, KEY_F0+5 },
+    { KEYBOARD_F1+5, KEY_F0+6 },
+    { KEYBOARD_F1+6, KEY_F0+7 },
+    { KEYBOARD_F1+7, KEY_F0+8 },
+    { KEYBOARD_F1+8, KEY_F0+9 },
+    { KEYBOARD_F1+9, KEY_F0+10 },
+    { KEYBOARD_F1+10, KEY_F0+11 },
+    { KEYBOARD_F1+11, KEY_F0+12 },
+    { KEYBOARD_HOME, KEY_HOME },
+    { KEYBOARD_END, KEY_END },
+    { KEYBOARD_PAGE_UP, KEY_PPAGE },
+    { KEYBOARD_PAGE_DOWN, KEY_NPAGE },
+};
+
 int PDC_get_key( void)
 {
     InputEvent_t e;
     while (!getInputEvent(&e));
-    if (e.type == INPUT_KEY)
+    if (e.type == INPUT_KEY) {
+        if (e.data.key.character >= 32 && e.data.key.character <= 126)
+            return e.data.key.character;
+        for (uint16_t i=0; i<sizeof(translate)/sizeof(*translate); i++) {
+            if (e.data.key.character == translate[i].character)
+                return translate[i].key;
+        }
         return (uint16_t)e.data.key.character;
+    }
     return 0;
     // TODO: mouse
 }
