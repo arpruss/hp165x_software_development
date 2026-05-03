@@ -4,6 +4,8 @@
 #include <fcntl.h>
 //#include <errno.h> //TODO!
 
+#define _POSIX_MONOTONIC_CLOCK
+#include <time.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
@@ -641,3 +643,22 @@ int stat(const char *path, struct stat *buf) {
 	return 0;
 }
 
+
+
+int clock_gettime(clockid_t clock_id, struct timespec *tp) {
+    if (tp == NULL) {
+        return -1;
+    }
+
+    if (clock_id == CLOCK_MONOTONIC) {
+        uint32_t ticks = getVBLCounter();
+        uint16_t tps = ticksPerSecond();
+        tp->tv_sec = ticks / tps;
+        uint16_t t = ticks % tps;
+        tp->tv_nsec = (t * 1000000000ULL) / tps;
+        
+        return 0;
+    } 
+
+    return -1;
+}

@@ -59,6 +59,7 @@ typedef struct {
 	uint8_t visible;
 } MouseCursorData_t;
 
+void flushInputEvents(void);
 uint8_t isMouseCursorVisible(void);
 void saveMouseCursor(MouseCursorData_t* m); 
 void restoreMouseCursor(const MouseCursorData_t* m);
@@ -70,5 +71,6 @@ void setMouseCursor(ImageDrawer_t drawer, uint16_t drawMode, uint16_t eraseMode,
 void clearMouseCursor(void);
 void drawMouseCursor(void);
 uint8_t isInputSerialActive(void);
+char haveInputEvent(void);
 
 #endif

@@ -7,6 +7,7 @@ meson setup build-68000 \
     -Dtests=false \
 	-Dio-long-double=false \
 	-Dfast-bufio=true \
+    -Dc_args=-D_POSIX_MONOTONIC_CLOCK=200112L \
 	--wipe
 	
 ninja -C build-68000

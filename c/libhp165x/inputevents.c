@@ -4,6 +4,7 @@ static uint8_t useSerial = 0;
 static uint8_t mouseEventPos = 0;
 static uint8_t oldMouseButtons = 0;
 static int8_t mouseData[2];
+static uint8_t flushedMouseEvent = 0; // we requested a flush when the mouse event wasn't finished
 static int16_t mouseX = 0;
 static int16_t mouseY = 0;
 static uint16_t mouseDrawMode;
@@ -162,6 +163,10 @@ static uint8_t updateMouse(uint8_t serialChar, InputEvent_t* e) {
 		if (changed) 
 			drawMouseCursor();
 		
+        if (flushedMouseEvent) {
+            flushedMouseEvent = 0;
+            return 0;
+        }
 		return 1;
 	}
 	else if (mouseEventPos == 1) {
@@ -198,6 +203,34 @@ char kbhit(void) {
 	}
 }
 
+char haveInputEvent(void) {
+	if (peekKey())
+		return 1;
+	if (useSerial) {
+		while(1) {
+			int16_t c = simple_serial_peek();
+			if (c < 0)
+				return 0;
+			if ( IS_MOUSE(c) ) {
+                if (mouseEventPos < 2) {
+                    updateMouse(simple_serial_getchar(), NULL);
+                }
+                else {
+                    if (!flushedMouseEvent)
+                        return 1;
+                    updateMouse(simple_serial_getchar(), NULL);
+                }
+			}
+			else {
+				return 1;
+			}
+		}
+	}
+	else {
+		return 0;
+	}
+}
+
 char getch(void) {
 	while(1) {	
 		mouseTimeoutCheck();
@@ -218,6 +251,22 @@ char getch(void) {
 			}
 		}
 	}
+}
+
+void flushInputEvents(void) {
+    mouseTimeoutCheck();
+    getKey(0);
+    if (useSerial) {
+        while ( simple_serial_peek() >= 0 ) {
+            int16_t serialChar = simple_serial_getchar();
+            
+            if (IS_MOUSE(serialChar)) {
+                updateMouse(serialChar, NULL);
+            }
+        }
+        if (mouseEventPos > 0)
+            flushedMouseEvent = 1;
+    }
 }
 
 uint8_t getInputEvent(InputEvent_t* e) {
