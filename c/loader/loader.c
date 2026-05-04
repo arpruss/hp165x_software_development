@@ -84,10 +84,10 @@ void scan(void) {
 			setTextXY(0,0);
 			putText("No disc in drive...");
 			while ( (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS ) ) {
-				uint16_t k = getKey(0); 
-				if (k != 0) {
-					if (k == HP_KEY_STOP)
-						reboot();
+				if (kbhit()) {
+                    uint16_t k = getch();
+                    if ( k == KEYBOARD_BREAK )
+                        reboot();
 				}
 			}
 			setTextXY(0,0);
@@ -131,8 +131,12 @@ void menu(void) {
 		drawEntry(i, i==selected);
 	}
 	while (1) {
-		uint16_t k = getKey(0); 
-		if (k == HP_KEY_STOP)
+        InputEvent_t e;
+        if (! getInputEvent(&e))
+            continue;
+		uint16_t k = e.data.key.nativeKey;
+        uint16_t c = e.data.key.character;
+		if (c == KEYBOARD_BREAK)
 			reboot();
 		else if (k == HP_KEY_RUN)
 			return;
@@ -140,7 +144,6 @@ void menu(void) {
 			return;
 		if (0 == ( HARDWARE_STATUS_OLD_DISK & *HARDWARE_STATUS ))
 			return;
-		int c = parseKey(k);
 		if ('0' <= c && c <= '9') {
 			c -= '0';
 			drawEntry(selected, 0);
@@ -152,8 +155,8 @@ void menu(void) {
 			}
 			continue;
 		}
-		else if ('A' <= c && c <= 'F') {
-			c += 10 - 'A';
+		else if (isalpha(c)) {
+			c = toupper(c) + 10 - 'A';
 			drawEntry(selected, 0);
 			if (c < numNames) {
 				drawEntry(c, 1);
@@ -161,27 +164,27 @@ void menu(void) {
 			}
 			continue;
 		}
-		else if (HP_KEY_SELECT == k) {
+		else if (c == '\n') {
 			loadAndRun(names[selected]);
 		}
-		else if (HP_KEY_TURN_CW == k) {
+		else if (c == KEYBOARD_DOWN || c == KEYBOARD_RIGHT) {
 			drawEntry(selected, 0);
 			selected = (selected + 1) % numNames;
 			drawEntry(selected, 1);
 		}
-		else if (HP_KEY_TURN_CCW == k) {
+		else if (c == KEYBOARD_UP || c == KEYBOARD_LEFT) {
 			drawEntry(selected, 0);
 			selected = (selected + numNames - 1) % numNames;
 			drawEntry(selected, 1);
 		}
-		else if (HP_KEY_CLEAR == k) {
+		else if (HP_KEY_CLEAR == k || c == KEYBOARD_DELETE) {
 			setTextColors(DRAW_BACKGROUND,DRAW_FOREGROUND);
 			setTextXY(0,0);
-			putText("Delete? (0/1)");
+			putText("Delete? (0n/1y)");
 			setTextColors(DRAW_FOREGROUND,DRAW_BACKGROUND);
 			putText("                                          ");
-			k = getKey(1);
-			if (k==KEY_1) {
+			c = getch();
+			if (c==HP_KEY_1 || c=='y' || c=='Y') {
 				deleteByNameAndType(names[selected], TYPE_EXE);
 			}
 			return;
@@ -190,6 +193,7 @@ void menu(void) {
 }
 
 int main(void) {
+    initInputEvents(1);
 	setTextReverse(0);
 	setTextColors(DRAW_FOREGROUND, DRAW_BACKGROUND);
 	

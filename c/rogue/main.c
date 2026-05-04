@@ -43,8 +43,6 @@ main(int argc, char **argv, char **envp)
     char *env;
     int lowtime;
     
-    srand(getSeed32());
-
     md_init();
 
 #ifdef MASTER
