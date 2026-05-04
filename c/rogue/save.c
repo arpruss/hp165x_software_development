@@ -109,7 +109,7 @@ gotfile:
 	}
 	strcpy(file_name, buf);
 #ifdef HP165X
-    char filename2[15];
+    char filename2[16];
     sprintf(filename2,"%.10s:%04x",file_name,LIF_SAVE_TYPE);
 	if ((savef = fopen(filename2, "w")) == NULL)
 #else        
