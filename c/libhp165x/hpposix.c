@@ -640,6 +640,7 @@ int stat(const char *path, struct stat *buf) {
 	memset(buf, 0, sizeof(struct stat));
 	buf->st_mode = 0100000 /* S_IFREG */ | 0644;
 	buf->st_size = length;
+    buf->st_nlink = 1;
 	close(fd);
 	return 0;
 }

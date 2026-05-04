@@ -1,0 +1,86 @@
+SRCS=armor.c chase.c command.c daemon.c daemons.c extern.c fight.c init.c io.c list.c mach_dep.c main.c mdport.c misc.c monsters.c move.c new_level.c options.c pack.c passages.c potions.c rings.c rip.c rooms.c save.c scrolls.c state.c sticks.c things.c vers.c weapons.c wizard.c xcrypt.c
+
+
+
+CPU=68000
+
+LIBRARY=picolibc 
+PREFIX=m68k-elf
+HPLIB=hp165x640
+PRINTF_VERSION= #--defsym=vfscanf=__d_vfscanf --defsym=vfprintf=__d_vfprintf 
+GCC_LIB_DIR=C:/68k/bin/../lib/gcc/m68k-elf/13.1.0/m$(CPU)/ 
+
+LIBC_INCLUDE = ../picolibc-$(CPU)/usr/local/include
+LIBC_LIB_DIR = ../picolibc-$(CPU)/usr/local/lib
+LIBC = c
+LIBC_OPTIONS =
+
+BUILDDIR=build
+CC=$(PREFIX)-gcc
+LD=$(PREFIX)-ld
+OBJCOPY=$(PREFIX)-objcopy
+OBJDUMP=$(PREFIX)-objdump
+
+CFLAGS=-m$(CPU) $(LIBC_OPTIONS -D) --save-temps -Wno-unknown-pragmas -Wno-builtin-declaration-mismatch -Wall -Wextra -static -I../libhp165x -I$(LIBC_INCLUDE) -I../PDCursesMod -I. -msoft-float -MMD -MP -O99 -DHP165X
+LFLAGS=-gc-sections $(PRINTF_VERSION) -L../PDCursesMod/hp165x -lpdcurses -L../libhp165x -L$(LIBC_LIB_DIR) --script=platform.ld -l$(HPLIB) -l$(LIBC) -l$(HPLIB) -L$(GCC_LIB_DIR) -lgcc -Map=build/map
+
+OBJS=$(patsubst %.c,$(BUILDDIR)/%.c.o,$(SRCS))
+OBJS:=$(patsubst %.S,$(BUILDDIR)/%.S.o,$(OBJS))
+OBJS:=$(patsubst %.s,$(BUILDDIR)/%.s.o,$(OBJS))
+DEPS=$(OBJS:.o=.d)
+
+
+all: rogue.bin
+
+.PHONY: bmbinary release all clean rom dump dumps hexdump
+
+graysquare.S: ../libhp165x/imagetoassembly.py graysquare.txt
+	python ../libhp165x/imagetoassembly.py graysquare.txt > graysquare.S
+
+blacksquare.S: ../libhp165x/imagetoassembly.py blacksquare.txt
+	python ../libhp165x/imagetoassembly.py blacksquare.txt > blacksquare.S
+
+bmbinary: $(OBJS)
+	$(LD) -o $@ $(OBJS) $(LFLAGS)
+
+release: CFLAGS+= -DNDEBUG
+release: all
+
+$(BUILDDIR):
+	mkdir -p $@
+
+$(BUILDDIR)/%.c.o: %.c
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(BUILDDIR)/%.S.o: %.S
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+$(BUILDDIR)/%.s.o: %.s
+	mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+-include $(DEPS)
+
+clean:
+	rm -rf $(BUILDDIR)/*
+	rm -f bmbinary*
+
+rogue.bin: bmbinary
+	$(OBJCOPY) -O binary bmbinary bmbinary.rom
+	$(OBJCOPY) -O srec bmbinary bmbinary.s68
+	python ../../buildbinary.py bmbinary.s68 rogue.bin
+
+dump:
+	#$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
+	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -dt -j.text bmbinary
+	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.rodata -j.data -j.bss -j.heap -j.stack bmbinary
+
+dumps:
+	#$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.evt bmbinary
+	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -St -j.text bmbinary
+	$(OBJDUMP) -mm68k:$(CPU) -belf32-m68k -st -j.rodata -j.data -j.bss -j.heap -j.stack bmbinary
+
+hexdump:
+	hexdump -C bmbinary.rom

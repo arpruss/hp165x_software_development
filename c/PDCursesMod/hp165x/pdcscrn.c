@@ -75,7 +75,7 @@ int PDC_get_terminal_fd( void);        /* pdckbd.c */
 int PDC_scr_open(void)
 {
    atexit(reload);
-   initScreen(400,WRITE_BLACK);
+   initScreen(392,WRITE_BLACK);
    initInputEvents(1);
    PDC_LOG(("PDC_scr_open exit\n"));
    SP->mouse_wait = PDC_CLICK_PERIOD;
