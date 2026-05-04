@@ -38,7 +38,6 @@ hpgetc(FILE *file)
 		initKeyboard(1);
 		initialized = 1;
 	}
-	while (!kbhit());
 	return getch();
 }
 

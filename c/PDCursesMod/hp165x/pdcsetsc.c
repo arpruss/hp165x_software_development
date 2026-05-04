@@ -49,10 +49,14 @@ int PDC_curs_set( int visibility)
 
 int PDC_set_blink(bool blinkon)
 {
+    (void)blinkon;
+    return 0;
 }
 
 int PDC_set_bold(bool boldon)
 {
+    (void)boldon;
+    return 0;
 }
 
 void PDC_set_title( const char *title)

@@ -105,7 +105,7 @@ LIBSADDED = -lhp165x640
 BUILD		= $(CC) $(CFLAGS) -I$(PDCURSES_SRCDIR)
 
 LINK		= $(CC)
-LDFLAGS		= -nodefaultlibs -nostartfiles $(LIBCURSES) -Wl,-gc-sections -L../../libhp165x -L$(LIBC_LIB_DIR) -Wl,--script=platform.ld -lhp165x640 -l$(LIBC) -lhp165x640 -L$(GCC_LIB_DIR) -l$(LIBC) -lgcc -l$(LIBC)
+LDFLAGS		= -nodefaultlibs -nostartfiles $(LIBCURSES) -Wl,-gc-sections -L../../libhp165x -L$(LIBC_LIB_DIR) -Wl,--script=platform.ld -lhp165x640 -l$(LIBC) -lhp165x640 -l$(LIBC) -lgcc -l$(LIBC)
 RANLIB		= $(PREFIX)-ranlib
 
 .PHONY: all libs clean demos tests

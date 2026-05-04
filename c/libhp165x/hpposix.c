@@ -681,3 +681,25 @@ int gettimeofday(struct timeval *tv,
 clock_t times(struct tms *buffer) {
     return getVBLCounter(); // TODO: use different kinds of times
 }
+
+pid_t getpid(void) {
+    return 0;
+}
+
+uid_t getuid(void) {
+    return 0;
+}
+
+int chmod(const char *path, mode_t mode) {
+    return 0;
+}
+
+int nanosleep(const struct timespec *duration,
+             struct timespec *rem) {
+    (void)rem;
+    uint32_t perSec = ticksPerSecond();
+    uint32_t ticks = duration->tv_sec * perSec + (duration->tv_nsec * perSec / 1000000000ULL);
+    uint32_t start = getVBLCounter();
+    while (getVBLCounter() - start < ticks);
+    return 0;
+}
