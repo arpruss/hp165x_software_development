@@ -247,7 +247,7 @@ char getch(void) {
 				updateMouse(c, NULL);
 			}
 			else {
-				return c;
+				return parseSerialKey(c);
 			}
 		}
 	}
@@ -276,7 +276,7 @@ uint8_t getInputEvent(InputEvent_t* e) {
 	
 	if (k != 0) {
 		e->type = INPUT_KEY;
-		e->data.key.character = parseKey(k);
+		e->data.key.character = (uint8_t)parseKey(k);
 		e->data.key.nativeKey = k;
 		return 1;
 	}
@@ -291,8 +291,8 @@ uint8_t getInputEvent(InputEvent_t* e) {
 			}
 			else {
 				e->type = INPUT_KEY;
-				e->data.key.character = (uint8_t)serialChar;
-				e->data.key.nativeKey = 0;
+				e->data.key.character = (uint8_t)parseSerialKey((uint8_t)serialChar);
+				e->data.key.nativeKey = (uint8_t)serialChar;
 				return 1;
 			}
 		}

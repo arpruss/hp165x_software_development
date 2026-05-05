@@ -66,14 +66,26 @@ on some terminals).
    "Correct" mouse handling will require that we detect a button-down,
 then hold off for SP->mouse_wait to see if we get a release event.  */
 
-static struct {
-    uint16_t character;
+#define KEY_A1                (KEY_OFFSET + 0xc1) /* upper left on Virtual keypad */
+#define KEY_A2                (KEY_OFFSET + 0xc2) /* upper middle on Virt. keypad */
+#define KEY_A3                (KEY_OFFSET + 0xc3) /* upper right on Vir. keypad */
+#define KEY_B1                (KEY_OFFSET + 0xc4) /* middle left on Virt. keypad */
+#define KEY_B2                (KEY_OFFSET + 0xc5) /* center on Virt. keypad */
+#define KEY_B3                (KEY_OFFSET + 0xc6) /* middle right on Vir. keypad */
+#define KEY_C1                (KEY_OFFSET + 0xc7) /* lower left on Virt. keypad */
+#define KEY_C2                (KEY_OFFSET + 0xc8) /* lower middle on Virt. keypad */
+#define KEY_C3                (KEY_OFFSET + 0xc9) /* lower right on Vir. keypad */
+
+static const struct {
+    uint8_t character;
     uint16_t key;
 } translate[] = {
     { KEYBOARD_LEFT, KEY_LEFT },
     { KEYBOARD_RIGHT, KEY_RIGHT },
     { KEYBOARD_UP, KEY_UP },
     { KEYBOARD_DOWN, KEY_DOWN },
+    { KEYBOARD_CTRL_LEFT, CTL_LEFT },
+    { KEYBOARD_CTRL_RIGHT, CTL_RIGHT },
     { KEYBOARD_F1, KEY_F0+1 },
     { KEYBOARD_F1+1, KEY_F0+2 },
     { KEYBOARD_F1+2, KEY_F0+3 },
@@ -92,16 +104,33 @@ static struct {
     { KEYBOARD_PAGE_DOWN, KEY_NPAGE },
 };
 
+static const struct {
+    uint16_t native;
+    uint16_t key;
+} translateNative[] = {
+    { KEYBOARD_KP_7, KEY_A1 },
+    { KEYBOARD_KP_8, KEY_A2 },
+    { KEYBOARD_KP_9, KEY_A3 },
+    { KEYBOARD_KP_4, KEY_B1 },
+    { KEYBOARD_KP_5, KEY_B2 },
+    { KEYBOARD_KP_6, KEY_B3 },
+    { KEYBOARD_KP_1, KEY_C1 },
+    { KEYBOARD_KP_2, KEY_C2 },
+    { KEYBOARD_KP_3, KEY_C3 },
+};
+
 int PDC_get_key( void)
 {
     InputEvent_t e;
     while (!getInputEvent(&e));
     if (e.type == INPUT_KEY) {
-        if (e.data.key.character >= 32 && e.data.key.character <= 126)
-            return e.data.key.character;
         for (uint16_t i=0; i<sizeof(translate)/sizeof(*translate); i++) {
             if (e.data.key.character == translate[i].character)
                 return translate[i].key;
+        }
+        for (uint16_t i=0; i<sizeof(translateNative)/sizeof(*translateNative); i++) {
+            if (e.data.key.nativeKey == translateNative[i].native)
+                return translateNative[i].key;
         }
         return (uint16_t)e.data.key.character;
     }

@@ -105,7 +105,7 @@ int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {
 			}
 		}
 		char c = getch();
-		switch(c) {
+		switch((uint8_t)c) {
 			case '\n':
 			case '\r':
 				clearCursor();
@@ -128,7 +128,7 @@ int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {
 					drawCursor();
 				}
 				break;
-			case '\x07': // ctrl-g
+			case KEYBOARD_DELETE:
 				if (cursor < length) {
 					clearCursor();
 					memmove(buffer+cursor, buffer+cursor+1, length-cursor);
@@ -139,7 +139,6 @@ int getTextWithTimeout(char* _buffer, uint16_t maxSize, int timeoutTicks) {
 				}
 				break;
 			case '\b':
-			case '\x7F':
 				if (cursor > 0) {
 					clearCursor();
 					if (cursor < length) 

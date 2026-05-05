@@ -61,8 +61,8 @@
 #define HP_KEY_UP_DOWN 0x1040
 #define HP_KEY_LEFT_RIGHT 0x2040
 #define HP_KEY_SELECT 0x2001
-#define HP_KEY_TURN_CCW 0x0082
-#define HP_KEY_TURN_CW 0x0081
+#define HP_KEY_TURN_CCW 0x8082
+#define HP_KEY_TURN_CW 0x8081
 #define ADJUST_WIDTH(x) ((x)*57/50) // measured at 1.14
 #define TEXT_MODE_NORMAL 0
 
@@ -89,6 +89,7 @@ uint32_t getVBLCounter(void);
 void setVBLCounter(uint32_t value);
 void initialScreen();
 char parseKey(uint16_t key);
+char parseSerialKey(uint8_t key);
 void setDialHorizontal(uint8_t h);
 int loadAndRunForPatch(const char* filename, void (*overrideStart)(void), void (**originalStartP)(), uint32_t* originalCodeSizeP);
 int loadAndRun(const char* filename);

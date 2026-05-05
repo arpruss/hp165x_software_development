@@ -37,6 +37,8 @@
 #define MODE_READ_WRITE		  1
 #define MODE_WRITE            2
 
+#define SYSTEM_START_TIME     1767225600 // January 1, 2026, midnight
+
 //#define readBlock driveReadBlock
 
 /* The files are entirely stored in memory. 
@@ -645,6 +647,35 @@ int stat(const char *path, struct stat *buf) {
 	return 0;
 }
 
+int fstat(int fd, struct stat *buf) {
+	HPFILE* f = &files[fd-FD_OFFSET];
+
+    if (f->mode == MODE_READ && ! f->rw.readData->sizeIsExact ) {
+        int n = getHPLength(f);
+        if (n < 0) 
+            return -1;
+        f->dataSize = n;
+        f->rw.readData->sizeIsExact = 1;
+    }
+	memset(buf, 0, sizeof(struct stat));
+	buf->st_mode = 0100000 /* S_IFREG */ | 0644;
+	buf->st_size = f->dataSize;
+    buf->st_nlink = 1;
+	return 0;
+}
+
+int access(const char *path, int mode) {
+	char hpName[MAX_FILENAME_LENGTH+1];
+	uint16_t fileType = getHPName(hpName, path);
+    DirEntry_t d;
+    checkDiskChange(NULL);
+
+    if (findDirEntry(hpName, fileType, &d) < 0)
+        return -1;
+    else
+        return 0;
+}
+
 
 
 int clock_gettime(clockid_t clock_id, struct timespec *tp) {
@@ -670,7 +701,8 @@ int gettimeofday(struct timeval *tv,
     (void)tz; 
     uint32_t t = getVBLCounter();
     uint32_t perSec = ticksPerSecond();
-    tv->tv_sec = t / perSec;
+    tv->tv_sec = t / perSec + SYSTEM_START_TIME;
+    volatile uint32_t x = (uint32_t)tv->tv_sec;
     t %= perSec;
     tv->tv_usec = (t * 1000000)/perSec;
     return 0; 
@@ -700,6 +732,14 @@ int nanosleep(const struct timespec *duration,
     (void)rem;
     uint32_t perSec = ticksPerSecond();
     uint32_t ticks = duration->tv_sec * perSec + (duration->tv_nsec * perSec / 1000000000ULL);
+    uint32_t start = getVBLCounter();
+    while (getVBLCounter() - start < ticks);
+    return 0;
+}
+
+int usleep(useconds_t u) {
+    uint32_t perSec = ticksPerSecond();
+    uint32_t ticks = (u * perSec / 1000000UL);
     uint32_t start = getVBLCounter();
     while (getVBLCounter() - start < ticks);
     return 0;

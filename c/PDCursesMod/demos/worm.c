@@ -153,6 +153,8 @@ static void cleanup( SCREEN *screen_pointer)
 
 int main(int argc, char *argv[])
 {
+    initScreen(392,WRITE_BLACK);
+
     const struct options *op;
     struct worm *w;
     short **ref, *ip;
@@ -204,7 +206,7 @@ int main(int argc, char *argv[])
             return EXIT_FAILURE;
         }
     }
-
+    
     screen_pointer = newterm(NULL, stdout, stdin);
     seed = time((time_t *)0);
     srand( (unsigned)seed);

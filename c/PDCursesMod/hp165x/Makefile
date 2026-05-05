@@ -13,6 +13,12 @@ OBJCOPY=$(PREFIX)-objcopy
 OBJDUMP=$(PREFIX)-objdump
 AR = $(PREFIX)-ar
 
+LIBRARY=picolibc 
+PREFIX=m68k-elf
+HPLIB=hp165x640
+PRINTF_VERSION= #--defsym=vfscanf=__d_vfscanf --defsym=vfprintf=__d_vfprintf 
+GCC_LIB_DIR=C:/68k/bin/../lib/gcc/m68k-elf/13.1.0/m$(CPU)/ 
+
 CPU=68000
 GCC_LIB_DIR=C:/68k/lib/gcc/m68k-elf/13.1.0/m$(CPU)/ 
 LIBC_INCLUDE = ../../picolibc-$(CPU)/usr/local/include
@@ -105,7 +111,9 @@ LIBSADDED = -lhp165x640
 BUILD		= $(CC) $(CFLAGS) -I$(PDCURSES_SRCDIR)
 
 LINK		= $(CC)
-LDFLAGS		= -nodefaultlibs -nostartfiles $(LIBCURSES) -Wl,-gc-sections -L../../libhp165x -L$(LIBC_LIB_DIR) -Wl,--script=platform.ld -lhp165x640 -l$(LIBC) -lhp165x640 -l$(LIBC) -lgcc -l$(LIBC)
+#LDFLAGS		= -nodefaultlibs -nostartfiles $(LIBCURSES) -Wl,-gc-sections -L../../libhp165x -L$(LIBC_LIB_DIR) -Wl,--script=platform.ld -lhp165x640 -l$(LIBC) -lhp165x640 -l$(LIBC) -lgcc -l$(LIBC)
+LFLAGS=-gc-sections $(PRINTF_VERSION) -L../PDCursesMod/hp165x -lpdcurses -L../../libhp165x -L$(LIBC_LIB_DIR) --script=platform.ld -l$(HPLIB) -l$(LIBC) -l$(HPLIB) -L$(GCC_LIB_DIR) -lgcc 
+
 RANLIB		= $(PREFIX)-ranlib
 
 .PHONY: all libs clean demos tests
@@ -147,7 +155,8 @@ $(PDCOBJS) : %.o: $(osdir)/%.c
 	$(BUILD) -c $<
 
 $(DEMOS_EXCEPT_TUIDEMO): %$(E): $(demodir)/%.c
-	$(BUILD) $(DEMOFLAGS) -o$@.elf $< $(LDFLAGS) -Wl,-Map=$@.map $(EXELIBS) 
+	$(BUILD) $(DEMOFLAGS) -c -o$@.o $< 
+	$(LD) -o $@.elf $@.o $(LFLAGS) -L. $(EXELIBS) 
 	$(OBJCOPY) -O srec $@.elf $@.s68
 	python ../../../buildbinary.py $@.s68 $@
     

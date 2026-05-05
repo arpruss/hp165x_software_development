@@ -415,6 +415,7 @@ main(int argc, char** argv) {
 	atexit(goodbye);
 	
 	initScreen(400, WRITE_BLACK);
+
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 
 	setTextColors(WRITE_WHITE,WRITE_BLACK);
