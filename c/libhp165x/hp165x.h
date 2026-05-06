@@ -106,6 +106,7 @@ int getText(char* _buffer, uint16_t maxSize);
 int padFilename(char* paddedName, const char* name);
 uint32_t getSeed32(void);
 void __attribute__((noreturn)) reboot(void);
+void waitMillis(uint32_t n);
 
 /* 
    I don't know which registers are clobbered by the OS routines, so to

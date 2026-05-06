@@ -153,10 +153,12 @@ static void int5_read(void) {
 		__builtin_unreachable(); 
 }
 
-static void __attribute__((noinline))_int5_write(void) {
+#if 0 // TODO
+static void __attribute__((noinline))_int5_write(void) { 
 	intDone = 1;	
 	nopInt(5);
 }
+#endif
 
 static void int5_write(void) {
 	asm volatile("rte");	

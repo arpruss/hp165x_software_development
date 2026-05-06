@@ -5,6 +5,12 @@
 #include <stddef.h>
 #include <hp165x.h>
 
+
+//$$f_V = \frac{f_{clk}}{R0 \times \left[ R4 \times (R9 + 1) + R5 \right]}$$
+
+//fclk = 2.5e6 or 2.386e6
+//fv = fclk / (R0*(R4*(R9+1)+R5))
+
 //1.12 : 1.17
 //1.20 : 1.24
 //clock rate formula: ratio of h-displayed 

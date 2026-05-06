@@ -4,6 +4,7 @@
 #include <fcntl.h>
 //#include <errno.h> //TODO!
 
+#include <sys/times.h>
 #include <sys/_timeval.h>
 #define _POSIX_MONOTONIC_CLOCK
 #include <time.h>
@@ -684,11 +685,10 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp) {
     }
 
     if (clock_id == CLOCK_MONOTONIC) {
-        uint32_t ticks = getVBLCounter();
-        uint16_t tps = ticksPerSecond();
-        tp->tv_sec = ticks / tps;
-        uint16_t t = ticks % tps;
-        tp->tv_nsec = (t * 1000000000ULL) / tps;
+        uint32_t ticks = getVBLCounter()*1000;
+        tp->tv_sec = ticks / ticksPerSec;
+        uint16_t t = ticks % ticksPerSec;
+        tp->tv_nsec = (t * 1000000000ULL) / ticksPerSec;
         
         return 0;
     } 
@@ -700,16 +700,13 @@ int gettimeofday(struct timeval *tv,
                         void* tz) {
     (void)tz; 
     uint32_t t = getVBLCounter();
-    uint32_t perSec = ticksPerSecond();
-    tv->tv_sec = t / perSec + SYSTEM_START_TIME;
+    tv->tv_sec = t / ticksPerSec + SYSTEM_START_TIME;
     volatile uint32_t x = (uint32_t)tv->tv_sec;
-    t %= perSec;
-    tv->tv_usec = (t * 1000000)/perSec;
+    t %= ticksPerSec;
+    tv->tv_usec = (t * 1000000) / ticksPerSec;
     return 0; 
 }
 
-
-#include <sys/times.h>
 
 clock_t times(struct tms *buffer) {
     return getVBLCounter(); // TODO: use different kinds of times
@@ -727,20 +724,14 @@ int chmod(const char *path, mode_t mode) {
     return 0;
 }
 
+void usleep(useconds_t n) { // todo: higher resolution
+    waitMillis((n+500)/1000);
+}
+
 int nanosleep(const struct timespec *duration,
-             struct timespec *rem) {
+             struct timespec *rem) { // todo: higher resolution
     (void)rem;
-    uint32_t perSec = ticksPerSecond();
-    uint32_t ticks = duration->tv_sec * perSec + (duration->tv_nsec * perSec / 1000000000ULL);
-    uint32_t start = getVBLCounter();
-    while (getVBLCounter() - start < ticks);
+    waitMillis(duration->tv_sec * 1000 + (uint32_t)(duration->tv_nsec / 1000000));
     return 0;
 }
 
-int usleep(useconds_t u) {
-    uint32_t perSec = ticksPerSecond();
-    uint32_t ticks = (u * perSec / 1000000UL);
-    uint32_t start = getVBLCounter();
-    while (getVBLCounter() - start < ticks);
-    return 0;
-}

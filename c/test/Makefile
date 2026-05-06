@@ -5,7 +5,7 @@ CPU=68000
 
 LIBRARY=picolibc 
 PREFIX=m68k-elf
-HPLIB=hp165x640
+HPLIB=hp165x
 PRINTF_VERSION= #--defsym=vfscanf=__d_vfscanf --defsym=vfprintf=__d_vfprintf 
 GCC_LIB_DIR=C:/68k/bin/../lib/gcc/m68k-elf/13.1.0/m$(CPU)/ 
 

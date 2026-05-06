@@ -408,13 +408,23 @@ void screenMemoryRand(void) {
     }
 }
 
+void delay1000(void) {
+    printf("Go!"); //16:23.83 = 983.83 minus maybe .1 : 983.73, ticks 59079: 60.06 Hz ; 
+    uint32_t t = getVBLCounter();
+    for (int i=0;i<10;i++) {
+        waitMillis(100000);
+        putChar(i+'1');
+    }
+    printf("\nTicks: %ld\n", getVBLCounter()-t);
+}
+
 main(int argc, char** argv) {
 	(void)argc;
 	(void)argv;
 	
 	atexit(goodbye);
 	
-	initScreen(400, WRITE_BLACK);
+	initScreen(0, WRITE_BLACK);
 
 	*SCREEN_MEMORY_CONTROL = WRITE_WHITE;
 
@@ -434,6 +444,7 @@ main(int argc, char** argv) {
 	putText("C - inputEvents\n");
 	putText("D - mouse\n");
 	putText("E - misc control\n");
+    putText("F - 1000 second = 16:40 wait\n");
 	putText("IO - screen memory randomness\n");
 	setTextXY(0,getTextRows()-1);
 	putText("Please choose one");
@@ -459,6 +470,7 @@ main(int argc, char** argv) {
 		case HP_KEY_C: inputEvents(); break;
 		case HP_KEY_D: mouse(); break;
 		case HP_KEY_E: miscControl(); break;
+        case HP_KEY_F: delay1000(); break;
 		case HP_KEY_IO: screenMemoryRand(); break;
 		default:
 			reload();

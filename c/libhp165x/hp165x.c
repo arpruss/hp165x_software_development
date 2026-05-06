@@ -58,10 +58,10 @@ void reload(void) {
 
 // https://stackoverflow.com/questions/66586687/delay-loop-in-68k-assembly
 
-// the processor is supposed to be 10MHz, but my timing shows more like 8.5MHz
+// the processor is supposed to be 10MHz, but my timing shows more like 8.6MHz
 // per tick. Some of that may be due to VBL stealing CPU cycles.
 static void waitSecond(void) {
-	asm volatile("  move.l #(8500000/16),%%d0\n" 
+	asm volatile("  move.l #(8640582/16),%%d0\n" 
 		"  moveq.l #1,%%d1\n"
 		"1:\n"
 		"  sub.l %%d1,%%d0\n"
@@ -85,5 +85,20 @@ asm(".globl delayTicks\n"
 	"movem.l (%sp)+,%d2-%d7/%a2-%a6\n\t" \
 	"rts");
 		
+void waitMillis(uint32_t n) {
+    asm volatile(
+       "0: tst.l %[n]\n"
+       "   beq.s 2f\n"
+       "   move.l #(8640582/16/1000),%%d0\n"
+       "   moveq.l #1,%%d1\n"
+       "1:\n"
+	   "   sub.l %%d1,%%d0\n"
+	   "   bne.s 1b\n"
+       "   subq #1,%[n]\n"
+       "   bra.s 0b\n" 
+       "2:\n"
+       : : [n] "d" (n) : "d0", "d1");
+}
+
 
 _WRAP_0_RET_D1(getKeyBIOS,0xeb38);

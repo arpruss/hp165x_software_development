@@ -7,6 +7,7 @@
 #define MC6845_H_TOTAL     0
 #define MC6845_H_DISPLAYED 1
 #define MC6845_H_SYNC      2
+#define MC6845_SYNC_WIDTH  3
 #define MC6845_V_TOTAL	   4
 #define MC6845_V_ADJUST	   5
 #define MC6845_V_DISPLAYED 6
@@ -17,5 +18,9 @@ void resetMC6845(void);
 void setScreenHeight(uint16_t height);
 void _setScreenWidth(void);
 uint16_t ticksPerSecond(void);
+extern uint16_t ticksPerSec;
+extern uint32_t ticksPer1000Sec;
+extern uint16_t msPerTick;
+extern uint16_t usPerTick;
 
 #endif
