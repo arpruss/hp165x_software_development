@@ -20,6 +20,17 @@
 #include <hp165x.h>
 
 short selectFile(char* name) {
+    int i = 0;
+    DirEntry_t d;
+    char haveSave = 0;
+    while (getDirEntry(i, &d) >= 0) {
+        if (d.type == LIF_SAVE_TYPE) {
+            haveSave = 1;
+            break;
+        }
+    }
+    if (! haveSave)
+        return 0;
     initInputEvents(1);
     printf("Restore game? (y/N) ");
     char c = getch();

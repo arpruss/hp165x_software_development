@@ -130,6 +130,10 @@ static uint8_t validateName(const char* hpName) {
 uint16_t getHPName(char* hpName, const char* name) {
 	uint16_t i,j;
 	uint16_t fileType = 0;
+    
+    char* lastSlash = strrchr(name,'/');
+    if (lastSlash != NULL)
+        name = lastSlash+1;
 	
 	for (i=j=0; name[i]; i++) {
 		if (name[i] == ':') {
