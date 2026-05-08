@@ -131,6 +131,10 @@ void menu(void) {
 		drawEntry(i, i==selected);
 	}
 	while (1) {
+		if (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS )
+			return;
+		if (0 == ( HARDWARE_STATUS_OLD_DISK & *HARDWARE_STATUS ))
+			return;
         InputEvent_t e;
         if (! getInputEvent(&e))
             continue;
@@ -139,10 +143,6 @@ void menu(void) {
 		if (c == KEYBOARD_BREAK)
 			reboot();
 		else if (k == HP_KEY_RUN)
-			return;
-		if (HARDWARE_STATUS_NO_DISK & *HARDWARE_STATUS )
-			return;
-		if (0 == ( HARDWARE_STATUS_OLD_DISK & *HARDWARE_STATUS ))
 			return;
 		if ('0' <= c && c <= '9') {
 			c -= '0';

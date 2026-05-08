@@ -27,6 +27,8 @@ typedef struct {
 } DirEntry_t;
 
 #define TYPE_EXE 0xC001
+#define TYPE_DELETED 0x0000
+#define TYPE_END 0xFFFF
 void  __attribute__ ((noinline)) _saveAsteriskArea(void);
 void  __attribute__ ((noinline)) _restoreAsteriskArea(void);
 int writeBlocks(uint32_t blockNum, unsigned count, const void* data);

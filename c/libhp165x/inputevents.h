@@ -3,8 +3,13 @@
 #define _KEYBOARD_H
 #include <hp165x.h>
 
-#define KEYBOARD_CTRL_LEFT  0xA3
-#define KEYBOARD_CTRL_RIGHT 0xA4
+#define KEYBOARD_MODIFIER_MASK  0xF
+#define _KEYBOARD_MODIFIER 0x80
+#define KEYBOARD_MODIFIER_SHIFT 1
+#define KEYBOARD_MODIFIER_CTRL  2
+#define KEYBOARD_MODIFIER_ALT   4
+#define KEYBOARD_MODIFIER_GUI   8
+#define IS_MODIFIER(k) ( ((k)&~KEYBOARD_MODIFIER_MASK) == _KEYBOARD_MODIFIER)
 
 #define _CTRL(x) ((x)-'a'+1)
 #define KEYBOARD_UP      0xDA
@@ -41,13 +46,15 @@
 #define KEYBOARD_KP_8            (_KEYBOARD_HID_OFFSET+0x60)
 #define KEYBOARD_KP_9            (_KEYBOARD_HID_OFFSET+0x61)
 
-#define INPUT_MOUSE    0x01
-#define INPUT_KEY      0x02
-#define MOUSE_DATA     0xF0
+#define INPUT_MOUSE     0x01
+#define INPUT_KEY       0x02
+#define INPUT_MODIFIERS 0x03
+#define MOUSE_DATA      0xF0
 
 // if you're using kbhit() or getch(), mouse events will get skipped
 char kbhit(void);
 char getch(void);
+uint8_t getKeyModifiers(void);
 
 typedef struct {
 	uint8_t type;
@@ -55,6 +62,7 @@ typedef struct {
 		struct {
 			uint16_t character;
 			uint16_t nativeKey;
+            uint8_t  modifiers;
 		} key;
 		struct {
 			uint16_t x;

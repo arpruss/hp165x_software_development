@@ -20,6 +20,8 @@
 #undef getch
 #include <hp165x.h>
 
+short cursorX,cursorY;
+
 int PDC_get_terminal_fd( void)
 {
     return -1;
@@ -32,7 +34,8 @@ size_t PDC_puts_to_stdout( const char *buff)
 
 void PDC_gotoyx(int y, int x)
 {
-    setTextCursorXY(x,y);
+    cursorX = x;
+    cursorY = y;
 }
 
 
@@ -54,4 +57,5 @@ void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
 
 void PDC_doupdate(void)
 {
+    setTextCursorXY(cursorX,cursorY);
 }

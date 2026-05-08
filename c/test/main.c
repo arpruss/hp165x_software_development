@@ -345,7 +345,7 @@ void inputEvents(void) {
 		InputEvent_t e;
 		if (getInputEvent(&e)) {
 			if (e.type == INPUT_KEY) {
-				printf("key: %x %x\n", e.data.key.character, e.data.key.nativeKey);
+				printf("key: %x %x %x\n", e.data.key.character, e.data.key.nativeKey, e.data.key.modifiers);
 				if (e.data.key.nativeKey == HP_KEY_STOP)
 					return;
 			}

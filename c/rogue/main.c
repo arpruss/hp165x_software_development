@@ -28,6 +28,7 @@ short selectFile(char* name) {
             haveSave = 1;
             break;
         }
+        i++;
     }
     if (! haveSave)
         return 0;
@@ -153,6 +154,7 @@ main(int argc, char **argv, char **envp)
     fflush(stdout);
 
     initscr();				/* Start up cursor package */
+    curs_set(1);            /* Show cursor */
     init_probs();			/* Set up prob tables for objects */
     init_player();			/* Set up initial player stats */
     init_names();			/* Set up names of scrolls */

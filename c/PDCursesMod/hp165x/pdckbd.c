@@ -134,7 +134,7 @@ int PDC_get_key( void)
         }
         return (uint16_t)e.data.key.character;
     }
-    return 0;
+    return -1;
     // TODO: mouse
 }
 

@@ -27,6 +27,7 @@ static struct termios orig_term;
 
 
 int PDC_rows = 28, PDC_cols = 80;
+extern short cursorX, cursorY;
 
 static int PDC_get_screen_size( int *n_cols, int *n_rows)
 {
@@ -81,6 +82,9 @@ int PDC_scr_open(void)
    SP->mouse_wait = PDC_CLICK_PERIOD;
    SP->visibility = 0;                /* no cursor,  by default */
    SP->curscol = SP->cursrow = 0;
+   cursorX = cursorY = 0;
+   setTextCursorXY(0,0);
+   showTextCursor(0);
    SP->audible = TRUE;
    SP->mono = FALSE;
    SP->orig_attr = TRUE;

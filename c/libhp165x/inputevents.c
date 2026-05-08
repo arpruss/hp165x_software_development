@@ -15,8 +15,13 @@ static uint32_t lastMouseCursorTicks;
 #define NO_CURSOR -1000
 static int16_t mouseCursorX=NO_CURSOR;
 static int16_t mouseCursorY;
+static uint8_t modifiers = 0;
 
 #define IS_MOUSE(c) ( mouseEventPos > 0 || ( ((c) & MOUSE_DATA) == MOUSE_DATA ) )
+
+uint8_t getKeyModifiers(void) {
+    return modifiers;
+}
 
 uint8_t isInputSerialActive(void) {
 	return useSerial;
@@ -114,6 +119,7 @@ void initInputEvents(uint8_t s) {
 		simple_serial_close();
 	oldMouseButtons = 0;
 	drawMouse = NULL;
+    modifiers = 0;
 }
 
 static uint8_t updateMouse(uint8_t serialChar, InputEvent_t* e) {
@@ -193,6 +199,9 @@ char kbhit(void) {
 			if ( IS_MOUSE(c) ) {
 				updateMouse(simple_serial_getchar(), NULL);
 			}
+            else if ( IS_MODIFIER(c) ) {
+                modifiers = c & KEYBOARD_MODIFIER_MASK;
+            }
 			else {
 				return 1;
 			}
@@ -246,6 +255,9 @@ char getch(void) {
 			if ( IS_MOUSE(c) ) {
 				updateMouse(c, NULL);
 			}
+            else if ( IS_MODIFIER(c) ) {
+                modifiers = c & KEYBOARD_MODIFIER_MASK;
+            }
 			else {
 				return parseSerialKey(c);
 			}
@@ -289,10 +301,19 @@ uint8_t getInputEvent(InputEvent_t* e) {
 				if (updateMouse(serialChar, e))
 					return 1;
 			}
+            else if (IS_MODIFIER(serialChar)) {
+                e->type = INPUT_MODIFIERS;
+                e->data.key.character = 0;
+                e->data.key.nativeKey = serialChar;
+                modifiers = serialChar & KEYBOARD_MODIFIER_MASK;
+                e->data.key.modifiers = modifiers;
+                return 1;
+            }
 			else {
 				e->type = INPUT_KEY;
 				e->data.key.character = (uint8_t)parseSerialKey((uint8_t)serialChar);
 				e->data.key.nativeKey = (uint8_t)serialChar;
+                e->data.key.modifiers = modifiers;
 				return 1;
 			}
 		}
