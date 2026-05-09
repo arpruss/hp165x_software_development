@@ -84,8 +84,6 @@ static const struct {
     { KEYBOARD_RIGHT, KEY_RIGHT },
     { KEYBOARD_UP, KEY_UP },
     { KEYBOARD_DOWN, KEY_DOWN },
-    { KEYBOARD_CTRL_LEFT, CTL_LEFT },
-    { KEYBOARD_CTRL_RIGHT, CTL_RIGHT },
     { KEYBOARD_F1, KEY_F0+1 },
     { KEYBOARD_F1+1, KEY_F0+2 },
     { KEYBOARD_F1+2, KEY_F0+3 },
@@ -122,8 +120,25 @@ static const struct {
 int PDC_get_key( void)
 {
     InputEvent_t e;
+    SP->key_modifiers = 0;
     while (!getInputEvent(&e));
     if (e.type == INPUT_KEY) {
+        if (e.data.key.modifiers & KEYBOARD_MODIFIER_SHIFT)
+            SP->key_modifiers |= PDC_KEY_MODIFIER_SHIFT;
+
+        if (e.data.key.modifiers & KEYBOARD_MODIFIER_CTRL)
+            SP->key_modifiers |= PDC_KEY_MODIFIER_CONTROL;
+
+        if (e.data.key.modifiers & KEYBOARD_MODIFIER_ALT)
+            SP->key_modifiers |= PDC_KEY_MODIFIER_ALT;
+        
+        if (e.data.key.modifiers & KEYBOARD_MODIFIER_CTRL) {
+            if (e.data.key.character == KEYBOARD_LEFT) 
+                return CTL_LEFT;
+            else if (e.data.key.character == KEYBOARD_RIGHT)
+                return CTL_RIGHT;
+        }
+
         for (uint16_t i=0; i<sizeof(translate)/sizeof(*translate); i++) {
             if (e.data.key.character == translate[i].character)
                 return translate[i].key;
