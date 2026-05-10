@@ -700,11 +700,15 @@ int clock_gettime(clockid_t clock_id, struct timespec *tp) {
     return -1;
 }
 
+uint32_t __attribute__((noinline,weak)) _systemStartTime(void) {
+    return SYSTEM_START_TIME;
+}
+
 int gettimeofday(struct timeval *tv,
                         void* tz) {
     (void)tz; 
     uint32_t t = getVBLCounter();
-    tv->tv_sec = t / ticksPerSec + SYSTEM_START_TIME;
+    tv->tv_sec = t / ticksPerSec + _systemStartTime();
     volatile uint32_t x = (uint32_t)tv->tv_sec;
     t %= ticksPerSec;
     tv->tv_usec = (t * 1000000) / ticksPerSec;

@@ -79,7 +79,4 @@ int rmdir(const char *path) {
 	return -1;
 }
 
-int fstat(int fildes, struct stat *buf) {
-	return -1;
-}
 
