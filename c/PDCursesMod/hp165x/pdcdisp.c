@@ -43,7 +43,7 @@ void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
 {
     setTextXY(x,lineno);
     while (len > 0) {
-        setTextReverse((*srcp & A_REVERSE) != 0);
+        setTextReverse(((*srcp & A_REVERSE) != 0) ^ ((*srcp & A_STANDOUT) != 0));
         setTextUnderline((*srcp & A_UNDERLINE) != 0);
         uint16_t ch = *srcp++;
         len--;

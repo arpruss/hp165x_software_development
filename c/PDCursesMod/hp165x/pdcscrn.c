@@ -89,7 +89,7 @@ int PDC_scr_open(void)
    SP->mono = FALSE;
    SP->orig_attr = TRUE;
    SP->orig_fore = SP->orig_back = -1;
-   SP->termattrs = A_UNDERLINE|A_REVERSE;
+   SP->termattrs = A_UNDERLINE|A_REVERSE|A_STANDOUT;
    return( 0);
 }
 

@@ -525,12 +525,19 @@ one of them. The nth functions calls ECFA with the third argument being n.
  
  FUN_009c174a: some sort of big complicated file operation thingy
  
-TIME
+TIME (handler at 6C3C)
+0001 0203 04
+07C0 000F
 
-A7005f: seconds
-A7005e: minutes
-A7005d: hours
-A7005c: frames (up to frame-count)
+
+
+A70060.w: year number, starting at 0x7C0 
+A70064.w: month number, starting at 06 
+A70063.b: day of month, starting at 0F = June 15, 1984
+A7005f.b: seconds
+A7005e.b: minutes
+A7005d.b: hours
+A7005c.b: frames (up to frame-count)
 A70076: frames per second
 A70066: frames per second adjustment (subtracted from frames per second)??
 

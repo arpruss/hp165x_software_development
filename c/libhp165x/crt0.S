@@ -40,6 +40,40 @@ _start:
 		move.w  (%a0)+,%d1
 		move.w	%d1,(%a1)+
 		dbra	%d0,3b
+        
+    /* set VBL counter; assume device doesn't stay on for more than a month */
+        move.l  #0xA70000,%a0
+        clr.l   %d0
+        move.b  0x63(%a0),%d0 // day of month
+        sub.w   #0xf,%d0      // at startup it's 0xF (June 15, 1984)
+        mulu.w  #36200,%d0
+        add.l   %d0,%d0      // day * 86400
+        move.l  %d0,%d1
+
+        clr.l   %d0
+        move.b  0x5d(%a0),%d0 // hours
+        mulu.w  #3600,%d0    
+        add.l  %d0,%d1
+
+        clr.l   %d0
+        move.b  0x5e(%a0),%d0 // minutes
+        mulu.w  #60,%d0      
+        add.l   %d0,%d1
+        
+        clr.l   %d0
+        move.b  0x5f(%a0),%d0 // seconds
+        add.l   %d0,%d1      // t
+        
+    /* now multiply by 60 */
+        move.l  %d1,%d0 /* d0=t */
+        add.l   %d0,%d0 /* d0=2t */
+        add.l   %d0,%d0 /* d0=4t */
+        lsl.l   #6,%d1  /* d1=64t */
+        sub.l   %d0,%d1 /* d1=64t-4t */
+        clr.l   %d0
+        move.b  0x5c(%a0),%d0  // frames
+        add.l   %d0,%d1
+        move.l  %d1,vblCounterValue
 		
 	/* install VBL counter */
 		move.l  #vbl_count, 0x980712 /* VBL callback */
