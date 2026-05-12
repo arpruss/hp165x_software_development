@@ -707,6 +707,9 @@ uint32_t __attribute__((noinline,weak)) _systemStartTime(void) {
 int gettimeofday(struct timeval *tv,
                         void* tz) {
     (void)tz; 
+    static uint32_t startTime = (uint32_t)(-1);
+    if (startTime == (uint32_t)(-1))
+        startTime = _systemStartTime();
     uint32_t t = getVBLCounter();
     tv->tv_sec = t / ticksPerSec + _systemStartTime();
     volatile uint32_t x = (uint32_t)tv->tv_sec;
