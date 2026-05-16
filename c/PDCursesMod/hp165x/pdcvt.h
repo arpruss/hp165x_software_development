@@ -7,6 +7,7 @@ extern int PDC_is_ansi;
 #endif
 
 #ifdef PDC_WIDE
+#error wide
    #if !defined( UNICODE)
       # define UNICODE
    #endif

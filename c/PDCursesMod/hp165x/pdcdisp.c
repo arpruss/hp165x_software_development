@@ -1,8 +1,4 @@
-#if defined( DOS) || (defined( _WIN32) && !defined( PDC_WIDE))
-   #define USE_UNICODE_ACS_CHARS 0
-#else
-   #define USE_UNICODE_ACS_CHARS 1
-#endif
+#define USE_UNICODE_ACS_CHARS 0
 
 #include <wchar.h>
 #include <assert.h>
@@ -30,6 +26,8 @@ int PDC_get_terminal_fd( void)
 
 size_t PDC_puts_to_stdout( const char *buff)
 {
+    putText(buff);
+    return strlen(buff);
 }
 
 void PDC_gotoyx(int y, int x)
@@ -38,16 +36,21 @@ void PDC_gotoyx(int y, int x)
     cursorY = y;
 }
 
-
 void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
 {
+    chtype prevAttr = ~(chtype)0;
     setTextXY(x,lineno);
     while (len > 0) {
-        setTextReverse(((*srcp & A_REVERSE) != 0) ^ ((*srcp & A_STANDOUT) != 0));
-        setTextUnderline((*srcp & A_UNDERLINE) != 0);
-        uint16_t ch = *srcp++;
+        chtype attr = *srcp & ~A_CHARTEXT;
+        if (attr != prevAttr) {
+            
+            setTextReverse((attr & A_REVERSE) != 0);
+            setTextUnderline((attr & A_UNDERLINE) != 0);
+            prevAttr = attr;
+        }
+        uint16_t ch = *srcp++ & A_CHARTEXT;
         len--;
-        if( _is_altcharset( ch))
+        if( _is_altcharset(ch))
             ch = acs_map[ch & 0x7f];        
         putChar(ch);
     }
