@@ -17,6 +17,7 @@
 #include <hp165x.h>
 
 short cursorX,cursorY;
+extern chtype _hpPrevAttr;
 
 int PDC_get_terminal_fd( void)
 {
@@ -38,12 +39,11 @@ void PDC_gotoyx(int y, int x)
 
 void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
 {
-    static chtype prevAttr = ~(chtype)0;
     setTextXY(x,lineno);
     while (len > 0) {
         chtype attr = *srcp & ~A_CHARTEXT;
-        if (attr != prevAttr) {
-            if (attr & A_BLINK) {
+        if (attr != _hpPrevAttr) {
+            if (attr & A_BOLD) {
                 _setTextColors(WRITE_WHITE, WRITE_GRAY);
                 setTextScrollBitplanes(0xF);
             }
@@ -56,7 +56,7 @@ void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
             }
             setTextReverse((attr & A_REVERSE) != 0);
             setTextUnderline((attr & A_UNDERLINE) != 0);
-            prevAttr = attr;
+            _hpPrevAttr = attr;
         }
         uint16_t ch = *srcp++ & A_CHARTEXT;
         len--;

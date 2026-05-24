@@ -28,7 +28,8 @@ static struct termios orig_term;
 
 int PDC_rows = 28, PDC_cols = 80;
 extern short cursorX, cursorY;
-
+chtype _hpPrevAttr = ~(chtype)0;
+ 
 static int PDC_get_screen_size( int *n_cols, int *n_rows)
 {
     *n_cols = PDC_rows;
@@ -93,7 +94,7 @@ int PDC_scr_open(void)
    SP->mono = FALSE;
    SP->orig_attr = TRUE;
    SP->orig_fore = SP->orig_back = -1;
-   SP->termattrs = A_UNDERLINE|A_REVERSE|A_STANDOUT|A_DIM|A_BLINK;
+   SP->termattrs = A_UNDERLINE|A_REVERSE|A_STANDOUT|A_DIM|A_BOLD;
    return( 0);
 }
 
