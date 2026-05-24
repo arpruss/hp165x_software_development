@@ -10,7 +10,9 @@
 uint16_t pixelToTextX(uint16_t x);
 uint16_t pixelToTextY(uint16_t y);
 void highlightText(uint16_t n, uint8_t highlightState);
-void setScrollBitplanes(uint8_t b);
+void addToTextScrollBitplanes(uint8_t b);
+void setTextScrollBitplanes(uint8_t b);
+void _setTextColors(uint16_t f, uint16_t b); // don't affect bitplanes
 void setTextColors(uint16_t f, uint16_t b);
 uint16_t getTextForeground(void);
 uint16_t getTextBackground(void);

@@ -65,6 +65,10 @@ void PDC_save_screen_mode(int i)
 
 void PDC_scr_close( void)
 {
+    setTextReverse(0);
+    setTextUnderline(0);
+    setTextColors(WRITE_WHITE, WRITE_BLACK);
+    setTextXY(0,getTextRows()-1);
 }
 
 void PDC_scr_free( void)
@@ -89,7 +93,7 @@ int PDC_scr_open(void)
    SP->mono = FALSE;
    SP->orig_attr = TRUE;
    SP->orig_fore = SP->orig_back = -1;
-   SP->termattrs = A_UNDERLINE|A_REVERSE|A_STANDOUT;
+   SP->termattrs = A_UNDERLINE|A_REVERSE|A_STANDOUT|A_DIM|A_BLINK;
    return( 0);
 }
 

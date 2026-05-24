@@ -38,12 +38,22 @@ void PDC_gotoyx(int y, int x)
 
 void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
 {
-    chtype prevAttr = ~(chtype)0;
+    static chtype prevAttr = ~(chtype)0;
     setTextXY(x,lineno);
     while (len > 0) {
         chtype attr = *srcp & ~A_CHARTEXT;
         if (attr != prevAttr) {
-            
+            if (attr & A_BLINK) {
+                _setTextColors(WRITE_WHITE, WRITE_GRAY);
+                setTextScrollBitplanes(0xF);
+            }
+            else if (attr & A_DIM) {
+                _setTextColors(WRITE_GRAY, WRITE_BLACK);
+                setTextScrollBitplanes(0xF);
+            }
+            else {
+                _setTextColors(WRITE_WHITE, WRITE_BLACK);
+            }
             setTextReverse((attr & A_REVERSE) != 0);
             setTextUnderline((attr & A_UNDERLINE) != 0);
             prevAttr = attr;
@@ -54,8 +64,6 @@ void PDC_transform_line(int lineno, int x, int len, const chtype *srcp)
             ch = acs_map[ch & 0x7f];        
         putChar(ch);
     }
-    setTextReverse(0);
-    setTextUnderline(0);
 }
 
 void PDC_doupdate(void)

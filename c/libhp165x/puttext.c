@@ -131,6 +131,15 @@ void setTextScrollBitplanes(uint8_t b) {
 	scrollBitplanes = b;
 }
 
+void addToTextScrollBitplanes(uint8_t b) {
+	scrollBitplanes |= b;
+}
+
+void _setTextColors(uint16_t f, uint16_t b) {
+	foreground = f;
+	background = b;
+}
+
 void setTextColors(uint16_t f, uint16_t b) {
 	foreground = f;
 	background = b;
