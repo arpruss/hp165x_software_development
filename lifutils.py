@@ -9,7 +9,7 @@ GENERIC = False # set to True for use with devices other than HP 1652B/53B; may 
 BIGDISK_TRACKS = 254
 SIDES = 2
 BLOCK_SIZE = 256
-DATA_TRACKS = 77
+DATA_TRACKS = 80 # 77
 BLOCKS_PER_SECTOR = 4
 SECTORS_PER_TRACK = 5
 DIR_ENTRY_SIZE = 32
@@ -438,8 +438,9 @@ while sys.argv[1].startswith("--"):
         CHUNKING = False
         sys.argv = sys.argv[:1] + sys.argv[2:]
     elif sys.argv[1] == "--generic":
-        GENERIC = False
+        GENERIC = True
         MAGIC_TRACK = -1
+        CHUNKING = False
         sys.argv = sys.argv[:1] + sys.argv[2:]
     elif sys.argv[1] == "--nopack":
         PACK = False
@@ -551,5 +552,3 @@ if rewrite:
     else:
         with open(sys.argv[2],"wb") as outf:
             outf.write(diskData)
-        
-        

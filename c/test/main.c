@@ -58,34 +58,27 @@ void miscControl(void) {
 	}
 }
 
+static inline void wait100Micros(uint32_t n) {
+    asm volatile(
+       "0: tst.l %[n]\n"
+       "   beq.s 2f\n"
+       "   move.l #(8640582/16/10000),%%d0\n"
+       "   moveq.l #1,%%d1\n"
+       "1:\n"
+	   "   sub.l %%d1,%%d0\n"
+	   "   bne.s 1b\n"
+       "   subq #1,%[n]\n"
+       "   bra.s 0b\n" 
+       "2:\n"
+       : : [n] "d" (n) : "d0", "d1");
+}
+
+
 void beeper(void) {
-	uint8_t setMode = 1;
-	uint16_t control = 0xFE;
-	uint32_t n = 1;
-    setKeyClick(0);
-	while(1) {
-		setTextXY(0,0);
-		putText(setMode ? "set mode  \n" : "clear mode\n");
-		putText("SET: ");
-		printBinary(control);
-		uint16_t k = getKey(1);
-		if (k) {
-			k = parseKey(k);
-			if ('0' <= k && k <='7') {
-				if (setMode)
-					control |= (1<<(k-'0'));
-				else
-					control &= ~(1<<(k-'0'));
-				*BEEPER = control;
-				
-			}
-			if ('R' == k)
-				setMode = !setMode;
-			if (KEYBOARD_BREAK == k)
-				return;
-		}
-		printf("\n%u\n%u", (unsigned)getVBLCounter(),n++);
-	}
+    for (uint16_t i=0; i<70; i++) {
+        *BEEPER=0;
+        waitMillis(2);
+    }
 }
 
 void fileTest(void) {
@@ -436,7 +429,7 @@ main(int argc, char** argv) {
 	putText("4 - setjmp/longjmp\n");
 	putText("5 - rows\n");
 	putText("6 - stack test\n");
-//	putText("7 - scope\n");
+	putText("7 - beeper\n");
 	putText("8 - file test\n");
 	putText("9 - info\n");
 	putText("A - line\n");
@@ -462,7 +455,7 @@ main(int argc, char** argv) {
 		case HP_KEY_4: testJmp(); break;
 		case HP_KEY_5: rows(); break;
 		case HP_KEY_6: stack(); break;
-//		case HP_KEY_7: scope(); break;
+		case HP_KEY_7: beeper(); break;
 		case HP_KEY_8: fileTest(); break;
 		case HP_KEY_9: diskInfo(); break;
 		case HP_KEY_A: line(); break;
