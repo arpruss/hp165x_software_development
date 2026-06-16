@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <hp165x.h>
 
+//#define SERIAL_MODE_DIRECT
+
 void _serialInit(void);
 _WRAP_0(_serialInit,0xeb50);
 _WRAP_5(_serialMode,0xeb5c);
@@ -12,7 +14,22 @@ _WRAP_2(serialWrite,0xeb44);
 
 void serialSetup(uint8_t baud, uint8_t parity, uint8_t stopBits, uint8_t dataBits, uint8_t protocol) {
 	_serialInit();
+#ifdef SERIAL_MODE_DIRECT    
+    *SERIAL_COMMAND = 0x10; // async 16X 
+    uint8_t mode = 0b10 | ((dataBits-1)<<2) | (parity<<4);
+    if (stopBits == STOP_BITS_1_AND_HALF)
+        mode |= 0b10000000;
+    else if (stopBits == STOP_BITS_2)
+        mode |= 0b11000000;
+    else
+        mode |= 0b01000000;
+    *SERIAL_MODE = mode;
+    *SERIAL_MODE = baud | 0x70;
+    *SERIAL_COMMAND = 0x14;
+    *SERIAL_COMMAND |= 0x02;
+#else
 	_serialMode(SERIAL_BASE,baud,parity,stopBits,dataBits);
+#endif    
 	*SERIAL_COMMAND = 0x26; // DTR and input and output
 	*(volatile uint8_t*)0x009842d1 = protocol;
 }

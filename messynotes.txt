@@ -224,11 +224,11 @@ For writing, it looks like:
   
 9842c4.l: input/output address base (0x20a000)
 
-20a000: data i/o address (read/write)
-20a002: SCN2661 Status Register
+20a001.b: data i/o address (read/write)
+20a003.b: SCN2661 Status Register
     0x20: DTR
-20a004: SCN2661 Mode Register 1 MR10-17 on first write, then Mode Register 2 MR20-27 on second write
-20a006: SCN2661 command register (read/write)
+20a005.b: SCN2661 Mode Register 1 MR10-17 on first write, then Mode Register 2 MR20-27 on second write
+20a007.b: SCN2661 command register (read/write)
 	0x20 : DCD (1=on)
 	0x02 : DSR
 20a00
