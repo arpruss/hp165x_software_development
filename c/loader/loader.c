@@ -136,7 +136,7 @@ void menu(void) {
 		if (0 == ( HARDWARE_STATUS_OLD_DISK & *HARDWARE_STATUS ))
 			return;
         InputEvent_t e;
-        if (! getInputEvent(&e))
+        if (! getInputEvent(&e) || e.type != INPUT_KEY)
             continue;
 		uint16_t k = e.data.key.nativeKey;
         uint16_t c = e.data.key.character;

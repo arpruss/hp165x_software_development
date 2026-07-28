@@ -206,6 +206,8 @@ channel, and after reading it, write another 1 to 00c00023. Reading can go on to
 
 SERIAL
 
+This is based around an SCN 2661​ EPCI chip.
+
 eb50: init serial
 eb44: (int,char*): send to serial, but it never works for me: just hangs
 ea06: called as if it was a read function, but actually may just be a delayTicks(ticks)

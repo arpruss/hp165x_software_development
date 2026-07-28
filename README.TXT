@@ -40,3 +40,7 @@ already includes loader and wiztris.
 
 The lifutils.py utility can run hxcfe directly to convert hfe to/from lif seamlessly. Just make sure you
 have hxcfe in the same directory.
+
+Some of the software needs a serial keyboard and/or mouse. The protocol I used is non-standard. I made
+a Blue Pill + SP3232 based serial to Apple Desktop Bus (ADB) adapter, so I could use my old Apple ADB 
+keyboard and mouse. The firmware is here: https://github.com/arpruss/adb2serial
